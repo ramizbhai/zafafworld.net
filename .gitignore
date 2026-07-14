@@ -74,3 +74,4 @@ temp/
 # Docker / Podman
 .docker/
 .containerignore
+zafaf-backups/
