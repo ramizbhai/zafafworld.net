@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO message_read_receipts (message_id, user_id)\n             SELECT m.id, $1 FROM messages m\n             WHERE m.conversation_id = $2 AND m.sender_id != $1\n             ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "37715849983aa0c9b4f020f33a73542c09c3aada6005ce5239df1196c9329134"
+}

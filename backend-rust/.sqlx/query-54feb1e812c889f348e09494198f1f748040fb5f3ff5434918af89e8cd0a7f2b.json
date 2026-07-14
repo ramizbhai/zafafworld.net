@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE listing_promotions SET clicks_count = clicks_count + 1 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "54feb1e812c889f348e09494198f1f748040fb5f3ff5434918af89e8cd0a7f2b"
+}

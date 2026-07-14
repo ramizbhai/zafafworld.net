@@ -1,0 +1,76 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.vim
+*~
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+*.local
+
+# Node.js / Bun / Frontend (client-web, admin-panel, vendor-portal)
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-debug.log
+bun.lockb
+# If you want to version bun.lock, remove bun.lockb but usually bun.lock is kept.
+dist/
+build/
+.svelte-kit/
+out/
+coverage/
+.nyc_output/
+
+# Rust (backend-rust)
+/backend-rust/target/
+target/
+**/*.rs.bk
+Cargo.lock
+
+# WordPress (cms-wordpress)
+cms-wordpress/wp-config.php
+cms-wordpress/wp-content/uploads/
+cms-wordpress/wp-content/upgrade/
+cms-wordpress/wp-content/cache/
+cms-wordpress/wp-content/backup-db/
+# Ignore everything in wp-content except custom themes/plugins if desired
+# cms-wordpress/wp-content/plugins/*
+# !cms-wordpress/wp-content/plugins/my-custom-plugin/
+# cms-wordpress/wp-content/themes/*
+# !cms-wordpress/wp-content/themes/my-custom-theme/
+
+# Logs and databases
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary files
+tmp/
+temp/
+*.pid
+*.seed
+*.pid.lock
+
+# Docker / Podman
+.docker/
+.containerignore

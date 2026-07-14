@@ -53,7 +53,6 @@ const VALID_COORDINATOR_GENDERS: &[&str] = &["male", "female", "any"];
 #[derive(Deserialize, validator::Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GalleryItemInput {
-    #[validate(url)]
     image_url: String,
     file_path: Option<String>,
     is_cover: Option<bool>,
@@ -191,7 +190,9 @@ struct ReorderImageRequest {
     images: Vec<ImageSortItem>,
 }
 
+// rename_all = "camelCase" ensures "sortOrder" from JSON maps to sort_order field.
 #[derive(Deserialize, validator::Validate)]
+#[serde(rename_all = "camelCase")]
 struct ImageSortItem {
     id: Uuid,
     #[validate(range(min = 0))]
@@ -524,7 +525,7 @@ fn row_to_product_json(row: &sqlx::postgres::PgRow) -> Result<Value, AppError> {
         "googleMapsUrl": google_maps_url,
         "latitude": latitude,
         "longitude": longitude,
-        "featuresSelection": features_selection,
+        // featuresSelection at canonical top-level position (no duplicate)
         "pricing": {
             "basePriceSar": match base_price_sar {
                 Some(d) => Some(d.to_string().parse::<f64>().map_err(|_| AppError::Internal("Invalid price format in database".to_string()))?),
@@ -879,7 +880,7 @@ async fn create_product(
         limits::DESCRIPTION,
     );
     // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
-    let clean_title_legacy: Option<String> = None;
+    let clean_title_legacy: Option<String> = Some(clean_title_en.clone());
     // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_desc_legacy: Option<String> = None;
 
@@ -938,11 +939,6 @@ async fn create_product(
     let features_selection = payload.features_selection.unwrap_or_else(|| json!({}));
     if let Some(obj) = features_selection.as_object() {
         let keys: Vec<Uuid> = obj.keys().filter_map(|k| Uuid::parse_str(k).ok()).collect();
-        if keys.len() != obj.len() {
-            return Err(AppError::BadRequest(
-                "Invalid feature IDs format".to_string(),
-            ));
-        }
 
         if !keys.is_empty() {
             let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM features WHERE id = ANY($1)")
@@ -966,23 +962,6 @@ async fn create_product(
     let computed_total_capacity = compute_total_capacity(&attrs);
     let computed_searchable_amenities = compute_searchable_amenities(&attrs, &cultural_attrs, &features_selection);
 
-    let men_capacity_val = attrs
-        .get("men_capacity")
-        .or_else(|| attrs.get("menCapacity"))
-        .and_then(|v| v.as_i64())
-        .map(|v| v as i32);
-    let women_capacity_val = attrs
-        .get("women_capacity")
-        .or_else(|| attrs.get("womenCapacity"))
-        .and_then(|v| v.as_i64())
-        .map(|v| v as i32);
-    let has_separate_entries_val = attrs
-        .get("has_separate_entrances")
-        .or_else(|| attrs.get("has_separate_entries"))
-        .or_else(|| attrs.get("hasSeparateEntrances"))
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-
     sqlx::query(
         "INSERT INTO vendor_products (
             id, vendor_id,
@@ -1001,7 +980,7 @@ async fn create_product(
             features_selection,
             meta_title_ar, meta_title_en, meta_description_ar, meta_description_en,
             coordinator_email, coordinator_mobile,
-            cultural_attributes, men_capacity, women_capacity, has_separate_entries,
+            cultural_attributes,
             total_capacity, searchable_amenities
         ) VALUES (
             $1, $2,
@@ -1020,8 +999,8 @@ async fn create_product(
             $28,
             $29, $30, $31, $32,
             $33, $34,
-            $35, $36, $37, $38,
-            $39, $40
+            $35,
+            $36, $37
         )",
     )
     .bind(new_id)
@@ -1064,9 +1043,6 @@ async fn create_product(
     .bind(&clean_coord_email)
     .bind(&clean_coord_mobile)
     .bind(&cultural_attrs)
-    .bind(men_capacity_val)
-    .bind(women_capacity_val)
-    .bind(has_separate_entries_val)
     .bind(computed_total_capacity)
     .bind(&computed_searchable_amenities)
     .execute(&mut *rls_tx.tx)
@@ -1276,7 +1252,7 @@ async fn update_product(
     let clean_coord_name_ar = sanitize_opt(&payload.coordinator_name_ar, limits::NAME_SHORT);
     
     // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
-    let clean_title_legacy: Option<String> = None;
+    let clean_title_legacy: Option<String> = clean_title_en.clone();
     // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_desc_legacy: Option<String> = None;
     // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
@@ -1304,11 +1280,6 @@ async fn update_product(
     if let Some(ref features) = payload.features_selection {
         if let Some(obj) = features.as_object() {
             let keys: Vec<Uuid> = obj.keys().filter_map(|k| Uuid::parse_str(k).ok()).collect();
-            if keys.len() != obj.len() {
-                return Err(AppError::BadRequest(
-                    "Invalid feature IDs format".to_string(),
-                ));
-            }
 
             if !keys.is_empty() {
                 let count: i64 =
@@ -1344,31 +1315,18 @@ async fn update_product(
     };
 
     if db_version != payload.version {
-        tracing::warn!("Version conflict for product {}. Expected {}, got {}", product_id, payload.version, db_version);
-        return Err(AppError::NotFound(
-            "Version conflict: The listing was updated elsewhere. Please refresh.".to_string()
+        tracing::warn!(
+            "Version conflict for product {}. DB version={}, client version={}",
+            product_id, db_version, payload.version
+        );
+        return Err(AppError::Conflict(
+            "Version conflict: The listing was updated elsewhere. Please refresh and try again.".to_string()
         ));
     }
 
     let eff_attributes = payload.attributes.clone().unwrap_or(db_attributes);
     let eff_cultural = payload.cultural_attributes.clone().unwrap_or(db_cultural);
     let eff_features = payload.features_selection.clone().unwrap_or(db_features);
-
-    let men_capacity_val = eff_attributes
-        .get("men_capacity")
-        .or_else(|| eff_attributes.get("menCapacity"))
-        .and_then(|v| v.as_i64())
-        .map(|v| v as i32);
-    let women_capacity_val = eff_attributes
-        .get("women_capacity")
-        .or_else(|| eff_attributes.get("womenCapacity"))
-        .and_then(|v| v.as_i64())
-        .map(|v| v as i32);
-    let has_separate_entries_val = eff_attributes
-        .get("has_separate_entrances")
-        .or_else(|| eff_attributes.get("has_separate_entries"))
-        .or_else(|| eff_attributes.get("hasSeparateEntrances"))
-        .and_then(|v| v.as_bool());
 
     let computed_total_capacity = compute_total_capacity(&eff_attributes);
     let computed_searchable_amenities = compute_searchable_amenities(&eff_attributes, &eff_cultural, &eff_features);
@@ -1380,9 +1338,9 @@ async fn update_product(
             description     = COALESCE($2, description),
             -- V2 bilingual
             title_ar        = COALESCE($3, title_ar),
-            title_en        = COALESCE($35, title_en),
+            title_en        = COALESCE($32, title_en),
             description_ar  = COALESCE($4, description_ar),
-            description_en  = COALESCE($36, description_en),
+            description_en  = COALESCE($33, description_en),
             product_category = COALESCE($5, product_category),
             base_price_sar  = COALESCE($6::numeric, base_price_sar),
             deposit_percentage = COALESCE($7, deposit_percentage),
@@ -1390,7 +1348,7 @@ async fn update_product(
             gender_section  = COALESCE($9, gender_section),
             coordinator_name    = COALESCE($10, coordinator_name),
             coordinator_name_ar = COALESCE($11, coordinator_name_ar),
-            coordinator_name_en = COALESCE($37, coordinator_name_en),
+            coordinator_name_en = COALESCE($34, coordinator_name_en),
             coordinator_phone   = COALESCE($12, coordinator_phone),
             coordinator_whatsapp = COALESCE($13, coordinator_whatsapp),
             coordinator_avatar  = COALESCE($14, coordinator_avatar),
@@ -1408,12 +1366,9 @@ async fn update_product(
             meta_description_en = COALESCE($29, meta_description_en),
             coordinator_email   = COALESCE($30, coordinator_email),
             coordinator_mobile  = COALESCE($31, coordinator_mobile),
-            men_capacity        = COALESCE($32, men_capacity),
-            women_capacity      = COALESCE($33, women_capacity),
-            has_separate_entries = COALESCE($34, has_separate_entries),
-            cultural_attributes = COALESCE($38, cultural_attributes),
-            total_capacity      = $39,
-            searchable_amenities = $40,
+            cultural_attributes = COALESCE($35, cultural_attributes),
+            total_capacity      = $36,
+            searchable_amenities = $37,
             version         = version + 1,
             updated_at      = CURRENT_TIMESTAMP
           WHERE id = $19 AND vendor_id = $20 AND version = $21",
@@ -1449,15 +1404,12 @@ async fn update_product(
     .bind(&clean_meta_desc_en) // $29
     .bind(&clean_coord_email) // $30
     .bind(&clean_coord_mobile) // $31
-    .bind(men_capacity_val) // $32
-    .bind(women_capacity_val) // $33
-    .bind(has_separate_entries_val) // $34
-    .bind(&clean_title_en) // $35
-    .bind(&clean_desc_en) // $36
-    .bind(&clean_coord_name_en) // $37
-    .bind(&payload.cultural_attributes) // $38
-    .bind(computed_total_capacity) // $39
-    .bind(&computed_searchable_amenities) // $40
+    .bind(&clean_title_en) // $32
+    .bind(&clean_desc_en) // $33
+    .bind(&clean_coord_name_en) // $34
+    .bind(&payload.cultural_attributes) // $35
+    .bind(computed_total_capacity) // $36
+    .bind(&computed_searchable_amenities) // $37
     .execute(&mut *rls_tx.tx)
     .await?
     .rows_affected();
@@ -1784,7 +1736,9 @@ async fn list_product_images(
 
 // ─── ADD IMAGE: POST /vendor/products/:id/images ─────────────────────────────
 
+// All fields use snake_case internally; serde maps camelCase JSON keys from the frontend.
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct AddProductImageRequest {
     image_url: String,
     file_path: Option<String>,

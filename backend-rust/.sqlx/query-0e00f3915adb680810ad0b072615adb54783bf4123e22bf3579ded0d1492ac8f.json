@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*)::int \n         FROM listing_promotions lp\n         WHERE lp.listing_id = $1\n           AND lp.status = 'approved'\n           AND lp.id != $2\n           AND tstzrange(lp.start_at, lp.end_at, '[]') && tstzrange($3, $4, '[]')",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "0e00f3915adb680810ad0b072615adb54783bf4123e22bf3579ded0d1492ac8f"
+}

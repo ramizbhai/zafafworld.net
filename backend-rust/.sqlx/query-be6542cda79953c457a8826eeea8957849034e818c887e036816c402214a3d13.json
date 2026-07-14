@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n                id, \n                product_id as \"product_id?\",\n                name_ar, \n                name_en, \n                description_ar, \n                description_en, \n                original_price::float8 as original_price, \n                discounted_price::float8 as discounted_price, \n                is_zafaf_exclusive, \n                expiry_date::text as expiry_date,\n                version\n             FROM vendor_packages \n             WHERE vendor_id = $1 \n             ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_id?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "name_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "description_ar",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "description_en",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "original_price",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "discounted_price",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_zafaf_exclusive",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "expiry_date",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "version",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "be6542cda79953c457a8826eeea8957849034e818c887e036816c402214a3d13"
+}

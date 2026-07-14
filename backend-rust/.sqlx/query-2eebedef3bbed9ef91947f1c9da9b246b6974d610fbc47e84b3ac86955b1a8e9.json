@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id FROM conversations c\n             JOIN conversation_participants cp ON c.id = cp.conversation_id\n             WHERE cp.user_id = $1 AND c.title = 'Admin Support Chat'\n             LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2eebedef3bbed9ef91947f1c9da9b246b6974d610fbc47e84b3ac86955b1a8e9"
+}

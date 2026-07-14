@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vendor_subscription_requests SET status = 'rejected', admin_notes = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "31029bfa246ad4a920d2ea5a1895ece6794dc5e9cc0d2230e975261d909381ba"
+}

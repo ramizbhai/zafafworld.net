@@ -718,6 +718,7 @@ struct AddGalleryImageRequest {
     #[serde(default)]
     product_id: Option<Uuid>,
     #[serde(default)]
+    #[allow(dead_code)]
     file_path: Option<String>,
 }
 

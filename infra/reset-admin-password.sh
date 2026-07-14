@@ -29,7 +29,7 @@ if [[ -f "${PROJECT_ROOT}/.env" ]]; then
 fi
 
 DEFAULT_EMAIL="admin@zafafworld.net"
-DEFAULT_PASSWORD="${ADMIN_INITIAL_PASSWORD:-Zafafworld@2026}"
+DEFAULT_PASSWORD="Zafafworld@2026"
 
 if [[ "$#" -eq 2 ]]; then
     ADMIN_EMAIL="$1"

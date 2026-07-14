@@ -6,7 +6,7 @@
 # Force:    sudo logrotate -f /etc/logrotate.d/zafaf-nginx
 # ══════════════════════════════════════════════════════════════════════════════
 
-/var/log/zafaf/nginx/*.log {
+/var/lib/zafafworld/logs/nginx/*.log {
     daily                          # Rotate daily
     size 100M                      # Also rotate if file exceeds 100MB
     missingok                      # Don't error if log file is absent

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO vendor_packages (\n                id, vendor_id, product_id, name_ar, name_en, description_ar, description_en, \n                original_price, discounted_price, is_zafaf_exclusive, expiry_date\n             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Bool",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c4cd0972dfcc5b25ec3d5e74aa75539b09c634fa52d60d03c915de4d323da704"
+}

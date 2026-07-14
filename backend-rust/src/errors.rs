@@ -258,7 +258,7 @@ pub fn map_db_error(err: sqlx::Error) -> AppError {
                 db_err.message()
             )),
             Some("23502") => AppError::BadRequest(
-                "A required field was missing from the submission.".to_string(),
+                format!("A required field was missing from the submission. Details: {}", db_err.message()),
             ),
             _ => AppError::Database(err.to_string()),
         }

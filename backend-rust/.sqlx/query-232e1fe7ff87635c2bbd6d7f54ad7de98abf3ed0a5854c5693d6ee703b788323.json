@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vendor_packages \n             SET name_ar = $1, name_en = $2, description_ar = $3, description_en = $4, \n                 original_price = $5::numeric, discounted_price = $6::numeric, is_zafaf_exclusive = $7, expiry_date = $8,\n                 product_id = COALESCE($9, product_id),\n                 version = version + 1\n             WHERE id = $10 AND vendor_id = $11 AND version = $12",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Bool",
+        "Date",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "232e1fe7ff87635c2bbd6d7f54ad7de98abf3ed0a5854c5693d6ee703b788323"
+}

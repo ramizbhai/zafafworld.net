@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vendors SET subscription_tier_id = $1, subscription_expires_at = NOW() + INTERVAL '1 year', subscription_status = 'active' WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fe3778134e94c5276552ca0cdf221ecad066f202b339860afcc7f80d44991cbb"
+}

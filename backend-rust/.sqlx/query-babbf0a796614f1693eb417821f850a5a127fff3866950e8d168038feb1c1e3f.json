@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vendors\n             SET name_ar = $1,\n                 name_en = $2,\n                 description_ar = COALESCE($3, description_ar),\n                 description_en = COALESCE($4, description_en),\n                 address_ar = COALESCE($5, address_ar),\n                 address_en = COALESCE($6, address_en),\n                 phone = COALESCE($7, phone),\n                 email = COALESCE($8, email),\n                 latitude = COALESCE($9, latitude),\n                 longitude = COALESCE($10, longitude),\n                 crm_venue_id = COALESCE($11, crm_venue_id),\n                 star_rating = COALESCE($12, star_rating),\n                 website = COALESCE($13, website),\n                 maps_url = COALESCE($14, maps_url),\n                 video_url_1 = COALESCE($15, video_url_1),\n                 has_partition = COALESCE($16, has_partition),\n                 capacity_min = COALESCE($17, capacity_min),\n                 capacity_max = COALESCE($18, capacity_max),\n                 amenities = COALESCE($19, amenities),\n                 city_id = COALESCE($20, city_id),\n                 instagram_url = COALESCE($21, instagram_url),\n                 cr_number = COALESCE($22, cr_number),\n                 coordinator_name_ar = COALESCE($23, coordinator_name_ar),\n                 coordinator_name_en = COALESCE($24, coordinator_name_en),\n                 coordinator_phone = COALESCE($25, coordinator_phone),\n                 coordinator_whatsapp = COALESCE($26, coordinator_whatsapp),\n                 version = version + 1,\n                 updated_at = CURRENT_TIMESTAMP\n             WHERE id = $27 AND version = $28",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Float8",
+        "Float8",
+        "Varchar",
+        "Numeric",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Int4",
+        "Int4",
+        "TextArray",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "babbf0a796614f1693eb417821f850a5a127fff3866950e8d168038feb1c1e3f"
+}

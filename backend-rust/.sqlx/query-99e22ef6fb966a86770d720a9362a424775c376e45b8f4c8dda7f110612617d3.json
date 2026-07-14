@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, priority_score, policy_limits, price, billing_cycle, features\n        FROM subscription_tiers\n        ORDER BY priority_score ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "priority_score",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "policy_limits",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "billing_cycle",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "features",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "99e22ef6fb966a86770d720a9362a424775c376e45b8f4c8dda7f110612617d3"
+}

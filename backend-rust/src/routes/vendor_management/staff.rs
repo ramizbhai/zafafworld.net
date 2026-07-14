@@ -3,8 +3,8 @@ use crate::middleware::auth::{RequireVendor, RequireVendorOwner, RlsTx};
 use crate::state::AppState;
 use crate::models::inquiry::VendorStaff;
 use axum::{
-    extract::{Path, State},
-    routing::{get, post},
+    extract::State,
+    routing::get,
     Json, Router,
 };
 use serde_json::{json, Value};

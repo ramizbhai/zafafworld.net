@@ -27,7 +27,7 @@ services:
   postgres:
     image: docker.io/postgres:16-alpine
     restart: always
-    mem_limit: 3g
+    mem_limit: 4g
     cpus: 4
     networks:
       - zafaf_network
@@ -85,7 +85,7 @@ services:
   redis:
     image: docker.io/redis:7-alpine
     restart: always
-    mem_limit: 512m
+    mem_limit: 1g
     cpus: 1
     networks:
       - zafaf_network
@@ -104,8 +104,8 @@ services:
   minio:
     image: docker.io/minio/minio:latest
     restart: always
-    mem_limit: 1.5g
-    cpus: 0.5
+    mem_limit: 2g
+    cpus: 2
     networks:
       - zafaf_network
     environment:
@@ -157,7 +157,7 @@ services:
       dockerfile: Containerfile
     image: localhost/zafaf-backend:latest
     restart: always
-    mem_limit: 1g
+    mem_limit: 1.5g
     cpus: 2
     user: "10001:10001"
     networks:
@@ -200,8 +200,6 @@ services:
       WP_SYNC_SECRET: "${WP_SYNC_SECRET}"
     security_opt:
       - label:disable        # Allow UDS socket bind on tmpfs without SELinux confinement
-    ports:
-      - "127.0.0.1:8080:8080"
     volumes:
       - zafaf_uds_socket:/var/run/zafaf:z
       - /var/lib/zafafworld/uploads:/app/assets/uploads:z
@@ -222,15 +220,16 @@ services:
       dockerfile: Containerfile
     image: localhost/zafaf-client-web:latest
     restart: always
-    mem_limit: 1.5g
-    cpus: 1
+    mem_limit: 2g
+    cpus: 2
     # user managed by Containerfile: USER zafaf (addgroup -S zafaf)
     networks:
       - zafaf_network
     environment:
       PUBLIC_API_URL: "${PUBLIC_API_URL:-https://api.zafafworld.net}"
       PUBLIC_WS_URL: "${PUBLIC_WS_URL:-wss://api.zafafworld.net}"
-      ORIGIN: "https://zafafworld.net"
+      ORIGIN: "${PUBLIC_CLIENT_URL:-https://zafafworld.net}"
+      BODY_SIZE_LIMIT: "209715200"
       REDIS_URL: "redis://redis:6379"
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
@@ -260,18 +259,16 @@ services:
       dockerfile: Containerfile
     image: localhost/zafaf-vendor-portal:latest
     restart: always
-    mem_limit: 512m
+    mem_limit: 1g
     cpus: 1
     # user managed by Containerfile: USER zafaf (addgroup -S zafaf)
-    ports:
-      - "127.0.0.1:8082:8082"
     networks:
       - zafaf_network
     environment:
-      PUBLIC_API_URL: "http://127.0.0.1:8080"
-      PUBLIC_WS_URL: "ws://127.0.0.1:8080"
-      ORIGIN: "http://127.0.0.1:8082"
-      BODY_SIZE_LIMIT: "10485760"
+      PUBLIC_API_URL: "${PUBLIC_API_URL:-https://api.zafafworld.net}"
+      PUBLIC_WS_URL: "${PUBLIC_WS_URL:-wss://api.zafafworld.net}"
+      ORIGIN: "${PUBLIC_VENDOR_URL:-https://vendor.zafafworld.net}"
+      BODY_SIZE_LIMIT: "209715200"
       REDIS_URL: "redis://redis:6379"
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
@@ -299,14 +296,15 @@ services:
       dockerfile: Containerfile
     image: localhost/zafaf-admin-panel:latest
     restart: always
-    mem_limit: 384m
+    mem_limit: 512m
     cpus: 0.5
     # user managed by Containerfile: USER zafaf (addgroup -S zafaf)
     networks:
       - zafaf_network
     environment:
       PUBLIC_API_URL: "${PUBLIC_API_URL:-https://api.zafafworld.net}"
-      ORIGIN: "https://admin.zafafworld.net"
+      ORIGIN: "${PUBLIC_ADMIN_URL:-https://admin.zafafworld.net}"
+      BODY_SIZE_LIMIT: "209715200"
       REDIS_URL: "redis://redis:6379"
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
@@ -334,8 +332,8 @@ services:
       dockerfile: Containerfile
     image: localhost/zafaf-nginx:latest
     restart: always
-    mem_limit: 256m
-    cpus: 1
+    mem_limit: 512m
+    cpus: 2
     security_opt:
       - label:disable
     depends_on:
@@ -379,8 +377,8 @@ services:
     image: docker.io/library/wordpress:php8.3-fpm
     container_name: zafaf-cms
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: 1
+    mem_limit: 1g
+    cpus: 2
     networks:
       - zafaf_network
     depends_on:
@@ -405,8 +403,8 @@ services:
     container_name: zafaf-cms-nginx
     restart: unless-stopped
     entrypoint: ["/entrypoint.sh"]
-    mem_limit: 128m
-    cpus: 0.5
+    mem_limit: 256m
+    cpus: 1
     networks:
       - zafaf_network
     depends_on:
@@ -430,7 +428,7 @@ services:
     image: docker.io/library/mariadb:10.11
     container_name: zafaf-cms-db
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     cpus: 1
     networks:
       - zafaf_network

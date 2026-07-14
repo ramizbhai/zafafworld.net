@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE listing_promotions\n         SET start_at = $1, end_at = $2, status = 'pending', updated_at = NOW()\n         WHERE id = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4b027293f3227df8aa23b1df36e513fea5a95edcb4ddfb67fd2e3fd1d8ed8993"
+}

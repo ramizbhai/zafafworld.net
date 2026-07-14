@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n                id, \n                image_url, \n                is_cover, \n                caption, \n                product_id,\n                created_at::text as created_at\n             FROM vendor_gallery \n             WHERE vendor_id = $1 \n             ORDER BY is_cover DESC, created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "is_cover",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "caption",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "product_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "60aca339587787855760c4bc3dacb0300ba2f97dfff2c9e17ce1d071d0cde1b7"
+}

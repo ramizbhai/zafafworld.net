@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT COUNT(*)::bigint as \"count!\"\n        FROM listing_promotions lp\n        WHERE lp.vendor_id = $1\n          AND ($2::text IS NULL OR lp.status = $2::text)\n          AND ($3::text IS NULL OR lp.title_en ILIKE $3::text OR lp.title_ar ILIKE $3::text)\n          AND ($4::timestamptz IS NULL OR lp.start_at >= $4::timestamptz)\n          AND ($5::timestamptz IS NULL OR lp.end_at <= $5::timestamptz)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "fb97b41e1387e4fe4338a3f01093ac148074225e2fb5f584f1d529636b22956c"
+}

@@ -98,12 +98,12 @@ find "$DEPLOY_ROOT" "${PRUNE_EXPR[@]}" -name "Containerfile" -exec chmod 644 {} 
 find "$DEPLOY_ROOT" "${PRUNE_EXPR[@]}" -name "entrypoint.sh" -exec chmod 755 {} + 2>/dev/null || true
 
 # Step 6: Log directory permissions
-log_info "Applying permissions to /var/log/zafaf..."
-if [[ -d "/var/log/zafaf" ]]; then
-    chown -R "$OWNER" /var/log/zafaf 2>/dev/null || true
-    find /var/log/zafaf -type d -exec chmod 755 {} + 2>/dev/null || true
-    find /var/log/zafaf -type f -exec chmod 644 {} + 2>/dev/null || true
-    log_success "/var/log/zafaf configured successfully"
+log_info "Applying permissions to /var/lib/zafafworld/logs..."
+if [[ -d "/var/lib/zafafworld/logs" ]]; then
+    chown -R "$OWNER" /var/lib/zafafworld/logs 2>/dev/null || true
+    find /var/lib/zafafworld/logs -type d -exec chmod 755 {} + 2>/dev/null || true
+    find /var/lib/zafafworld/logs -type f -exec chmod 644 {} + 2>/dev/null || true
+    log_success "/var/lib/zafafworld/logs configured successfully"
 fi
 
 # Step 6b: Shared uploads volume permissions

@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n                vp.id, COALESCE(vp.title_en, vp.title_ar, vp.title, 'Unnamed Product') AS title, vp.product_category,\n                COUNT(cb.id)::bigint AS booking_count,\n                COALESCE(SUM(cb.total_price) FILTER (WHERE cb.status IN ('confirmed', 'Confirmed', 'completed', 'Completed')), 0.00)::float8 AS total_revenue\n             FROM vendor_products vp\n             LEFT JOIN core_bookings cb ON vp.id = cb.product_id\n             WHERE vp.vendor_id = $1 AND vp.status != 'archived'\n             GROUP BY vp.id, vp.title_en, vp.title_ar, vp.title, vp.product_category\n             ORDER BY booking_count DESC, total_revenue DESC\n             LIMIT 5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "product_category",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "booking_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "total_revenue",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "a60337d0ca7b15879b610e184ee33c00a33437d15432712713417f690cd39908"
+}

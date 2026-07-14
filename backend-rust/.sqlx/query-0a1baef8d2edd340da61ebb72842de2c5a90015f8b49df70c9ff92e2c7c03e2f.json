@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vendor_gallery \n                     SET is_cover = FALSE \n                     WHERE product_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0a1baef8d2edd340da61ebb72842de2c5a90015f8b49df70c9ff92e2c7c03e2f"
+}

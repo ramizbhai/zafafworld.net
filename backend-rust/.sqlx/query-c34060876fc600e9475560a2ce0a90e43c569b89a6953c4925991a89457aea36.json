@@ -1,0 +1,199 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            lp.id as promotion_id,\n            lp.promo_type,\n            lp.discount_type,\n            lp.discount_percentage,\n            lp.discount_fixed_amount,\n            lp.benefit_description_en,\n            lp.benefit_description_ar,\n            lp.use_listing_cover_image,\n            lp.custom_banner_image_url,\n            lp.title_en,\n            lp.title_ar,\n            lp.description_en,\n            lp.description_ar,\n            lp.badge_text_en,\n            lp.badge_text_ar,\n            lp.banner_image_url,\n            lp.start_at,\n            lp.end_at,\n            lp.status,\n            p.id as product_id,\n            p.title_en as listing_name_en,\n            p.title_ar as listing_name_ar,\n            p.slug as listing_slug,\n            (SELECT image_url FROM vendor_gallery WHERE product_id = p.id AND is_cover = TRUE LIMIT 1) AS cover_image,\n            p.city_id,\n            p.product_category as category,\n            v.name_en as vendor_name,\n            st.name as subscription_tier,\n            st.priority_score\n        FROM listing_promotions lp\n        JOIN vendors v ON lp.vendor_id = v.id\n        JOIN subscription_tiers st ON v.subscription_tier_id = st.id\n        JOIN vendor_products p ON lp.listing_id = p.id\n        WHERE fn_promo_is_active(lp.status, lp.start_at, lp.end_at)\n          AND v.status = 'active'\n          AND v.subscription_status = 'active'\n          AND p.status = 'active'\n          AND ($1::text IS NULL OR p.product_category = $1::text)\n          AND ($2::uuid IS NULL OR p.city_id = $2::uuid)\n          AND ($3::uuid IS NULL OR v.id = $3::uuid)\n          AND ($4::text IS NULL OR lp.title_en ILIKE $4::text OR lp.title_ar ILIKE $4::text OR lp.description_en ILIKE $4::text OR lp.description_ar ILIKE $4::text)\n          AND ($5::timestamptz IS NULL OR lp.start_at >= $5::timestamptz)\n          AND ($6::timestamptz IS NULL OR lp.end_at <= $6::timestamptz)\n        ORDER BY \n            CASE WHEN $7 = 'priority' AND $8 = 'desc' THEN st.priority_score END DESC,\n            CASE WHEN $7 = 'priority' AND $8 = 'asc' THEN st.priority_score END ASC,\n            CASE WHEN $7 = 'end_at' AND $8 = 'desc' THEN lp.end_at END DESC,\n            CASE WHEN $7 = 'end_at' AND $8 = 'asc' THEN lp.end_at END ASC,\n            CASE WHEN $7 = 'created_at' AND $8 = 'desc' THEN lp.created_at END DESC,\n            CASE WHEN $7 = 'created_at' AND $8 = 'asc' THEN lp.created_at END ASC,\n            st.priority_score DESC,\n            lp.end_at ASC,\n            lp.created_at DESC\n        LIMIT $9 OFFSET $10\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "promotion_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "promo_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "discount_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "discount_percentage",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "discount_fixed_amount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "benefit_description_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "benefit_description_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "use_listing_cover_image",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "custom_banner_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "title_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "title_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "description_en",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "description_ar",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "badge_text_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 14,
+        "name": "badge_text_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "banner_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 16,
+        "name": "start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "end_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 19,
+        "name": "product_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 20,
+        "name": "listing_name_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 21,
+        "name": "listing_name_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 22,
+        "name": "listing_slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 23,
+        "name": "cover_image",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 24,
+        "name": "city_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 25,
+        "name": "category",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 26,
+        "name": "vendor_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 27,
+        "name": "subscription_tier",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 28,
+        "name": "priority_score",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      null,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c34060876fc600e9475560a2ce0a90e43c569b89a6953c4925991a89457aea36"
+}

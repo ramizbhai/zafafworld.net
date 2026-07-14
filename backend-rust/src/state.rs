@@ -100,6 +100,7 @@ pub struct AppState {
     pub whatsapp_service: std::sync::Arc<crate::services::whatsapp::WhatsappService>,
     pub booking_event_tx: broadcast::Sender<BookingEvent>,
     pub chat_event_tx: broadcast::Sender<ChatEvent>,
+    #[allow(dead_code)]
     pub inquiry_event_tx: broadcast::Sender<InquiryEvent>,
     pub ws_manager: Arc<WsManager>,
     pub rate_limit_store:

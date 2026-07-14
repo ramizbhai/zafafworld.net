@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) FROM listing_promotions WHERE vendor_id = $1 AND status IN ('pending', 'approved', 'paused')",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "89009b4a0e96f26f093179f6bed8f053a9b282e43d8b84cf43fecc6fead167f0"
+}

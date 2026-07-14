@@ -9,11 +9,12 @@
 #       Use journalctl to read them:
 #         journalctl --user -u zafafworld.service -o json
 #
-#       This config covers any file-based logs written to /var/log/zafaf/app/
-#       For journald retention, see /etc/systemd/journald.conf instead.
+#       This config covers any file-based logs written to /var/lib/zafafworld/logs/app/
+#
+# USAGE:  logrotate -f /opt/zafafworld.net/infra/logrotate/app-journal
 # ══════════════════════════════════════════════════════════════════════════════
 
-/var/log/zafaf/app/*.log {
+/var/lib/zafafworld/logs/app/*.log {
     daily                          # Rotate daily
     size 50M                       # Also rotate if file exceeds 50MB
     missingok                      # Don't error if no app log files exist yet

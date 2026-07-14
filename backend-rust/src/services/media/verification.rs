@@ -9,10 +9,10 @@
 
 use crate::config::AppConfig;
 use crate::errors::AppError;
-use crate::services::media::{self, minio_client::MinioClient, ProcessedMedia};
+use crate::services::media::{self, minio_client::MinioClient};
 use image::{ImageBuffer, Rgb, DynamicImage, ImageFormat};
 use sqlx::PgPool;
-use std::collections::HashMap;
+
 use std::fs;
 use uuid::Uuid;
 

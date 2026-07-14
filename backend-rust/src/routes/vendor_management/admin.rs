@@ -2,14 +2,14 @@ use crate::errors::AppError;
 use crate::middleware::auth::{RequireAdmin, RlsTx};
 use crate::state::AppState;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     routing::{get, post, patch},
     Json, Router,
 };
 use serde_json::{json, Value};
 use uuid::Uuid;
 use sqlx::Row;
-use serde::Deserialize;
+
 
 #[derive(serde::Deserialize)]
 pub struct UpdateVendorSubscriptionInput {

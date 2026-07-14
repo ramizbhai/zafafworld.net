@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n                m.id, \n                m.sender_id, \n                m.body, \n                (SELECT file_url FROM message_attachments a WHERE a.message_id = m.id LIMIT 1) as file_url,\n                EXISTS(SELECT 1 FROM message_read_receipts r WHERE r.message_id = m.id AND r.user_id != m.sender_id) as is_read,\n                m.created_at\n             FROM messages m\n             WHERE m.conversation_id = $1\n             ORDER BY m.created_at ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "sender_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "file_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_read",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      null,
+      null,
+      false
+    ]
+  },
+  "hash": "01ccc7a5424b24a0810c7939ea5754362a67cc23243de5902bce7f9b2e654354"
+}

@@ -1,0 +1,143 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, listing_id, promo_type, discount_type, discount_percentage,\n               discount_fixed_amount, benefit_description_en, benefit_description_ar,\n               use_listing_cover_image, custom_banner_image_url, title_en, title_ar,\n               description_en, description_ar, badge_text_en, badge_text_ar,\n               start_at, end_at, status as config_status, rejection_reason, created_at\n        FROM listing_promotions\n        WHERE id = $1 AND vendor_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "listing_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "promo_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "discount_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "discount_percentage",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "discount_fixed_amount",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "benefit_description_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "benefit_description_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "use_listing_cover_image",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "custom_banner_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "title_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "title_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "description_en",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "description_ar",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "badge_text_en",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "badge_text_ar",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 16,
+        "name": "start_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "end_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "config_status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 19,
+        "name": "rejection_reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 20,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "13688270bb6e4e15b469823b3cfe9955e85d6addc6ff0eca9b15183382505957"
+}

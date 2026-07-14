@@ -361,7 +361,8 @@ function createListingStore() {
                 basePriceSar: product.pricing?.basePriceSar?.toString() || product.base_price_sar?.toString() || '',
                 priceOnInquiry: product.pricing?.priceOnInquiry ?? product.price_on_inquiry ?? false,
                 depositPercentage: product.pricing?.depositPercentage ?? product.deposit_percentage ?? 25,
-                selectedCityId: product.metadata?.cityId || product.city_id || '',
+                // cityId is always nested in metadata in API response — no snake_case fallback needed
+                selectedCityId: product.metadata?.cityId ?? '',
                 googleMapsUrl: product.googleMapsUrl || product.google_maps_url || '',
                 latitude: product.latitude?.toString() || '',
                 longitude: product.longitude?.toString() || '',

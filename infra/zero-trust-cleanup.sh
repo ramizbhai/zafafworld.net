@@ -164,7 +164,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════════════
 echo -e "${BOLD}── Block 5: Stale logs ──────────────────────────────────────────${NC}"
 
-# Repo-level log files (logs should live in /var/log/zafaf, not the repo)
+# Repo-level log files (logs should live in /var/lib/zafafworld/logs, not the repo)
 find "${DEPLOY_ROOT}" -maxdepth 3 -name "*.log" -not -path "*/infra/*" \
     -exec printf "  ${GREEN}✓ del${NC}   %s\n" {} \; \
     -exec rm -f {} \; 2>/dev/null || true
@@ -183,8 +183,8 @@ echo ""
 # BLOCK 7: Ensure required runtime directories exist
 # ═══════════════════════════════════════════════════════════════════════════════
 echo -e "${BOLD}── Block 7: Runtime directory setup ────────────────────────────${NC}"
-ensure_dir "/var/log/zafaf"       755
-ensure_dir "/var/log/zafaf/nginx" 755
+ensure_dir "/var/lib/zafafworld/logs"       755
+ensure_dir "/var/lib/zafafworld/logs/nginx" 755
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════

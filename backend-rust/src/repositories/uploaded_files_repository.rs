@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 pub struct UploadedFileDto {
     pub id: Uuid,
+    #[allow(dead_code)]
     pub bucket_name: String,
     pub object_key: String,
     pub file_name: String,

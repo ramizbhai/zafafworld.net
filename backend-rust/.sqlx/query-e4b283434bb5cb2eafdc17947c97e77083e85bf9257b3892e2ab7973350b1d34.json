@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO message_attachments (message_id, file_name, file_url, file_type, file_size)\n                 VALUES ($1, 'attachment', $2, 'unknown', 0)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e4b283434bb5cb2eafdc17947c97e77083e85bf9257b3892e2ab7973350b1d34"
+}

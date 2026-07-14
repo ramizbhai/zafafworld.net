@@ -10,6 +10,7 @@
     import { page } from "$app/stores";
     import { getApiUrl } from "$lib/utils/api";
     import { getContext } from "svelte";
+    import { wizardFetch } from "$lib/utils/wizardFetch";
 
     let { data } = $props<{ data: { sessionToken: string } }>();
     const i18n = getI18n();
@@ -54,22 +55,52 @@
 
             try {
                 const galleryPayload = [];
-                if (state.coverItem) galleryPayload.push({ ...state.coverItem, sortOrder: 0 });
-                state.galleryItems.forEach((item, idx) => galleryPayload.push({ ...item, sortOrder: idx + 1 }));
+                if (state.coverItem && state.coverItem.status === "completed") {
+                    galleryPayload.push({
+                        imageUrl: state.coverItem.url,
+                        filePath: state.coverItem.file_path,
+                        isCover: true,
+                        sortOrder: 0,
+                        mediaType: state.coverItem.mediaType || "image",
+                        fileSize: state.coverItem.fileSize || 0,
+                        thumbnailUrl: state.coverItem.thumbnailUrl || null,
+                        durationSeconds: state.coverItem.durationSeconds || null,
+                        caption: state.coverItem.caption || null,
+                    });
+                }
+                
+                let sortIdx = 1;
+                state.galleryItems.forEach((item) => {
+                    if (item.status === "completed" && item.url) {
+                        galleryPayload.push({
+                            imageUrl: item.url,
+                            filePath: item.file_path,
+                            isCover: false,
+                            sortOrder: sortIdx,
+                            mediaType: item.mediaType || "image",
+                            fileSize: item.fileSize || 0,
+                            thumbnailUrl: item.thumbnailUrl || null,
+                            durationSeconds: item.durationSeconds || null,
+                            caption: item.caption || null,
+                        });
+                        sortIdx++;
+                    }
+                });
 
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
-                const res = await fetch(url, {
+                const res = await wizardFetch(url, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${data.sessionToken}`,
+                        "X-Trace-ID": listingStore.getTraceId(),
                     },
                     body: JSON.stringify({ version: $listingStore.version, galleryItems: galleryPayload }),
                 });
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.error || `Server error ${res.status}`);
+                    throw new Error(err.message || err.error || `Server error ${res.status}`);
                 }
 
                 const responseData = await res.json();

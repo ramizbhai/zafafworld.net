@@ -205,7 +205,8 @@ class ApiClient {
           'Authorization': `Bearer ${token}`,
           'Cookie': `zafaf_vendor_session=${token}`
         },
-        body: formData
+        body: formData,
+        timeoutMs: 600000 // 10 minutes timeout for large video uploads
       });
     },
 
@@ -644,7 +645,8 @@ class ApiClient {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData
+        body: formData,
+        timeoutMs: 600000
       });
     },
 

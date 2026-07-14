@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO vendor_subscription_requests (id, vendor_id, requested_tier_id, status) VALUES ($1, $2, $3, 'pending')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "449dde30031832032b956427f47df2a6614069709ca623ff5d87a856460d0b9e"
+}

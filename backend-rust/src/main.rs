@@ -1,4 +1,5 @@
 #![recursion_limit = "256"]
+#![allow(unused_imports, unused_variables, dead_code)]
 
 use axum::extract::DefaultBodyLimit;
 use axum::http::{header, Method};

@@ -245,7 +245,7 @@ check_port 5434  "postgres debug (host→container)"
 # ─── 8. Volume & directory write permissions ──────────────────────────────────
 SECTION "8. Volume & Directory Write Permissions"
 
-LOG_DIR="/var/log/zafaf"
+LOG_DIR="/var/lib/zafafworld/logs"
 if [ -d "$LOG_DIR" ]; then
     if [ -w "$LOG_DIR" ]; then
         PASS "$LOG_DIR is writable"
@@ -256,7 +256,7 @@ else
     INFO "$LOG_DIR does not exist — service ExecStartPre will create it"
 fi
 
-NGINX_LOG="/var/log/zafaf/nginx"
+NGINX_LOG="/var/lib/zafafworld/logs/nginx"
 if [ -d "$NGINX_LOG" ]; then
     if [ -w "$NGINX_LOG" ]; then
         PASS "$NGINX_LOG is writable"

@@ -16,7 +16,7 @@ if os.path.exists(env_file):
                 continue
             if '=' in line:
                 k, v = line.split('=', 1)
-                env_vars[k.strip()] = v.strip()
+                env_vars[k.strip()] = v.strip().strip('"').strip("'")
 
 # MinIO Config
 endpoint = env_vars.get("MINIO_ENDPOINT", "http://minio:9000")
@@ -31,7 +31,7 @@ if os.path.exists(master_env_file):
                 continue
             if '=' in line:
                 k, v = line.split('=', 1)
-                env_vars[k.strip()] = v.strip()
+                env_vars[k.strip()] = v.strip().strip('"').strip("'")
 
 root_user = env_vars.get("MINIO_ROOT_USER", "zafaf_minio_admin")
 root_password = env_vars.get("MINIO_ROOT_PASSWORD", "zafafminiosupersecurepass2026")

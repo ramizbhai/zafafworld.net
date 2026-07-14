@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE listing_promotions\n             SET listing_id = $1, promo_type = $2, discount_type = $3, \n                 discount_percentage = $4, discount_fixed_amount = $5,\n                 benefit_description_en = $6, benefit_description_ar = $7,\n                 use_listing_cover_image = $8, custom_banner_image_url = $9,\n                 title_en = $10, title_ar = $11, description_en = $12, description_ar = $13,\n                 badge_text_en = $14, badge_text_ar = $15, start_at = $16, end_at = $17, \n                 status = $18, updated_at = NOW()\n             WHERE id = $19",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Numeric",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Timestamptz",
+        "Timestamptz",
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0ac184e6369e127e5dc4e371ed766ea00d5add54236503e01e9f1472b6075496"
+}
