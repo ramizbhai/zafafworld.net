@@ -1,0 +1,91 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Containerfile — backend-rust (Axum/Tokio)
+# Strategy : Two-stage build. Stage 1 pre-warms the dependency cache by building
+#             a stub binary with only Cargo.toml + Cargo.lock copied — this layer
+#             is re-used on source-only changes. Stage 2 copies real source and
+#             builds the final release binary.
+#             cargo-chef removed: its transitive dep cargo-platform v0.3.2 now
+#             requires rustc 1.88 (unreleased). The dummy-main pattern gives the
+#             same caching guarantee with zero external tools.
+#             Final image: debian:bookworm-slim (glibc required by sqlx/rustls).
+#             Target size: <50MB stripped binary + runtime libs.
+# UDS mode : Listens on unix:/var/run/zafaf/zafaf.sock when BIND_MODE=uds.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Stage 1: Builder ───────────────────────────────────────────────────────────
+FROM docker.io/rust:1.95-slim-bookworm AS builder
+
+# Install system build deps for sqlx/openssl/native-tls
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ── Dependency pre-warming layer ──────────────────────────────────────────────
+# Copy only the manifest files first. Build a stub binary so all crate
+# dependencies are compiled and cached in this layer. This layer is NOT
+# invalidated by changes to src/ — only Cargo.toml / Cargo.lock changes.
+COPY Cargo.toml ./
+
+ENV CARGO_BUILD_JOBS=2
+
+RUN mkdir -p src && \
+    echo 'fn main() { println!("stub"); }' > src/main.rs && \
+    cargo build --release 2>&1 && \
+    rm -rf src target/release/backend-rust target/release/deps/backend_rust*
+
+# ── Full source build ─────────────────────────────────────────────────────────
+COPY . .
+
+# SQLX_OFFLINE=true — no compile-time query! macros in this codebase (verified
+# via cargo sqlx prepare which returned "no queries found"). Safe to set.
+ENV SQLX_OFFLINE=true
+
+RUN cargo build --release --bin backend-rust
+
+# Strip debug symbols to minimise final binary size
+RUN strip target/release/backend-rust
+
+# ── Stage 2: Minimal runtime image ────────────────────────────────────────────
+FROM docker.io/debian:bookworm-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    curl \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+# Non-root application user
+RUN groupadd --gid 10001 zafaf && \
+    useradd  --uid 10001 --gid zafaf --no-create-home --shell /usr/sbin/nologin zafaf
+
+# Create the UDS socket directory — must match nginx volume mount
+RUN mkdir -p /var/run/zafaf && chown zafaf:zafaf /var/run/zafaf && chmod 777 /var/run/zafaf
+
+WORKDIR /app
+COPY --from=builder /app/target/release/backend-rust /usr/local/bin/backend-rust
+
+# Copy migrations so sqlx::migrate!() can run on boot inside the container
+COPY --from=builder /app/migrations ./migrations
+
+# Create upload directory tree with correct ownership BEFORE switching user.
+# When the named volume (zafaf_backend_uploads) is first mounted, Podman seeds
+# the volume from this image layer — preserving uid/gid so the zafaf user can
+# write gallery and temp files without a Permission denied error.
+RUN mkdir -p /app/assets/uploads/gallery \
+             /app/assets/uploads/temp \
+             /app/assets/uploads/chat \
+ && chown -R zafaf:zafaf /app/assets \
+ && chmod -R 755 /app/assets
+
+USER zafaf
+
+# Expose nothing on TCP — all traffic via UDS when BIND_MODE=uds
+# BIND_MODE=tcp still works for local dev with PORT=8080
+ENV BIND_MODE=uds
+ENV UDS_PATH=/var/run/zafaf/zafaf.sock
+ENV RUST_LOG=info
+
+ENTRYPOINT ["/usr/local/bin/backend-rust"]

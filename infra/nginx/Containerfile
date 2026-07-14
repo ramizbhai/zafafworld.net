@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Containerfile — nginx router (edge ingress)
+# Strategy : nginx:1.27-alpine — minimal, hardened edge proxy.
+#             Listens on 80 (HTTP) and 443 (HTTPS — bring your own certs).
+#             All proxy targets are pod-local (127.0.0.1 or UDS) so no
+#             external TCP ports are opened for backend services.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM docker.io/nginx:1.27-alpine AS router
+
+# Remove default site
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy virtual host shards
+COPY conf.d/         /etc/nginx/conf.d/
+COPY nginx.conf      /etc/nginx/nginx.conf
+
+# Copy IP updater and entrypoint scripts
+COPY update-cloudflare-ips.sh /usr/local/bin/update-cloudflare-ips.sh
+COPY entrypoint.sh            /entrypoint.sh
+
+# Install curl and bash for dynamic IP updates, set execution permissions
+RUN apk add --no-cache curl bash && \
+    chmod +x /usr/local/bin/update-cloudflare-ips.sh /entrypoint.sh
+
+# SSL placeholder directory (mount real certs at runtime)
+RUN mkdir -p /etc/nginx/ssl && chmod 700 /etc/nginx/ssl
+
+# UDS socket directory — shared volume with the backend container
+RUN mkdir -p /var/run/zafaf && chmod 777 /var/run/zafaf
+
+EXPOSE 80 443
+
+ENTRYPOINT ["/entrypoint.sh"]
+

@@ -1,0 +1,27 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Logrotate — ZafafWorld Nginx access/error logs
+#
+# Install:  sudo cp infra/logrotate/nginx /etc/logrotate.d/zafaf-nginx
+# Test:     sudo logrotate -d /etc/logrotate.d/zafaf-nginx
+# Force:    sudo logrotate -f /etc/logrotate.d/zafaf-nginx
+# ══════════════════════════════════════════════════════════════════════════════
+
+/var/log/zafaf/nginx/*.log {
+    daily                          # Rotate daily
+    size 100M                      # Also rotate if file exceeds 100MB
+    missingok                      # Don't error if log file is absent
+    rotate 30                      # Keep 30 rotated logs (~1 month)
+    compress                       # gzip old logs
+    delaycompress                  # Don't compress most recent rotated file
+                                   # (nginx may still write to it briefly)
+    notifempty                     # Skip rotation if log is empty
+    create 0640 noon noon          # New log file: rw-r----- owned by noon
+    dateext                        # Use date suffix: access.log-20260623.gz
+    sharedscripts                  # Run postrotate once even for multiple logs
+
+    postrotate
+        # Signal nginx inside the container to reopen log file descriptors.
+        # Project name is 'zafafworld' (set via -p zafafworld in compose).
+        podman exec zafafworld_nginx_1 nginx -s reopen 2>/dev/null || true
+    endscript
+}

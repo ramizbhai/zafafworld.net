@@ -1,0 +1,11 @@
+[Unit]
+Description=ZafafWorld Database and Volume Backups Job
+After=zafafworld.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/zafafworld.net
+ExecStart=/opt/zafafworld.net/infra/backup/backup-db.sh --execute
+Environment=BACKUP_DIR=/var/lib/zafafworld/backups
+StandardOutput=journal
+StandardError=journal

@@ -1,0 +1,153 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# zafafworld.service — ZafafWorld Production Stack (Rootless Podman)
+# Deployed to: ~/.config/systemd/user/zafafworld.service
+# Source:      /opt/zafafworld.net/infra/zafafworld.service
+#
+# podman-compose 1.5.0 flags used:
+#   -f <file>          : compose file (absolute path)
+#   --env-file <file>  : environment file (absolute path)
+#   -p <name>          : project name
+#
+# ── Security model ────────────────────────────────────────────────────────────
+# This service runs rootless Podman (uid=1000, no root privilege).
+# Systemd security hardening flags that are normally beneficial CANNOT be
+# used here without breaking rootless Podman's user-namespace setup:
+#
+#   ✗ NoNewPrivileges=true   — blocks newuidmap file-caps (cap_setuid=ep)
+#   ✗ ProtectControlGroups=true — makes /sys/fs/cgroup read-only; Podman
+#                                  must write to its user.slice cgroup
+#   ✗ PrivateDevices=true    — changes mount namespace, breaks userns setup
+#   ✗ ProtectKernelModules=true — sets SECBIT_NOROOT, strips caps on exec
+#   ✗ PrivateTmp=true        — mount namespace change breaks userns setup
+#   ✗ SystemCallFilter=...   — any seccomp filter breaks newuidmap capability
+#                               elevation in the user namespace context
+#   ✗ ProtectSystem=strict   — remounts /usr read-only; needed by Podman
+#   ✗ ProtectHome=read-only  — blocks writes to ~/.local/share/containers
+#
+# Security is provided instead by:
+#   ✓ Rootless Podman (no root privilege on the host)
+#   ✓ User namespace isolation (UID mapping via /etc/subuid/subgid)
+#   ✓ Container-level seccomp profiles (applied per container by Podman)
+#   ✓ SELinux container labels (:Z/:z on all volume mounts)
+#   ✓ ProtectKernelTunables=true (safe — does not affect namespaces)
+#   ✓ LockPersonality=true, RestrictRealtime=true (safe)
+#   ✓ RestrictSUIDSGID=true (safe — only blocks file creation, not exec)
+#
+# Bisect results on Fedora 42 / kernel 6.19.14 / podman 5.8.2:
+#   Each flag below individually causes "newuidmap: write to uid_map failed:
+#   Operation not permitted" when rootless Podman is launched as a service.
+# ══════════════════════════════════════════════════════════════════════════════
+
+[Unit]
+Description=ZafafWorld Production Stack (podman-compose)
+Documentation=https://github.com/ramizbhai/zafafworld.net
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+
+# ── Working directory (must be set so relative volume paths resolve) ───────
+WorkingDirectory=/opt/zafafworld.net
+
+# ── Runtime environment for rootless Podman ────────────────────────────────
+# XDG_RUNTIME_DIR: required by rootless podman for socket/cgroup access
+# DBUS_SESSION_BUS_ADDRESS: needed for dbus communication in linger sessions
+# HOME: ensures podman finds user config/storage in the right place
+# podman-compose install location: ~/.local/bin/ (pip/pipx install)
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Environment=HOME=/home/noon
+Environment=PATH=/home/noon/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+
+# ── Load production secrets (absolute path, never relative) ───────────────
+EnvironmentFile=/opt/zafafworld.net/.env
+
+# ── Pre-start: create log dir, tear down any stale stack ───────────────
+# Note: 'podman system migrate' also requires newuidmap (can't run here).
+# Instead, run it interactively before deploying: podman system migrate
+
+# Step 1: create nginx log dir (idempotent)
+ExecStartPre=/bin/mkdir -p /opt/zafafworld.net/infra/nginx/logs
+
+# Step 1b: Fix uploads volume permissions permanently
+ExecStartPre=/bin/bash /opt/zafafworld.net/infra/init-storage.sh
+
+# Step 2: graceful teardown of any existing stack.
+# 'down' may exit non-zero if no stack exists — '|| true' prevents blocking.
+ExecStartPre=/bin/bash -c '/usr/bin/podman-compose \
+    -f /opt/zafafworld.net/podman-compose.yml \
+    --env-file /opt/zafafworld.net/.env \
+    -p zafafworld \
+    down --timeout 15 || true'
+
+# ── Start: bring up the full stack ────────────────────────────────────────
+# NOTE: --no-build is intentional. Custom images (backend-rust, nginx, SPAs)
+# must be pre-built before deployment using:
+#   podman-compose -f podman-compose.yml build
+# Running 'podman build' from inside the systemd user service fails because
+# the build container needs to spawn a new user namespace (newuidmap), and
+# the service cgroup context has different namespace delegation than an
+# interactive session.  Pre-build images interactively, then start the service.
+ExecStart=/usr/bin/podman-compose \
+    -f /opt/zafafworld.net/podman-compose.yml \
+    --env-file /opt/zafafworld.net/.env \
+    -p zafafworld \
+    up --no-build --remove-orphans
+
+# ── Stop: graceful shutdown ───────────────────────────────────────────────
+# ExecStop handles clean shutdown of all containers.
+ExecStop=/usr/bin/podman-compose \
+    -f /opt/zafafworld.net/podman-compose.yml \
+    --env-file /opt/zafafworld.net/.env \
+    -p zafafworld \
+    down --timeout 30
+
+# ── Restart policy ────────────────────────────────────────────────────────
+Restart=on-failure
+RestartSec=15s
+
+# ── Timeouts ──────────────────────────────────────────────────────────────
+# 600s accommodates first-boot Rust compilation + container image pulls
+TimeoutStartSec=600
+TimeoutStopSec=60
+
+# ── Logging ───────────────────────────────────────────────────────────────
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zafafworld
+
+# ── Security hardening (compatible with rootless Podman on cgroup v2) ─────
+#
+# MUST be false: newuidmap has cap_setuid=ep file capability.
+# NoNewPrivileges=true blocks ALL capability elevation on exec (including file
+# capabilities), causing "write to uid_map failed: Operation not permitted".
+NoNewPrivileges=false
+
+# MUST be off: rootless Podman writes to ~/.local/share/containers (images),
+# ~/.config/containers (config), and /run/user/1000 (socket, cgroup).
+ProtectSystem=off
+ProtectHome=false
+
+# MUST be false: makes the cgroup tree read-only; Podman writes to its
+# user.slice/user-1000.slice to create container cgroups.
+ProtectControlGroups=false
+
+# MUST be false: changes mount namespace in a way that breaks user namespace
+# setup — each individually causes exit 125 from rootless Podman.
+PrivateDevices=false
+PrivateTmp=false
+
+# MUST be false: implicitly sets SECBIT_NOROOT which strips capabilities
+# from all subsequent exec() calls including the newuidmap helper.
+ProtectKernelModules=false
+
+# SystemCallFilter: ANY seccomp filter (even just @system-service) breaks
+# the newuidmap capability elevation path when running under systemd user.
+# Container-level seccomp is applied by Podman itself per-container.
+# Do NOT re-enable SystemCallFilter here.
+
+[Install]
+WantedBy=default.target

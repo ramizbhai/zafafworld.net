@@ -1,0 +1,156 @@
+<script lang="ts">
+    import { onMount } from "svelte";
+    import { getI18n } from "$lib/i18n/i18n.svelte";
+    import { listingStore } from "$lib/stores/listingStore";
+    import { CATEGORY_GROUPS } from "$lib/constants/wizard";
+    import { Sparkles, Check } from "lucide-svelte";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import { checkSubscriptionQuota } from "$lib/utils/subscriptionGuard";
+    import { triggerUpgrade } from "$lib/stores/upgradeStore";
+    import { env } from "$env/dynamic/public";
+
+    const i18n = getI18n();
+    let { data } = $props<{ data: { sessionToken: string } }>();
+    const apiBase =
+        env.PUBLIC_API_URL && env.PUBLIC_API_URL.includes("localhost")
+            ? ""
+            : env.PUBLIC_API_URL || "";
+
+    // Reactive store bindings
+    let selectedCategory = $derived($listingStore.formData.selectedCategory);
+    let maxProducts = $derived($page.data.telemetry?.vendor?.policy_limits?.max_products ?? 1);
+
+
+
+    function selectCategory(cat: string) {
+        listingStore.updateFormData({ selectedCategory: cat });
+    }
+
+    let isValid = $derived(!!selectedCategory);
+    $effect(() => {
+        listingStore.setCanContinue(isValid);
+    });
+
+    // Set submit handler
+    $effect(() => {
+        listingStore.setSubmitHandler(async () => {
+            if (!selectedCategory) return;
+            listingStore.setSubmitting(true);
+            listingStore.setError("");
+
+            try {
+                // Determine API URL (POST if new, PUT if existing draft)
+                const url = $listingStore.productId
+                    ? `${apiBase}/api/v1/vendor/products/${$listingStore.productId}`
+                    : `${apiBase}/api/v1/vendor/products`;
+
+                const method = $listingStore.productId ? "PUT" : "POST";
+
+                const payload = {
+                    productCategory: selectedCategory,
+                    version: $listingStore.productId ? $listingStore.version : undefined,
+                };
+
+                const { blocked, response: res } = await checkSubscriptionQuota(async () => {
+                    return await fetch(url, {
+                        method,
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${data.sessionToken}`,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                });
+
+                if (blocked) {
+                    triggerUpgrade(
+                        'products', 
+                        $page.data.telemetry?.vendor?.tier_id ?? '', 
+                        i18n.locale === 'ar' ? 'لقد وصلت إلى الحد الأقصى لعدد الإعلانات.' : 'Subscription quota limit reached.'
+                    );
+                    listingStore.setError("Subscription quota limit reached.");
+                    listingStore.setSubmitting(false);
+                    return;
+                }
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || `Server error ${res.status}`);
+                }
+
+                const responseData = await res.json();
+
+                // If it's a POST, save the generated product ID
+                if (!$listingStore.productId && responseData.id) {
+                    listingStore.setProductId(responseData.id);
+                }
+                
+                if (responseData.product?.version) {
+                    listingStore.setVersion(responseData.product.version);
+                }
+
+                listingStore.setHighestStep(1);
+                goto(`${$page.url.pathname.split("/step-")[0]}/step-2`);
+            } catch (err: any) {
+                listingStore.setError(
+                    err.message || "Failed to save category.",
+                );
+            } finally {
+                listingStore.setSubmitting(false);
+            }
+        });
+    });
+</script>
+
+<div class="step-pane fade-in">
+    <div class="step-heading">
+        <Sparkles class="step-icon" size={28} />
+        <div>
+            <h1>
+                {i18n.t("listingsWizard.whatsCategory") ||
+                    "What's your category?"}
+            </h1>
+            <p>
+                {i18n.t("listingsWizard.categoryDesc") ||
+                    "Select the category that best describes your service."}
+            </p>
+        </div>
+    </div>
+
+    {#if $listingStore.submitError}
+        <div class="error-banner">{$listingStore.submitError}</div>
+    {/if}
+
+    <div class="category-groups">
+        {#each CATEGORY_GROUPS as group}
+            <div class="group-section">
+                <h3 class="group-title">
+                    <span class="group-emoji">{group.emoji}</span>
+                    {i18n.locale === "ar" ? group.labelAr : group.labelEn}
+                </h3>
+                <div class="category-grid">
+                    {#each group.items as cat}
+                        <button
+                            type="button"
+                            class="category-tile"
+                            class:selected={selectedCategory === cat.value}
+                            onclick={() => selectCategory(cat.value)}
+                        >
+                            <span class="tile-emoji">{cat.emoji}</span>
+                            <span class="tile-en"
+                                >{i18n.locale === "ar" ? cat.ar : cat.en}</span
+                            >
+                            {#if selectedCategory === cat.value}
+                                <div class="tile-check">
+                                    <Check size={14} />
+                                </div>
+                            {/if}
+                        </button>
+                    {/each}
+                </div>
+            </div>
+        {/each}
+    </div>
+</div>
+

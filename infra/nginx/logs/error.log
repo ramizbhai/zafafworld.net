@@ -1,0 +1,4 @@
+2026/07/12 22:04:21 [emerg] 1#1: cannot load certificate "/etc/nginx/ssl/zafafworld.net.crt": BIO_new_file() failed (SSL: error:80000002:system library::No such file or directory:calling fopen(/etc/nginx/ssl/zafafworld.net.crt, r) error:10000080:BIO routines::no such file)
+2026/07/12 22:10:46 [notice] 52#52: signal process started
+2026/07/12 22:12:00 [error] 54#54: *44 client-web could not be resolved (3: Host not found), client: 127.0.0.1, server: zafafworld.net, request: "GET /healthz HTTP/1.1", host: "zafafworld.net"
+2026/07/12 22:12:01 [error] 54#54: *45 client-web could not be resolved (3: Host not found), client: 127.0.0.1, server: zafafworld.net, request: "GET /healthz HTTP/1.1", host: "zafafworld.net"

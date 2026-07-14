@@ -1,0 +1,10 @@
+[install]
+exact = true
+
+[install.cache]
+dir = "~/.bun/install/cache"
+
+[run]
+bun = true
+
+# Yeh add karo — production builds mein lifecycle scripts control ke liye:

@@ -1,0 +1,79 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Containerfile — client-web (SvelteKit SSR, adapter-node)
+#
+# Rootless Podman / Fedora compatible.
+# .containerignore excludes host node_modules/ and src/lib/paraglide/.
+# project.inlang/ is included (required by paraglide-js compile).
+#
+# Build layer order (optimized for cache):
+#   1. Copy manifests only → install deps (cached unless lockfile changes)
+#   2. chmod +x binaries   → prevent exit-126 inside container
+#   3. COPY --chown=root:root source → host UID/GID reset to container root
+#   4. paraglide compile (i18n) → svelte-kit sync → vite build
+#   5. Prune to prod deps
+#   → Runtime stage: non-root 'zafaf' user, --chown on COPY
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Stage 1: Builder ──────────────────────────────────────────────────────────
+FROM docker.io/oven/bun:1.3-alpine AS builder
+
+WORKDIR /app
+
+# Layer 1: manifests only (cached unless package.json / bun.lock changes)
+# bun.lock is committed — ensures reproducible builds inside container.
+COPY package.json bunfig.toml bun.lock ./
+
+# Layer 2: install all deps inside the container as root
+RUN bun install --frozen-lockfile
+
+# Layer 3: fix .bin/ permissions BEFORE source copy
+# node_modules/.bin/ contains symlinks to executables. Even though
+# .containerignore prevents host node_modules from entering, this
+# guard ensures the freshly-installed binaries are always executable.
+RUN chmod -R +x /app/node_modules/.bin/
+
+# Layer 4: copy source — host UID/GID reset to container root:root
+# --chown=root:root neutralizes UID mapping differences in rootless Podman.
+# .containerignore excludes: node_modules/, .svelte-kit/, build/,
+#   src/lib/paraglide/ (regenerated below).
+# .containerignore INCLUDES: project.inlang/ (required for paraglide-js).
+COPY --chown=root:root . .
+
+# Layer 5: compile i18n message catalog
+# Reads: project.inlang/settings.json (included via COPY above)
+# Writes: src/lib/paraglide/ (excluded from COPY, generated fresh here)
+RUN bunx @inlang/paraglide-js compile \
+    --project ./project.inlang \
+    --outdir ./src/lib/paraglide
+
+# Layer 6: generate SvelteKit route types ($types, route manifests)
+RUN bunx svelte-kit sync 2>/dev/null || true
+
+# Layer 7: production build
+RUN bun run build
+
+# Layer 8: prune dev deps, keep only production node_modules
+RUN bun install --production --frozen-lockfile \
+    && chmod -R +x /app/node_modules/.bin/
+
+# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
+FROM docker.io/oven/bun:1.3-alpine AS runtime
+
+WORKDIR /app
+
+# Create non-root system user before copying files
+RUN addgroup -S zafaf && adduser -S zafaf -G zafaf
+
+# Copy only runtime artifacts — chown in-flight avoids a separate RUN chown layer
+COPY --from=builder --chown=zafaf:zafaf /app/build        ./build
+COPY --from=builder --chown=zafaf:zafaf /app/node_modules ./node_modules
+COPY --from=builder --chown=zafaf:zafaf /app/package.json ./package.json
+
+ENV PORT=8081
+EXPOSE 8081
+
+# Switch to non-root for runtime — principle of least privilege
+USER zafaf
+
+# SvelteKit adapter-node entrypoint (no 'start' script needed)
+CMD ["bun", "build/index.js"]

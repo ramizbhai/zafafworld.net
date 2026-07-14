@@ -1,0 +1,27 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Logrotate — ZafafWorld application logs (backend, structured JSON)
+#
+# Install:  sudo cp infra/logrotate/app-journal /etc/logrotate.d/zafaf-app
+# Test:     sudo logrotate -d /etc/logrotate.d/zafaf-app
+# Force:    sudo logrotate -f /etc/logrotate.d/zafaf-app
+#
+# NOTE: The Rust backend logs to systemd journal (stdout → journald).
+#       Use journalctl to read them:
+#         journalctl --user -u zafafworld.service -o json
+#
+#       This config covers any file-based logs written to /var/log/zafaf/app/
+#       For journald retention, see /etc/systemd/journald.conf instead.
+# ══════════════════════════════════════════════════════════════════════════════
+
+/var/log/zafaf/app/*.log {
+    daily                          # Rotate daily
+    size 50M                       # Also rotate if file exceeds 50MB
+    missingok                      # Don't error if no app log files exist yet
+    rotate 14                      # Keep 14 days of app logs
+    compress                       # gzip old logs
+    delaycompress                  # Keep latest rotated log uncompressed
+    notifempty                     # Skip if empty
+    create 0640 noon noon          # New file owned by noon
+    dateext                        # Suffix: app.log-20260623.gz
+    # No postrotate needed — backend reads journald, not files.
+}

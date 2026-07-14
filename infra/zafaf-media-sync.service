@@ -1,0 +1,10 @@
+[Unit]
+Description=ZafafWorld Media Consistency Repair Job
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/zafafworld.net/infra/sync-media.sh repair --execute
+WorkingDirectory=/opt/zafafworld.net
+StandardOutput=journal
+StandardError=journal

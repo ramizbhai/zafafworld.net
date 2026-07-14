@@ -1,0 +1,305 @@
+export const CATEGORY_GROUPS = [
+        {
+            group: "venues",
+            labelAr: "القاعات والأماكن",
+            labelEn: "Venues & Spaces",
+            emoji: "🏛️",
+            items: [
+                {
+                    value: "wedding-palace",
+                    ar: "قصور الأفراح",
+                    en: "Wedding Palace",
+                    emoji: "🏛️",
+                },
+                {
+                    value: "hotel-venue",
+                    ar: "فنادق وقاعات",
+                    en: "Hotel Ballroom",
+                    emoji: "🏨",
+                },
+                {
+                    value: "villa-resort",
+                    ar: "استراحات وفلل",
+                    en: "Villa & Private Resort",
+                    emoji: "🏡",
+                },
+                {
+                    value: "restaurant-event",
+                    ar: "مطاعم وقاعات خاصة",
+                    en: "Restaurant & Dining",
+                    emoji: "🍽️",
+                },
+                {
+                    value: "outdoor-garden",
+                    ar: "حدائق وأماكن مفتوحة",
+                    en: "Outdoor Garden Venue",
+                    emoji: "🌿",
+                },
+                {
+                    value: "rooftop-venue",
+                    ar: "أماكن على السطح",
+                    en: "Rooftop Venue",
+                    emoji: "🌃",
+                },
+                {
+                    value: "private-beach",
+                    ar: "شاطئ خاص",
+                    en: "Private Beach",
+                    emoji: "🏖️",
+                },
+                {
+                    value: "chalet",
+                    ar: "شاليهات",
+                    en: "Chalet & Seasonal",
+                    emoji: "🏕️",
+                },
+            ],
+        },
+        {
+            group: "fashion",
+            labelAr: "الأزياء والموضة",
+            labelEn: "Fashion",
+            emoji: "👗",
+            items: [
+                {
+                    value: "wedding-gown",
+                    ar: "فساتين الزفاف",
+                    en: "Wedding Gown",
+                    emoji: "👗",
+                },
+                {
+                    value: "haute-couture",
+                    ar: "أزياء راقية وتصميم",
+                    en: "Haute Couture",
+                    emoji: "✨",
+                },
+                {
+                    value: "abaya-jalabiya",
+                    ar: "عباية وجلابية وكفتان",
+                    en: "Abaya & Jalabiya",
+                    emoji: "🧕",
+                },
+                {
+                    value: "groom-attire",
+                    ar: "ملابس العريس والبشت",
+                    en: "Groom Attire",
+                    emoji: "👘",
+                },
+            ],
+        },
+        {
+            group: "beauty",
+            labelAr: "الجمال والعناية",
+            labelEn: "Beauty & Care",
+            emoji: "💄",
+            items: [
+                {
+                    value: "hair-makeup",
+                    ar: "شعر ومكياج",
+                    en: "Hair & Makeup",
+                    emoji: "💄",
+                },
+                {
+                    value: "beauty-skincare",
+                    ar: "العناية بالبشرة",
+                    en: "Beauty & Skincare",
+                    emoji: "🧴",
+                },
+                {
+                    value: "henna-art",
+                    ar: "فن الحناء",
+                    en: "Henna Art",
+                    emoji: "🌿",
+                },
+            ],
+        },
+        {
+            group: "photography",
+            labelAr: "التصوير والاستوديو",
+            labelEn: "Photography",
+            emoji: "📷",
+            items: [
+                {
+                    value: "photography-video",
+                    ar: "تصوير وفيديو",
+                    en: "Photography & Video",
+                    emoji: "📷",
+                },
+                {
+                    value: "photo-studio",
+                    ar: "استوديو تصوير",
+                    en: "Photo Studio",
+                    emoji: "📸",
+                },
+            ],
+        },
+        {
+            group: "food",
+            labelAr: "الطعام والضيافة",
+            labelEn: "Food & Catering",
+            emoji: "🍱",
+            items: [
+                {
+                    value: "catering",
+                    ar: "ضيافة وطعام",
+                    en: "Wedding Catering",
+                    emoji: "🍱",
+                },
+                {
+                    value: "wedding-cake",
+                    ar: "كيك الزفاف والحلويات",
+                    en: "Wedding Cake",
+                    emoji: "🎂",
+                },
+                {
+                    value: "wedding-sweets",
+                    ar: "حلويات عربية وتوزيعات",
+                    en: "Arabic Sweets",
+                    emoji: "🍬",
+                },
+            ],
+        },
+        {
+            group: "entertainment",
+            labelAr: "الترفيه والحفلات",
+            labelEn: "Entertainment",
+            emoji: "🎵",
+            items: [
+                {
+                    value: "entertainment-dj",
+                    ar: "دي جي وحفلات",
+                    en: "DJ & Entertainment",
+                    emoji: "🎵",
+                },
+                {
+                    value: "zaffa",
+                    ar: "زفة عروس",
+                    en: "Zaffa & Procession",
+                    emoji: "🥁",
+                },
+                {
+                    value: "nasheed-band",
+                    ar: "إنشاد وفرقة موسيقية",
+                    en: "Nasheed & Band",
+                    emoji: "🎶",
+                },
+            ],
+        },
+        {
+            group: "jewelry_gifts",
+            labelAr: "المجوهرات والهدايا",
+            labelEn: "Jewelry & Gifts",
+            emoji: "💍",
+            items: [
+                {
+                    value: "wedding-jewelry",
+                    ar: "مجوهرات وخواتم",
+                    en: "Bridal Jewelry",
+                    emoji: "💍",
+                },
+                {
+                    value: "wedding-gifts",
+                    ar: "هدايا وتوزيعات",
+                    en: "Wedding Favors",
+                    emoji: "🎁",
+                },
+            ],
+        },
+        {
+            group: "planning_decor",
+            labelAr: "التخطيط والديكور",
+            labelEn: "Planning & Decor",
+            emoji: "📋",
+            items: [
+                {
+                    value: "wedding-planner",
+                    ar: "منظم حفلات زفاف",
+                    en: "Wedding Planner",
+                    emoji: "📋",
+                },
+                {
+                    value: "khosha-decor",
+                    ar: "كوشة وديكور",
+                    en: "Khosha & Decor",
+                    emoji: "🌺",
+                },
+                {
+                    value: "flowers-floral",
+                    ar: "ورد وزهور",
+                    en: "Flowers & Floral",
+                    emoji: "💐",
+                },
+                {
+                    value: "wedding-invitation",
+                    ar: "دعوات زفاف",
+                    en: "Wedding Invitations",
+                    emoji: "✉️",
+                },
+                {
+                    value: "lighting-av",
+                    ar: "إضاءة وتقنية الصوت",
+                    en: "Lighting & AV",
+                    emoji: "💡",
+                },
+            ],
+        },
+        {
+            group: "transportation",
+            labelAr: "المواصلات",
+            labelEn: "Transportation",
+            emoji: "🚗",
+            items: [
+                {
+                    value: "wedding-car",
+                    ar: "سيارات الزفاف",
+                    en: "Wedding Car & Limo",
+                    emoji: "🚗",
+                },
+            ],
+        },
+    ];
+
+export const GENDER_SECTIONS = [
+        {
+            value: "dual_parallel",
+            ar: "قسمين منفصلين (رجال ونساء)",
+            en: "Dual Parallel (Separate)",
+            icon: "⚖️",
+            description: "Separate halls with optional audio link",
+        },
+        {
+            value: "women_only",
+            ar: "حفل نسائي فقط",
+            en: "Women-Only Event",
+            icon: "👩",
+            description: "Exclusively for women",
+        },
+        {
+            value: "family",
+            ar: "عائلي مختلط",
+            en: "Family / Mixed",
+            icon: "👨‍👩‍👧‍👦",
+            description: "Families & couples welcome",
+        },
+        {
+            value: "men_only",
+            ar: "حفل رجالي فقط",
+            en: "Men-Only Event",
+            icon: "👨",
+            description: "Exclusively for men",
+        },
+        {
+            value: "both_sections",
+            ar: "خيار القسمين",
+            en: "Both Options Available",
+            icon: "🔄",
+            description: "Can host either format",
+        },
+        {
+            value: "not_applicable",
+            ar: "غير محدد",
+            en: "Not Applicable",
+            icon: "❓",
+            description: "Gender policy not relevant",
+        },
+    ];

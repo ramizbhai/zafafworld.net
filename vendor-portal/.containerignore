@@ -1,0 +1,32 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# .containerignore — vendor-portal
+#
+# Prevents host-side artifacts from entering the build context.
+# Critical: node_modules/ must be EXCLUDED — host version has hardenened
+# permissions (644 from permission-hardening.sh) that cause exit-126 when
+# podman's COPY . . overwrites the container's freshly-installed binaries.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Dependencies (always rebuilt inside container) ────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build output (not needed in builder context) ──────────────────────────────
+build/
+.svelte-kit/
+dist/
+
+# ── Dev/local tooling ─────────────────────────────────────────────────────────
+.bun/
+.vite/
+
+# ── Editor & OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

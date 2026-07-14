@@ -1,0 +1,7 @@
+# allow crawling everything by default
+User-agent: *
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /bff/
+
+Sitemap: https://zafafworld.net/sitemap-index.xml

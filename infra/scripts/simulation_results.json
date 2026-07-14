@@ -1,0 +1,274 @@
+{
+  "timestamp": "2026-07-08T23:53:13.669006",
+  "total": 38,
+  "passed": 38,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Vendor Dashboard Stats",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 24.586
+    },
+    {
+      "name": "List Vendor Products",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 17.233999999999998
+    },
+    {
+      "name": "Get Edit Context",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 18.286
+    },
+    {
+      "name": "Create Draft Listing",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 34.995
+    },
+    {
+      "name": "Update Draft Listing",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 38.073
+    },
+    {
+      "name": "Publish Draft Listing",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 34.58
+    },
+    {
+      "name": "List Gallery",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 17.009
+    },
+    {
+      "name": "List Packages",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 16.084
+    },
+    {
+      "name": "List Subscription Requests",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 17.017
+    },
+    {
+      "name": "Get Analytics",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 18.523
+    },
+    {
+      "name": "Get Chat Messages",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 23.661
+    },
+    {
+      "name": "Send Chat Reply",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 33.442
+    },
+    {
+      "name": "Get Chat After Reply",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 22.846
+    },
+    {
+      "name": "List Inquiries",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 18.261
+    },
+    {
+      "name": "List Bookings",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 16.028000000000002
+    },
+    {
+      "name": "List Notifications",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 16.309
+    },
+    {
+      "name": "Get Wallet",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 18.134
+    },
+    {
+      "name": "RLS: Vendor B cannot edit Vendor A product",
+      "status": "PASS",
+      "http_status": 404,
+      "detail": "HTTP 404",
+      "response_ms": 16.697
+    },
+    {
+      "name": "RLS: Vendor B cannot publish Vendor A product",
+      "status": "PASS",
+      "http_status": 404,
+      "detail": "HTTP 404",
+      "response_ms": 17.121000000000002
+    },
+    {
+      "name": "Expired Token Rejected",
+      "status": "PASS",
+      "http_status": 401,
+      "detail": "HTTP 401",
+      "response_ms": 16.793
+    },
+    {
+      "name": "No Token Rejected",
+      "status": "PASS",
+      "http_status": 401,
+      "detail": "HTTP 401",
+      "response_ms": 14.684
+    },
+    {
+      "name": "Public: List Categories",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 33.359
+    },
+    {
+      "name": "Public: List Cities",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 62.265
+    },
+    {
+      "name": "Public: List Amenities",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 27.018
+    },
+    {
+      "name": "Public: List Venue Types",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 22.233
+    },
+    {
+      "name": "Public: List Vendors (all)",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 23.844
+    },
+    {
+      "name": "Public: Search Vendors",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 39.967999999999996
+    },
+    {
+      "name": "Public: Filter Vendors by Category",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 18.505
+    },
+    {
+      "name": "Public: List Vendors (all)",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 16.665
+    },
+    {
+      "name": "Public: Vendor Detail by Slug",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 19.149
+    },
+    {
+      "name": "Client: Submit Inquiry",
+      "status": "PASS",
+      "http_status": 400,
+      "detail": "HTTP 400",
+      "response_ms": 14.213999999999999
+    },
+    {
+      "name": "Client Homepage",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200 | 96296 bytes",
+      "response_ms": 15.095
+    },
+    {
+      "name": "Client Vendor Listing",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200 | 38376 bytes",
+      "response_ms": 9.245
+    },
+    {
+      "name": "Admin: Dashboard Context",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 15.976
+    },
+    {
+      "name": "Admin: List Vendors",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 16.794
+    },
+    {
+      "name": "Admin: List Pending Listings",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 17.677
+    },
+    {
+      "name": "Admin: List All Listings",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 14.386
+    },
+    {
+      "name": "Delete Test Product",
+      "status": "PASS",
+      "http_status": 200,
+      "detail": "HTTP 200",
+      "response_ms": 41.772999999999996
+    }
+  ]
+}
