@@ -8,7 +8,7 @@
 		"prebuild": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"postinstall": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide || true"
 	},
@@ -27,11 +27,11 @@
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.16"
+		"vite": "^8.0.16",
+		"@inlang/plugin-m-function-matcher": "2.2.6",
+		"@inlang/plugin-message-format": "4.4.0"
 	},
 	"dependencies": {
-		"@inlang/plugin-m-function-matcher": "^2.2.6",
-		"@inlang/plugin-message-format": "^4.4.0",
 		"isomorphic-dompurify": "3.18.0",
 		"lucide-svelte": "^1.0.1",
 		"zod": "^4.4.3"

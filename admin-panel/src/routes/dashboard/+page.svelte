@@ -10,6 +10,11 @@
   let { data } = $props();
 
   const state = new AdminDashboardState(data);
+  $effect(() => {
+    if (data.summary) state.summary = data.summary;
+    if (data.dashboard) state.dashboard = data.dashboard;
+    if (data.approvals) state.approvals = data.approvals;
+  });
 </script>
 
 <div class="dashboard">

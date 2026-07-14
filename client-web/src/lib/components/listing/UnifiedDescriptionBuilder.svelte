@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { getI18n } from "$lib/i18n/i18n.svelte";
   import { ClientBuilderState } from "$lib/components/listing/clientBuilderState.svelte.js";
   import StepBaseInfo from "$lib/shared/builder/StepBaseInfo.svelte";
@@ -54,6 +55,15 @@
       metaDescriptionAr = data.metaDescriptionAr;
       metaDescriptionEn = data.metaDescriptionEn;
   };
+
+  $effect(() => {
+      let ar = titleAr;
+      let en = titleEn;
+      untrack(() => {
+          state.titleAr = ar;
+          state.titleEn = en;
+      });
+  });
 </script>
 
 <div class="unified-description-builder">

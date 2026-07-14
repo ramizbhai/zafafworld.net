@@ -47,6 +47,7 @@ CREATE TABLE public.global_users (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     failed_login_attempts integer DEFAULT 0 NOT NULL,
     locked_until timestamp with time zone,
+    status character varying(20) DEFAULT 'active' NOT NULL,
     scopes character varying(50)[] DEFAULT '{}'::character varying[] NOT NULL,
     display_name character varying(100),
     avatar_url character varying(255),

@@ -87,7 +87,9 @@
                         {#each fd.galleryItems as item}
                             <div class="gallery-preview-item">
                                 {#if item.mediaType === 'video'}
-                                    <video src={item.url.startsWith("http") ? item.url : getApiUrl(item.url)} class="w-full h-full object-cover"></video>
+                                    <video src={item.url.startsWith("http") ? item.url : getApiUrl(item.url)} class="w-full h-full object-cover">
+                                        <track kind="captions" src="" label="English" srclang="en" default>
+                                    </video>
                                 {:else}
                                     <img
                                         src={item.url.startsWith("http")

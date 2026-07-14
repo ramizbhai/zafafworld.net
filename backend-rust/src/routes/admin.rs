@@ -16,7 +16,7 @@ use validator::Validate;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-
+        .route("/users/:id/flag", patch(flag_user))
         .route(
             "/vendors/:id/chat/messages",
             get(get_admin_vendor_chat_messages),
@@ -1675,3 +1675,21 @@ async fn get_outbox_metrics(_auth: RequireAdmin) -> Result<Json<Value>, AppError
 }
 
 // ─── BFF ENDPOINT: GET /api/v1/admin/vendors-context ─────────────────────────
+
+pub async fn flag_user(
+    State(state): State<AppState>,
+    Path(user_id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    sqlx::query!(
+        "UPDATE global_users SET status = 'flagged' WHERE id = $1",
+        user_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "User flagged successfully"
+    })))
+}

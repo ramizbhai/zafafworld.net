@@ -187,10 +187,11 @@ export function createMessagesState(getData: () => any) {
     ui.setLoading(true);
     try {
       const res = await fetch(`/api/v1/admin/users/${userId}/flag`, {
-        method: "POST"
+        method: "PATCH"
       });
       if (res.ok) {
         // Success feedback
+        errorMsg = "User flagged successfully.";
       } else {
         errorMsg = "Failed to flag user.";
       }

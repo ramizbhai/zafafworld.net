@@ -21,7 +21,7 @@
 
   // Focus trap logic could be added using a svelte action, 
   // but for a pure UI component without external deps, we implement a simple version or just rely on a11y standards.
-  let modalRef: HTMLDivElement;
+  let modalRef = $state<HTMLDivElement>();
   
   $effect(() => {
     if (open && modalRef) {
