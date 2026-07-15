@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 -- ─── SYSTEM ROLES ─────────────────────────────────────────────────────────────
 DO $$
@@ -333,4 +332,3 @@ INSERT INTO cities (country_id, slug, name_ar, name_en) VALUES
     ('om', 'barka',        'بركاء',          'Barka')
 ON CONFLICT (country_id, slug) DO NOTHING;
 
-COMMIT;

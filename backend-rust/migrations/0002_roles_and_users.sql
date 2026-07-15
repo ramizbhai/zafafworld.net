@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 --
 
@@ -334,4 +333,3 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.uploaded_files TO zafaf_app_us
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.uploaded_files TO zafaf_db_admin;
 
 
-COMMIT;

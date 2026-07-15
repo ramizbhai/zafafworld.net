@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE global_users SET status = 'flagged' WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e7fa1850214bcf82f3a7545a906f0acb6574b81eb33d00c1c2a6025af9b6a0e9"
+}

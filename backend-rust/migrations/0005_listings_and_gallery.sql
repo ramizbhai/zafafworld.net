@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 --
 -- Name: reviews; Type: TABLE; Schema: public; Owner: zafaf_schema_owner
@@ -1040,4 +1039,3 @@ BEFORE INSERT OR UPDATE OF file_id ON public.vendor_gallery
 FOR EACH ROW
 EXECUTE FUNCTION public.sync_gallery_metadata_from_uploaded_files();
 
-COMMIT;

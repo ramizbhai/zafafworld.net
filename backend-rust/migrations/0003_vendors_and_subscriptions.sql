@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 --
 -- Name: vendor_verification_level; Type: TYPE; Schema: public; Owner: zafaf_db_admin
@@ -566,4 +565,3 @@ UPDATE subscription_tiers
 SET policy_limits = policy_limits || '{"max_promotions": -1}'::jsonb
 WHERE name ILIKE 'diamond';
 
-COMMIT;

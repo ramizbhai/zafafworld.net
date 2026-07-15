@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 --
 -- Name: Client_Budgets; Type: TABLE; Schema: public; Owner: zafaf_schema_owner
@@ -3877,4 +3876,3 @@ CREATE TRIGGER trg_vendor_inquiry_admin_notes_updated_at BEFORE UPDATE ON public
 CREATE TRIGGER trg_vendor_inquiry_management_updated_at BEFORE UPDATE ON public.vendor_inquiry_management FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 CREATE TRIGGER trg_vendor_whatsapp_templates_updated_at BEFORE UPDATE ON public.vendor_whatsapp_templates FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
-COMMIT;

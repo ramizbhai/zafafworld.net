@@ -39,9 +39,11 @@ RUN mkdir -p src && \
 # ── Full source build ─────────────────────────────────────────────────────────
 COPY . .
 
-# SQLX_OFFLINE=true — no compile-time query! macros in this codebase (verified
-# via cargo sqlx prepare which returned "no queries found"). Safe to set.
-ENV SQLX_OFFLINE=true
+# SQLX_OFFLINE=false — compiling query! macros using live database connection
+# Ensure DATABASE_URL is provided as a build arg!
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+ENV SQLX_OFFLINE=false
 
 RUN cargo build --release --bin backend-rust
 

@@ -3,7 +3,6 @@
 -- Consolidated ZafafWorld Database Schema Baseline
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-BEGIN;
 
 --
 -- Name: category_parent_group; Type: TYPE; Schema: public; Owner: zafaf_db_admin
@@ -719,4 +718,3 @@ INSERT INTO features (name_en, name_ar, category, input_type) VALUES
 ('Lighting', 'إضاءة', 'Amenities', 'boolean'),
 ('Possibility of holding several parties at the same time', 'إمكانية إقامة أكثر من حفل', 'Amenities', 'boolean');
 
-COMMIT;
