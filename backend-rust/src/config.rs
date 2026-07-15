@@ -83,6 +83,7 @@ pub struct AppConfig {
     pub minio_app_user: String,
     pub minio_app_password: String,
     pub minio_root_prefix: String,
+    pub wp_headless_base_url: String,
 }
 
 impl AppConfig {
@@ -431,6 +432,7 @@ impl AppConfig {
         let minio_app_user = env::var("MINIO_APP_USER").unwrap_or_default();
         let minio_app_password = env::var("MINIO_APP_PASSWORD").unwrap_or_default();
         let minio_root_prefix = env::var("MINIO_ROOT_PREFIX").unwrap_or_else(|_| "assets/uploads".to_string());
+        let wp_headless_base_url = env::var("WP_HEADLESS_BASE_URL").unwrap_or_else(|_| "https://cms.zafafworld.net".to_string());
 
         Self {
             database_url,
@@ -468,6 +470,7 @@ impl AppConfig {
             minio_app_user,
             minio_app_password,
             minio_root_prefix,
+            wp_headless_base_url,
         }
     }
 

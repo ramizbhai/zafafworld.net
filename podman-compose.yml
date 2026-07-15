@@ -192,6 +192,7 @@ services:
       SMTP_TLS_MODE: "${SMTP_TLS_MODE:-}"
       APP_ENVIRONMENT: "production"
       FRONTEND_URL: "${FRONTEND_URL:-https://zafafworld.net}"
+      WP_HEADLESS_BASE_URL: "${WP_HEADLESS_BASE_URL:-https://cms.zafafworld.net}"
       CORS_ORIGINS: "${CORS_ORIGINS:-https://zafafworld.net,https://vendor.zafafworld.net,https://admin.zafafworld.net}"
       ADMIN_INITIAL_EMAIL: "${ADMIN_INITIAL_EMAIL:-}" # first-boot DB seed
       ADMIN_INITIAL_PASSWORD: "${ADMIN_INITIAL_PASSWORD:-}" # first-boot DB seed
@@ -202,6 +203,8 @@ services:
       MINIO_ROOT_PREFIX: "${MINIO_ROOT_PREFIX:-assets/uploads}"
     security_opt:
       - label:disable        # Allow UDS socket bind on tmpfs without SELinux confinement
+    extra_hosts:
+      - "cms.zafafworld.net:10.89.0.1"
     volumes:
       - zafaf_uds_socket:/var/run/zafaf:z
       - /var/lib/zafafworld/uploads:/app/assets/uploads:z
@@ -237,8 +240,6 @@ services:
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
       PROTOCOL_HEADER: "x-forwarded-proto"
       HOST_HEADER: "x-forwarded-host"
-      # Internal Podman DNS — SvelteKit server-side WP fetches never cross the public internet
-      WP_INTERNAL_API_URL: "${WP_INTERNAL_API_URL:-http://zafaf-cms-nginx}"
     extra_hosts:
       - "api.zafafworld.net:host-gateway"
       - "zafafworld.net:host-gateway"
@@ -351,6 +352,7 @@ services:
       zafaf_network:
         aliases:
           - api.zafafworld.net
+          - cms.zafafworld.net
     ports:
       - "80:80"
       - "443:443"

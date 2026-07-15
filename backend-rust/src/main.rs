@@ -570,7 +570,10 @@ async fn main() {
     });
 
     // Start background Transactional Outbox Worker
-    services::outbox_worker::start_outbox_worker(app_state.clone(), shutdown_token);
+    services::outbox_worker::start_outbox_worker(app_state.clone(), shutdown_token.clone());
+
+    // Start background WordPress Cache Sync task
+    services::wp_cache_sync::start_wp_cache_sync(app_state.clone(), shutdown_token);
 
     // Spawn non-blocking Tokio background ticker loop running every 5 minutes to sweep and prune idempotency records older than 1 hour (3600 seconds)
     let idempotency_store_clone = app_state.idempotency_store.clone();
@@ -621,7 +624,7 @@ async fn main() {
             .merge(routes::vendor_management::packages::router(app_state.clone()))
             .merge(routes::vendor_management::staff::router(app_state.clone())))
         .nest("/api/v1/admin",    routes::admin::router()
-            .merge(routes::cms_discover::admin_blogs::router())
+            .merge(routes::cms_discover::blog_moderation::router())
             .merge(routes::cms_discover::admin_articles::router())
             .merge(routes::financial_ops::admin::router())
             .merge(routes::content_moderation::admin::router())

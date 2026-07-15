@@ -5,3 +5,4 @@ pub mod metrics;
 pub mod outbox_worker;
 pub mod translation;
 pub mod whatsapp;
+pub mod wp_cache_sync;
