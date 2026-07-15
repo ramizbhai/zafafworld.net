@@ -66,6 +66,7 @@
     {
       key: 'section.content',
       items: [
+        { href: '/dashboard/blog',         icon: Newspaper,    key: 'nav.blog',           badge: null },
         { href: '/dashboard/cms',          icon: Newspaper,    key: 'nav.cms',            badge: null },
         { href: '/dashboard/discover',     icon: Globe,        key: 'nav.discover',       badge: null },
         { href: '/dashboard/marketing',    icon: Megaphone,    key: 'nav.marketing',      badge: null },

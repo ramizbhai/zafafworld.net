@@ -68,7 +68,7 @@ async fn submit_vendor_inquiry(
     let (vendor_id, vendor_user_id, listing_title) = match (payload.listing_id, payload.vendor_id) {
         (Some(listing_id), _) => {
             let row = sqlx::query(
-                "SELECT p.vendor_id, v.user_id, p.name_en \
+                "SELECT p.vendor_id, v.user_id, p.title_en \
                  FROM vendor_products p \
                  JOIN vendors v ON p.vendor_id = v.id \
                  WHERE p.id = $1"
@@ -81,7 +81,7 @@ async fn submit_vendor_inquiry(
                 Some(r) => (
                     r.get::<Uuid, _>("vendor_id"),
                     r.get::<Uuid, _>("user_id"),
-                    r.get::<String, _>("name_en"),
+                    r.get::<String, _>("title_en"),
                 ),
                 None => return Err(AppError::NotFound("Listing not found".to_string())),
             }
@@ -393,7 +393,7 @@ async fn submit_guest_inquiry(
     let (vendor_id, vendor_user_id, listing_title) = match (payload.listing_id, payload.vendor_id) {
         (Some(listing_id), _) => {
             let row = sqlx::query(
-                "SELECT p.vendor_id, v.user_id, p.name_en \
+                "SELECT p.vendor_id, v.user_id, p.title_en \
                  FROM vendor_products p \
                  JOIN vendors v ON p.vendor_id = v.id \
                  WHERE p.id = $1"
@@ -406,7 +406,7 @@ async fn submit_guest_inquiry(
                 Some(r) => (
                     r.get::<Uuid, _>("vendor_id"),
                     r.get::<Uuid, _>("user_id"),
-                    r.get::<String, _>("name_en"),
+                    r.get::<String, _>("title_en"),
                 ),
                 None => return Err(AppError::NotFound("Listing not found".to_string())),
             }

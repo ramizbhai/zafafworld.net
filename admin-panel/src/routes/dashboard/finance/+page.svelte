@@ -25,7 +25,8 @@
     return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
-  function getCategoryLabel(category: string): string {
+  function getCategoryLabel(category: string | null | undefined): string {
+    if (!category) return $lang === 'ar' ? 'غير مصنف' : 'Uncategorized';
     const mapping: Record<string, string> = {
       // V2 Canonical slugs
       'wedding-palace':    $lang === 'ar' ? 'قصور الأفراح'   : 'Wedding Palace',

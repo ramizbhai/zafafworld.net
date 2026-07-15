@@ -11,6 +11,9 @@ export const GET = async ({}: RequestEvent) => {
     <sitemap>
         <loc>${SITE_URL}/sitemap-listings.xml</loc>
     </sitemap>
+    <sitemap>
+        <loc>${SITE_URL}/sitemap-blogs.xml</loc>
+    </sitemap>
 </sitemapindex>`;
 
     return new Response(sitemapIndex.trim(), {

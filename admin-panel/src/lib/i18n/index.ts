@@ -30,6 +30,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.reviews':        'التقييمات',
     'nav.subscriptions':  'إدارة الاشتراكات',
     'nav.discover':       'الاستكشاف والمدونات',
+    'nav.blog':           'إدارة المدونة',
     'nav.assistant':      'مساعد الأفراح / Afrah Assistant',
 
     // Sections
@@ -143,6 +144,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.reviews':        'Reviews',
     'nav.subscriptions':  'Subscriptions Management',
     'nav.discover':       'Discover & Blogs',
+    'nav.blog':           'Blog Management',
     'nav.assistant':      'Afrah Assistant / مساعد الأفراح',
 
     // Sections

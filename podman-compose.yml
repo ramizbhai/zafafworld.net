@@ -18,9 +18,6 @@ volumes:
       type: tmpfs
       device: tmpfs
       o: "size=4m,mode=777"
-  # ── CMS (WordPress) volumes ─────────────────────────────────────────────────
-  wp-core:
-    driver: local   # Shared between zafaf-cms (PHP-FPM) and zafaf-cms-nginx (static files)
 
 services:
 
@@ -203,7 +200,6 @@ services:
       MINIO_APP_USER: "${MINIO_APP_USER}"
       MINIO_APP_PASSWORD: "${MINIO_APP_PASSWORD}"
       MINIO_ROOT_PREFIX: "${MINIO_ROOT_PREFIX:-assets/uploads}"
-      WP_SYNC_SECRET: "${WP_SYNC_SECRET}"
     security_opt:
       - label:disable        # Allow UDS socket bind on tmpfs without SELinux confinement
     volumes:
@@ -372,83 +368,4 @@ services:
       retries: 5
       start_period: 10s
 
-  # ── WordPress CMS Stack ──────────────────────────────────────────────────────
-  # Three services, none expose host ports. MariaDB and raw PHP-FPM are
-  # architecturally unreachable from outside zafaf_network — not just firewalled.
-  # The Nginx sidecar translates HTTP → FastCGI inside the network only.
-  # External access (SEO manager's /wp-admin) routes through the TLS-terminating
-  # Nginx (the `nginx` service above) via a blog.zafafworld.net server block.
 
-  zafaf-cms:
-    image: docker.io/library/wordpress:php8.3-fpm
-    container_name: zafaf-cms
-    restart: unless-stopped
-    mem_limit: 1g
-    cpus: 2
-    networks:
-      - zafaf_network
-    depends_on:
-      - zafaf-cms-db
-    environment:
-      WORDPRESS_DB_HOST: zafaf-cms-db
-      WORDPRESS_DB_NAME: zafaf_cms
-      WORDPRESS_DB_USER: zafaf_cms_user
-      WORDPRESS_DB_PASSWORD: "${CMS_DB_PASSWORD}"
-      WORDPRESS_CONFIG_EXTRA: |
-        define('WP_SYNC_SECRET', '${WP_SYNC_SECRET}');
-        define('DISALLOW_FILE_EDIT', true);
-        define('DISALLOW_FILE_MODS', false);
-    volumes:
-      - wp-core:/var/www/html:z
-      - ./cms-wordpress/wp-content:/var/www/html/wp-content:z
-      - /var/lib/zafafworld/uploads:/var/www/html/wp-content/uploads:z
-    # No `ports:` — only reachable via FastCGI from zafaf-cms-nginx inside zafaf_network
-
-  zafaf-cms-nginx:
-    image: docker.io/library/nginx:1.27-alpine
-    container_name: zafaf-cms-nginx
-    restart: unless-stopped
-    entrypoint: ["/entrypoint.sh"]
-    mem_limit: 256m
-    cpus: 1
-    networks:
-      - zafaf_network
-    depends_on:
-      - zafaf-cms
-    volumes:
-      - wp-core:/var/www/html:ro,z
-      - ./cms-wordpress/wp-content:/var/www/html/wp-content:ro,z
-      - ./cms-wordpress/nginx/cms-internal.conf:/etc/nginx/conf.d/default.conf:ro,z
-      - ./cms-wordpress/nginx/entrypoint.sh:/entrypoint.sh:ro,z
-      - /var/lib/zafafworld/uploads:/var/www/html/wp-content/uploads:ro,z
-    # No `ports:` — reachable only as http://zafaf-cms-nginx inside zafaf_network.
-    # The external `nginx` service's blog.zafafworld.net server block proxies to this.
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f -s -o /dev/null http://127.0.0.1/wp-login.php || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-
-  zafaf-cms-db:
-    image: docker.io/library/mariadb:10.11
-    container_name: zafaf-cms-db
-    restart: unless-stopped
-    mem_limit: 1g
-    cpus: 1
-    networks:
-      - zafaf_network
-    environment:
-      MARIADB_DATABASE: zafaf_cms
-      MARIADB_USER: zafaf_cms_user
-      MARIADB_PASSWORD: "${CMS_DB_PASSWORD}"
-      MARIADB_ROOT_PASSWORD: "${CMS_DB_ROOT_PASSWORD}"
-    volumes:
-      - /var/lib/zafafworld/cms-db:/var/lib/mysql:Z
-    # No `ports:` — completely isolated. MariaDB is unreachable from Postgres and vice versa.
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s

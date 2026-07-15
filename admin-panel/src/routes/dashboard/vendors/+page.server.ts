@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
     try {
         // 2. Fetch context from aggregated BFF endpoint
-        const response = await fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/admin/vendors-context`, {
+        const response = await fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/admin/vendors/context`, {
             headers: authHeaders
         });
 

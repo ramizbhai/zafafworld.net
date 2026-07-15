@@ -645,10 +645,6 @@ async fn main() {
         .nest("/api/v1",          routes::telemetry_diagnostics::features::router(app_state.clone()))
         .nest("/api/v1",          routes::listing_promotions::router(app_state.clone()))
         .nest("/api/v1",          routes::telemetry_diagnostics::metrics::router())
-        // ── Internal endpoints (server-to-server only, no CORS, no JWT) ──────
-        // Reachable only from inside zafaf_network via Podman DNS.
-        // The domain_segregation_middleware skips paths not under /client/, /vendor/, /admin/.
-        .nest("/api/v1/internal", routes::cms_discover::sync::router(app_state.clone()))
         .nest_service("/assets",  tower_http::services::ServeDir::new("assets"))
         .layer(axum::middleware::from_fn(middleware::security::inject_security_headers))
         .layer(axum::middleware::from_fn(middleware::csrf::csrf_protection_middleware))

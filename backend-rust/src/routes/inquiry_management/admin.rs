@@ -386,19 +386,21 @@ async fn list_all_inquiries(
                 v.name_en as vendor_name_en, v.name_ar as vendor_name_ar,
                 vp.title_en as listing_title_en, vp.title_ar as listing_title_ar,
                 c.name_en as city_name_en, c.name_ar as city_name_ar,
-                gu.first_name as client_first_name, gu.last_name as client_last_name, gu.email as client_user_email, gu.phone as client_user_phone,
+                cp.first_name as client_first_name, cp.last_name as client_last_name, gu.email as client_user_email, cp.phone as client_user_phone,
                 COALESCE(vim.priority, 'medium') as priority,
                 COALESCE(vim.escalation_status, 'none') as escalation_status,
                 COALESCE(vim.resolution_status, 'unresolved') as resolution_status,
                 vim.assigned_admin_id,
-                admin_u.first_name as admin_first_name, admin_u.last_name as admin_last_name
+                admin_cp.first_name as admin_first_name, admin_cp.last_name as admin_last_name
          FROM vendor_inquiries vi
          JOIN vendors v ON vi.vendor_id = v.id
          LEFT JOIN vendor_products vp ON vi.product_id = vp.id
          LEFT JOIN global_users gu ON vi.client_id = gu.id
+         LEFT JOIN client_profiles cp ON gu.id = cp.client_id
          LEFT JOIN cities c ON vi.city_id = c.id
          LEFT JOIN vendor_inquiry_management vim ON vi.id = vim.inquiry_id
          LEFT JOIN global_users admin_u ON vim.assigned_admin_id = admin_u.id
+         LEFT JOIN client_profiles admin_cp ON admin_u.id = admin_cp.client_id
          {} ORDER BY {} {} LIMIT {} OFFSET {}",
         where_sql, sort_col, sort_ord, limit, offset
     );
@@ -595,19 +597,21 @@ async fn get_inquiry_detail(
                 v.name_en as vendor_name_en, v.name_ar as vendor_name_ar, v.email as vendor_email, v.phone as vendor_phone,
                 vp.title_en as listing_title_en, vp.title_ar as listing_title_ar,
                 c.name_en as city_name_en, c.name_ar as city_name_ar,
-                gu.first_name as client_first_name, gu.last_name as client_last_name, gu.email as client_user_email, gu.phone as client_user_phone,
+                cp.first_name as client_first_name, cp.last_name as client_last_name, gu.email as client_user_email, cp.phone as client_user_phone,
                 COALESCE(vim.priority, 'medium') as priority,
                 COALESCE(vim.escalation_status, 'none') as escalation_status,
                 COALESCE(vim.resolution_status, 'unresolved') as resolution_status,
                 vim.assigned_admin_id, vim.assigned_at, vim.escalated_at, vim.resolved_at,
-                admin_u.first_name as admin_first_name, admin_u.last_name as admin_last_name
+                admin_cp.first_name as admin_first_name, admin_cp.last_name as admin_last_name
          FROM vendor_inquiries vi
          JOIN vendors v ON vi.vendor_id = v.id
          LEFT JOIN vendor_products vp ON vi.product_id = vp.id
          LEFT JOIN global_users gu ON vi.client_id = gu.id
+         LEFT JOIN client_profiles cp ON gu.id = cp.client_id
          LEFT JOIN cities c ON vi.city_id = c.id
          LEFT JOIN vendor_inquiry_management vim ON vi.id = vim.inquiry_id
          LEFT JOIN global_users admin_u ON vim.assigned_admin_id = admin_u.id
+         LEFT JOIN client_profiles admin_cp ON admin_u.id = admin_cp.client_id
          WHERE vi.id = $1"
     )
     .bind(inq_uuid)
@@ -619,9 +623,10 @@ async fn get_inquiry_detail(
 
     let messages: Vec<Value> = if let Some(cid) = conversation_id {
         let msg_rows = sqlx::query(
-            "SELECT m.id, m.sender_id, m.body, m.created_at, gu.first_name, gu.last_name, gu.domain_type
+            "SELECT m.id, m.sender_id, m.body, m.created_at, cp.first_name, cp.last_name, gu.domain_type
              FROM messages m
              LEFT JOIN global_users gu ON m.sender_id = gu.id
+             LEFT JOIN client_profiles cp ON gu.id = cp.client_id
              WHERE m.conversation_id = $1
              ORDER BY m.created_at ASC"
         )
@@ -660,9 +665,10 @@ async fn get_inquiry_detail(
 
     let note_rows = sqlx::query(
         "SELECT n.id, n.admin_id, n.note, n.note_type, n.is_internal, n.created_at, n.updated_at,
-                gu.first_name, gu.last_name
+                cp.first_name, cp.last_name
          FROM vendor_inquiry_admin_notes n
          JOIN global_users gu ON n.admin_id = gu.id
+         LEFT JOIN client_profiles cp ON gu.id = cp.client_id
          WHERE n.inquiry_id = $1
          ORDER BY n.created_at ASC",
     )

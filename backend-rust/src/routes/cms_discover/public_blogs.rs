@@ -357,7 +357,7 @@ pub async fn create_blog_comment(
     let user_name = sqlx::query_scalar::<_, String>(
         "SELECT COALESCE(display_name, 'User') FROM global_users WHERE id = $1",
     )
-    .bind(&auth.user_id)
+    .bind(Uuid::parse_str(&auth.user_id).unwrap_or_default())
     .fetch_one(&state.db)
     .await
     .unwrap_or_else(|_| "User".to_string());
@@ -377,7 +377,7 @@ pub async fn create_blog_comment(
     ",
     )
     .bind(blog_id)
-    .bind(&auth.user_id)
+    .bind(Uuid::parse_str(&auth.user_id).unwrap_or_default())
     .bind(name_to_use)
     .bind(&auth.email)
     .bind(&payload.comment)

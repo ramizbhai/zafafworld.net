@@ -39,11 +39,10 @@ RUN mkdir -p src && \
 # ── Full source build ─────────────────────────────────────────────────────────
 COPY . .
 
-# SQLX_OFFLINE=false — compiling query! macros using live database connection
-# Ensure DATABASE_URL is provided as a build arg!
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
-ENV SQLX_OFFLINE=false
+# SQLX_OFFLINE=true — use pre-generated .sqlx/ query cache for compile-time SQL verification.
+# No live database connection is required during the image build. The .sqlx/ directory
+# must be kept up-to-date via `cargo sqlx prepare` whenever queries change.
+ENV SQLX_OFFLINE=true
 
 RUN cargo build --release --bin backend-rust
 

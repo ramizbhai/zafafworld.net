@@ -1,0 +1,43 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# .containerignore — client-web
+#
+# Prevents host-side artifacts from entering the build context.
+# Critical: node_modules/ must be EXCLUDED — host version has hardenened
+# permissions (644 from permission-hardening.sh) that cause exit-126 when
+# podman's COPY . . overwrites the container's freshly-installed binaries.
+#
+# NOTE: project.inlang/ is intentionally NOT excluded — paraglide-js needs
+# this directory to compile the i18n message catalog during build.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Dependencies (always rebuilt inside container) ────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build output (not needed in builder context) ──────────────────────────────
+build/
+.svelte-kit/
+dist/
+# paraglide output is regenerated during build — exclude the cached version
+src/lib/paraglide/
+
+# ── Dev/local tooling ─────────────────────────────────────────────────────────
+.bun/
+.vite/
+
+# ── Editor & OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Accidentally created global cache dirs ───────────────────────────────────
+# These are created when 'cd ~' goes wrong inside a container or CI shell.
+# Adding them here prevents them being included in future build contexts.
+~/
+.gemini/

@@ -77,13 +77,7 @@ pub struct AppConfig {
     pub whatsapp_token: Option<String>,
     pub whatsapp_phone_number_id: Option<String>,
     pub afrah_notification_phone: Option<String>,
-    /// Shared secret for the internal WordPress → Rust sync webhook.
-    /// Read from WP_SYNC_SECRET. Both WordPress (via WP_SYNC_SECRET PHP constant
-    /// in wp-config.php) and this backend must have the same value.
-    /// If empty in production, the /api/v1/internal/wp-sync endpoint will always
-    /// reject requests with 401 — a missing secret is a safer failure mode than
-    /// accepting unauthenticated syncs.
-    pub wp_sync_secret: String,
+
     pub minio_endpoint: String,
     pub minio_bucket: String,
     pub minio_app_user: String,
@@ -408,17 +402,7 @@ impl AppConfig {
             .ok()
             .filter(|s| !s.trim().is_empty());
 
-        // ── WordPress sync secret ─────────────────────────────────────────────
-        // Required for the internal /api/v1/internal/wp-sync endpoint.
-        // Warn in production if missing; the handler will reject all syncs with 401.
-        let wp_sync_secret = env::var("WP_SYNC_SECRET").unwrap_or_default();
-        if wp_sync_secret.is_empty() && is_prod {
-            tracing::warn!(
-                "WP_SYNC_SECRET is not set. The /api/v1/internal/wp-sync endpoint \
-                 will reject all incoming WordPress publish webhooks with 401. \
-                 Set WP_SYNC_SECRET in the environment to enable WordPress CMS sync."
-            );
-        }
+
 
         if let Some(ref id) = whatsapp_phone_number_id {
             if id.starts_with('+') {
@@ -478,7 +462,7 @@ impl AppConfig {
             whatsapp_token,
             whatsapp_phone_number_id,
             afrah_notification_phone,
-            wp_sync_secret,
+
             minio_endpoint,
             minio_bucket,
             minio_app_user,

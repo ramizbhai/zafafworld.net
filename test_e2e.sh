@@ -5,7 +5,7 @@ echo "1. Logging in..."
 TOKEN=$(curl -k -s -X POST https://localhost/api/v1/auth/login \
   -H "Host: api.zafafworld.net" \
   -H "Content-Type: application/json" \
-  -d '{"email": "ramiz@zafafworld.net", "password": "Ramiz@789", "domain_type": "Vendor"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+  -d '{"email": "vendor@test.com", "password": "Ramiz@789", "domain_type": "Vendor"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
 if [ -z "$TOKEN" ]; then
     echo "Login failed. Could not extract token."

@@ -20,9 +20,8 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
             throw error(404, 'Blog post not found');
         }
     } catch (err: any) {
-        if (err?.status && err?.body) throw err;
-        console.error('[Blog Slug Loader] Engagement fetch failed:', err);
-        throw error(500, 'Internal connection error');
+        console.error(`[Public Blog Loader] API request exception for slug "${slug}":`, err);
+        throw error(500, 'Internal Server Error');
     }
 
     if (!engagementData) {

@@ -105,11 +105,11 @@
 {/if}
 
 <div class="admin-layout" class:collapsed={adminGlobalState.sidebarCollapsed} dir={$dir as 'rtl' | 'ltr'}>
-  <AdminSidebar {t} {data} />
+  <AdminSidebar t={$t} {data} />
 
   <div class="main-area">
-    <AdminNavbar {t} {data} />
-    <AdminNotificationPanel {t} {lang} {data} />
+    <AdminNavbar t={$t} {data} />
+    <AdminNotificationPanel t={$t} lang={$lang} {data} />
 
     <main class="page-content" id="main-content">
       <div class="content-inner fade-in">

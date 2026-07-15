@@ -46,8 +46,8 @@ export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
         ]);
 
         if (!profileResponse.ok) {
-            if (profileResponse.status === 401 || profileResponse.status === 403) {
-                // 401 / 403 (invalid or expired session): Clear cookie and redirect
+            if (profileResponse.status === 401 || profileResponse.status === 403 || profileResponse.status === 404) {
+                // 401 / 403 / 404 (invalid or expired session): Clear cookie and redirect
                 cookies.delete('zafaf_admin_session', { path: '/' });
                 throw redirect(303, '/login');
             }

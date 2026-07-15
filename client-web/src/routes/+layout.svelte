@@ -176,7 +176,9 @@
   <meta property="og:locale" content={currentLang === 'ar' ? 'ar_SA' : 'en_US'} />
   <meta property="og:locale:alternate" content={currentLang === 'ar' ? 'en_US' : 'ar_SA'} />
 
-  <link rel="canonical" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), currentLang as any)}`} data-seo="canonical" />
+  {#if !$page.data.post}
+    <link rel="canonical" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), currentLang as any)}`} data-seo="canonical" />
+  {/if}
   <link rel="alternate" hreflang="ar" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), "ar")}`} />
   <link rel="alternate" hreflang="en" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), "en")}`} />
   <link rel="alternate" hreflang="x-default" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), "ar")}`} data-seo="x-default" />

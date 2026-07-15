@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const fs = require('fs');
 const https = require('https');
 
@@ -12,15 +14,16 @@ const API_URL = 'http://localhost:8000/api/v1'; // Running backend directly or v
 async function run() {
     try {
         console.log("1. Logging in...");
-        const loginRes = await fetch("http://localhost/api/v1/auth/login", {
+        const loginRes = await fetch("https://localhost/api/v1/auth/login", {
             method: "POST",
             headers: {
                 "Host": "api.zafafworld.net",
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                email: "ramiz@zafafworld.net",
-                password: "Ramiz@789"
+                email: "vendor@test.com",
+                password: "Ramiz@789",
+                domain_type: "Vendor"
             })
         });
 
@@ -57,7 +60,7 @@ async function run() {
             ]
         };
 
-        const createRes = await fetch("http://localhost/api/v1/vendor/products", {
+        const createRes = await fetch("https://localhost/api/v1/vendor/products", {
             method: "POST",
             headers: {
                 "Host": "api.zafafworld.net",

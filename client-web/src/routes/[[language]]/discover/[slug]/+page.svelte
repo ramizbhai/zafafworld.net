@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import * as m from '$lib/paraglide/messages.js';
   import { getLocale } from '$lib/paraglide/runtime.js';
   import { formatDate } from '$lib/utils/localize.js';
@@ -14,9 +15,11 @@
   const post = $derived(data.post);
   const related = $derived(data.related || []);
 
-  const activeTitle = $derived(post.lang === 'ar' ? (post.title_ar || post.title) : (post.title_en || post.title));
-  const activeMetaTitle = $derived(post.lang === 'ar' ? (post.meta_title_ar || post.meta_title || post.title_ar || post.title) : (post.meta_title_en || post.meta_title || post.title_en || post.title));
-  const activeMetaDesc = $derived(post.lang === 'ar' ? (post.meta_description_ar || post.meta_description || post.excerpt) : (post.meta_description_en || post.meta_description || post.excerpt));
+  const lang = $derived(getLocale());
+
+  const activeTitle = $derived(lang === 'ar' ? (post.title_ar || post.title) : (post.title_en || post.title));
+  const activeMetaTitle = $derived(lang === 'ar' ? (post.meta_title_ar || post.meta_title || post.title_ar || post.title) : (post.meta_title_en || post.meta_title || post.title_en || post.title));
+  const activeMetaDesc = $derived(lang === 'ar' ? (post.meta_description_ar || post.meta_description || post.excerpt) : (post.meta_description_en || post.meta_description || post.excerpt));
 
   let parsedBlocks = $derived.by(() => {
     if (!post.content_html) return [];
@@ -114,19 +117,35 @@
   {#if post.focus_keywords}
     <meta name="keywords" content={post.focus_keywords} />
   {/if}
-  {#if post.canonical_url}
-    <link rel="canonical" href={post.canonical_url} />
+  
+  <!-- Canonical tag -->
+  <link rel="canonical" href={post.canonical_url || `${$page.url.origin}${$page.url.pathname}`} />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content={`${$page.url.origin}${$page.url.pathname}`} />
+  <meta property="og:title" content={activeMetaTitle} />
+  <meta property="og:description" content={activeMetaDesc} />
+  {#if post.cover_image_url}
+    <meta property="og:image" content={resolveMediaUrl(post.cover_image_url)} />
   {/if}
-  {#each post.translations || [] as tr}
-    <link rel="alternate" hreflang={tr.lang} href={`/discover/${tr.slug}`} />
-  {/each}
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content={`${$page.url.origin}${$page.url.pathname}`} />
+  <meta property="twitter:title" content={activeMetaTitle} />
+  <meta property="twitter:description" content={activeMetaDesc} />
+  {#if post.cover_image_url}
+    <meta property="twitter:image" content={resolveMediaUrl(post.cover_image_url)} />
+  {/if}
+
   <!-- JSON-LD for SEO -->
   <script type="application/ld+json">
     {JSON.stringify({
       "@context": "https://schema.org",
       "@type": "BlogPosting",
       "headline": activeTitle,
-      "image": post.cover_image_url,
+      "image": post.cover_image_url ? resolveMediaUrl(post.cover_image_url) : undefined,
       "datePublished": post.created_at,
       "description": post.excerpt,
       "author": {

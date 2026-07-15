@@ -30,10 +30,10 @@ graph TB
         MN["📦 MinIO S3<br/>:9000/:9001"]
     end
     
-    subgraph "CMS Layer"
-        WP["📝 WordPress PHP-FPM"]
-        WPNG["🔧 CMS Nginx Sidecar"]
-        MDB["🗄️ MariaDB 10.11"]
+    subgraph "CMS Layer [RETIRED]"
+        WP["📝 WordPress PHP-FPM [SHUTDOWN]"]
+        WPNG["🔧 CMS Nginx Sidecar [SHUTDOWN]"]
+        MDB["🗄️ MariaDB 10.11 [SHUTDOWN]"]
     end
     
     CF --> NG
@@ -62,7 +62,7 @@ graph TB
 | `api.zafafworld.net` | backend-rust | UDS/8080 | REST API + WebSocket |
 | `vendor.zafafworld.net` | vendor-portal | 8082 | Vendor dashboard/management |
 | `admin.zafafworld.net` | admin-panel | 8083 | Admin control panel |
-| `blog.zafafworld.net` | WordPress CMS | via sidecar | SEO blog content management |
+| `blog.zafafworld.net` | [RETIRED] WordPress CMS | [RETIRED] | Decommissioned as of July 2026 |
 
 ---
 
@@ -104,7 +104,7 @@ graph TB
 | Module | File | Description |
 |--------|------|-------------|
 | [public.rs](backend-rust/src/routes/public.rs) | 96KB | Vendor listing search, category browsing, vendor detail, public reviews, gallery |
-| [cms_discover](backend-rust/src/routes/cms_discover) | public_blogs, public_articles | Blog posts & articles from WordPress CMS |
+| [cms_discover](backend-rust/src/routes/cms_discover) | public_blogs, public_articles | Blog posts & articles (native & historical WP) |
 | [reference_metadata](backend-rust/src/routes/reference_metadata) | public.rs | Cities, countries, features metadata |
 | [inquiry_management](backend-rust/src/routes/inquiry_management) | public.rs | Public inquiry submission |
 | [booking_workflow](backend-rust/src/routes/booking_workflow) | public.rs | Public booking flow |
@@ -143,7 +143,7 @@ graph TB
 | [admin.rs](backend-rust/src/routes/admin.rs) (56KB) | Users, vendors, listings, subscriptions, settings, system management |
 | [vendor_management/admin.rs](backend-rust/src/routes/vendor_management/admin.rs) (52KB) | Full vendor lifecycle management — approve, reject, suspend |
 | [inquiry_management/admin.rs](backend-rust/src/routes/inquiry_management/admin.rs) (41KB) | Inquiry escalation, assignment, analytics |
-| [cms_discover/admin_blogs.rs](backend-rust/src/routes/cms_discover/admin_blogs.rs) (20KB) | Blog post CRUD via WordPress sync |
+| [cms_discover/admin_blogs.rs](backend-rust/src/routes/cms_discover/admin_blogs.rs) (20KB) | Native blog post CRUD editor |
 | [financial_ops/admin.rs](backend-rust/src/routes/financial_ops/admin.rs) | Commission management, payouts |
 | [content_moderation/admin.rs](backend-rust/src/routes/content_moderation/admin.rs) | Review moderation queue |
 | [identity/admin.rs](backend-rust/src/routes/identity/admin.rs) (15KB) | User management, role assignment |
@@ -158,7 +158,7 @@ graph TB
 #### 🔧 Internal/Utility Routes
 | Module | Description |
 |--------|-------------|
-| [cms_discover/sync.rs](backend-rust/src/routes/cms_discover/sync.rs) (19KB) | WordPress → Rust sync webhook (server-to-server, WP_SYNC_SECRET auth) |
+| [cms_discover/sync.rs](backend-rust/src/routes/cms_discover/sync.rs) (19KB) | [DEPRECATED] WordPress → Rust sync webhook |
 | [telemetry_diagnostics](backend-rust/src/routes/telemetry_diagnostics) | Events tracking, feature flags, metrics endpoints |
 
 ---
@@ -332,7 +332,7 @@ Request → Try MinIO first → Not found? Try derivative fallback from original
 ### Key Architecture
 - **BFF Pattern**: Server-side routes in `/bff/v1/` proxy to backend API, keeping API keys server-side
 - **SSR**: Full server-side rendering for SEO
-- **WordPress Integration**: Fetches blog content from `WP_INTERNAL_API_URL` (internal Podman DNS, no public internet)
+- **Native Blog System**: Fetches blog content natively from Postgres via the unified public blog APIs
 
 ---
 
@@ -420,25 +420,11 @@ Request → Try MinIO first → Not found? Try derivative fallback from original
 
 ---
 
-## 8️⃣ WordPress CMS (`/cms-wordpress`)
+## 8️⃣ WordPress CMS [RETIRED] (`/cms-wordpress`)
 
-### Architecture (3-container isolated stack)
+### Architecture (Headless Stack Decommissioned as of July 2026)
 
-```mermaid
-graph LR
-    ENG["External Nginx<br/>(TLS termination)"] -->|"HTTP"| CMSNG["CMS Nginx Sidecar<br/>:80"]
-    CMSNG -->|"FastCGI :9000"| WP["WordPress PHP 8.3 FPM"]
-    WP --> MDB["MariaDB 10.11"]
-    
-    CW["Client Web (SSR)"] -->|"Internal HTTP<br/>WP REST API"| CMSNG
-    BE["Backend Rust"] -->|"WP Sync Webhook<br/>WP_SYNC_SECRET"| BE2["Internal sync endpoint"]
-```
-
-- **WordPress**: Headless CMS — used only for blog/article content management
-- **wp-admin**: Accessible via `blog.zafafworld.net` for SEO team
-- **Content sync**: WordPress → Rust backend via sync webhook (WP_SYNC_SECRET authenticated)
-- **Client-side**: SvelteKit SSR fetches from WordPress REST API internally (no public internet)
-- **Security**: `DISALLOW_FILE_EDIT = true`, MariaDB fully isolated from PostgreSQL
+The WordPress CMS three-container stack is stopped and retired. Historical blogs are preserved in PostgreSQL database, and all future posts are created/managed via the admin-panel native blog editor.
 
 ---
 
@@ -454,7 +440,7 @@ graph LR
 | [20-client-web.conf](infra/nginx/conf.d/20-client-web.conf) | zafafworld.net | Client SPA proxy + CSP |
 | [30-vendor-portal.conf](infra/nginx/conf.d/30-vendor-portal.conf) | vendor.zafafworld.net | Vendor portal proxy |
 | [40-admin-panel.conf](infra/nginx/conf.d/40-admin-panel.conf) | admin.zafafworld.net | Admin panel proxy |
-| [50-blog.conf](infra/nginx/conf.d/50-blog.conf) | blog.zafafworld.net | WordPress CMS proxy |
+| [DELETED] 50-blog.conf | blog.zafafworld.net | [RETIRED] WordPress CMS proxy |
 
 #### Security Headers (on all domains)
 - HSTS (2 years, includeSubDomains, preload)
@@ -620,12 +606,12 @@ sequenceDiagram
 | MinIO | 1.5GB | 0.5 | Object storage |
 | Redis | 512MB | 1 | Session cache |
 | Vendor Portal | 512MB | 1 | SSR |
-| WordPress | 512MB | 1 | PHP-FPM |
-| MariaDB | 512MB | 1 | CMS database |
+| [RETIRED] WordPress | — | — | Stopped as of July 2026 |
+| [RETIRED] MariaDB | — | — | Stopped as of July 2026 |
 | Admin Panel | 384MB | 0.5 | SSR |
 | Nginx | 256MB | 1 | Reverse proxy |
 | PgBouncer | 128MB | 0.5 | Connection pooler |
-| CMS Nginx | 128MB | 0.5 | FastCGI sidecar |
+| [RETIRED] CMS Nginx | — | — | Stopped as of July 2026 |
 
 **Total**: ~8.9GB RAM, ~13 CPU cores allocated
 

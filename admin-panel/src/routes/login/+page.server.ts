@@ -21,11 +21,12 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
             });
 
             if (!response.ok) {
-                if (response.status !== 401 && response.status !== 403) {
+                if (response.status !== 401 && response.status !== 403 && response.status !== 404) {
                     // 5xx / network error: Throw 503
                     throw error(503, 'Service temporarily unavailable');
                 }
-                // 401 / 403: normal "not logged in" case. Let it fall through to render the login form.
+                // Clear the stale/invalid session cookie and let it fall through to login page
+                cookies.delete('zafaf_admin_session', { path: '/' });
             } else {
                 const data = await response.json();
                 if (data.status === 'success' && data.user?.role?.toLowerCase() === 'admin') {

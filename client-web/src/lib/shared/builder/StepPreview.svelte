@@ -1,12 +1,11 @@
 <script lang="ts">
   import { MapPin, Phone, Share2 } from 'lucide-svelte';
   import type { ClientBuilderState } from '../../components/listing/clientBuilderState.svelte.js';
-  import { getI18n } from "$lib/i18n/i18n.svelte";
+  import { getLocale } from "$lib/paraglide/runtime.js";
   import { resolveMediaUrl } from "$lib/shared/utils/media.js";
 
-  let { state }: { state: ClientBuilderState } = $props();
-  const i18n = getI18n();
-  let currentLang = $derived(i18n.locale);
+  let { state, locale }: { state: ClientBuilderState; locale?: "ar" | "en" } = $props();
+  let currentLang = $derived(locale || getLocale());
 
   let allBlocks = $derived([...state.featureBlocks, ...state.mediaBlocks]);
 

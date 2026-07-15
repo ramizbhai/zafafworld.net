@@ -68,7 +68,7 @@
 
 <div class="unified-description-builder">
   {#if readonly}
-      <StepPreview {state} />
+      <StepPreview {state} locale={locale} />
   {:else}
       <div class="wizard-header">
           <div class="step-progress">
@@ -97,7 +97,7 @@
           {:else if state.currentStep === 3}
               <StepMedia {state} />
           {:else if state.currentStep === 4}
-              <StepPreview {state} />
+              <StepPreview {state} locale={locale} />
           {/if}
       </div>
 

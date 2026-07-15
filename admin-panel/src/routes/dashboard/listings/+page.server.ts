@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ fetch, cookies, depends }) => {
     const sessionToken = cookies.get('zafaf_admin_session');
     if (!sessionToken) throw redirect(303, '/login');
 
-    const res = await fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/admin/listings`, {
+    const res = await fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/admin/vendors/all-listings`, {
         headers: {
             'Authorization': `Bearer ${sessionToken}`,
             'Cookie': `zafaf_admin_session=${sessionToken}`

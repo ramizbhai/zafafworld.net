@@ -105,6 +105,7 @@ pub struct CreateBlogPayload {
     published_at: Option<chrono::DateTime<chrono::Utc>>,
     categories: Option<Vec<Uuid>>,
     tags: Option<Vec<Uuid>>,
+    canonical_url: Option<String>,
 }
 
 use crate::middleware::auth::{RequireAdmin, RequireAuth};
@@ -123,8 +124,8 @@ pub async fn create_blog(
     };
 
     let res = sqlx::query("
-        INSERT INTO blogs (slug, title, title_ar, title_en, excerpt, content_html, content_markdown, cover_image_url, author_id, meta_title, meta_title_ar, meta_title_en, meta_description, meta_description_ar, meta_description_en, focus_keywords, read_time_minutes, is_published, published_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        INSERT INTO blogs (slug, title, title_ar, title_en, excerpt, content_html, content_markdown, cover_image_url, author_id, meta_title, meta_title_ar, meta_title_en, meta_description, meta_description_ar, meta_description_en, focus_keywords, read_time_minutes, is_published, published_at, canonical_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         RETURNING id
     ")
     .bind(&payload.slug)
@@ -147,6 +148,7 @@ pub async fn create_blog(
     .bind(payload.read_time_minutes)
     .bind(payload.is_published)
     .bind(published_at)
+    .bind(&payload.canonical_url)
     .fetch_one(&mut *tx)
     .await;
 
@@ -252,8 +254,8 @@ pub async fn update_blog(
 
     let res = sqlx::query("
         UPDATE blogs 
-        SET slug = $1, title = $2, title_ar = $3, title_en = $4, excerpt = $5, content_html = $6, content_markdown = $7, cover_image_url = $8, meta_title = $9, meta_title_ar = $10, meta_title_en = $11, meta_description = $12, meta_description_ar = $13, meta_description_en = $14, focus_keywords = $15, read_time_minutes = $16, is_published = $17, published_at = $18, updated_at = now()
-        WHERE id = $19
+        SET slug = $1, title = $2, title_ar = $3, title_en = $4, excerpt = $5, content_html = $6, content_markdown = $7, cover_image_url = $8, meta_title = $9, meta_title_ar = $10, meta_title_en = $11, meta_description = $12, meta_description_ar = $13, meta_description_en = $14, focus_keywords = $15, read_time_minutes = $16, is_published = $17, published_at = $18, canonical_url = $19, updated_at = now()
+        WHERE id = $20
     ")
     .bind(&payload.slug)
     .bind(payload.title_en.as_deref().unwrap_or(&payload.title)) // Keep legacy title synced to English
@@ -273,6 +275,7 @@ pub async fn update_blog(
     .bind(payload.read_time_minutes)
     .bind(payload.is_published)
     .bind(published_at)
+    .bind(&payload.canonical_url)
     .bind(id)
     .execute(&mut *tx)
     .await;

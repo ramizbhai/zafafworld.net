@@ -1,4 +1,5 @@
-export function getCategoryLabel(category: string): string {
+export function getCategoryLabel(category: string | null | undefined): string {
+    if (!category) return 'Uncategorized / غير مصنف';
     const mapping: Record<string, string> = {
         'wedding-palace':    'Wedding Palace / قصر أفراح',
         'hotel-venue':       'Hotel Ballroom / فندق وقاعة',
