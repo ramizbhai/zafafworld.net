@@ -356,15 +356,15 @@
               <span
                 class="text-[9px] tracking-wider text-[#008080] font-extrabold uppercase mb-1 block"
               >
-                {m.auto_afrah_is_here_to_pla()}
+                {isAr ? 'مساعدك الشخصي' : 'Your Personal Assistant'}
               </span>
               <h3
                 class="font-display text-xl md:text-2xl font-bold text-[#2D2620] mb-1.5 leading-tight"
               >
-                {m.auto_meet_your_wedding_pl()}
+                {isAr ? 'تحتاج مساعدة في اتخاذ القرار؟' : 'Need Help Deciding?'}
               </h3>
               <p class="text-[11px] text-[#9E8E7A] font-medium leading-relaxed">
-                {m.auto_tell_us_about_your_d()}
+                {isAr ? 'أخبرنا بما تبحث عنه وسنوصلك بأفضل المزودين.' : 'Tell us what you are looking for and we will match you with the perfect vendor.'}
               </p>
             </div>
           </div>

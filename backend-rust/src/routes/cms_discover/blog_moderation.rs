@@ -1,8 +1,8 @@
 use crate::errors::AppError;
 use crate::state::AppState;
 use axum::{
-    extract::{Path, Query, State},
-    routing::{get, patch},
+    extract::{Path, Query, State, Multipart},
+    routing::{get, patch, post},
     Json, Router,
 };
 use serde::Deserialize;
@@ -10,16 +10,90 @@ use serde_json::{json, Value};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::middleware::auth::RequireAdmin;
+
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/blogs", get(list_admin_blogs))
-        .route("/blogs/:id", get(get_admin_blog))
+        .route("/blogs", get(list_admin_blogs).post(create_admin_blog))
+        .route("/blogs/upload", post(upload_blog_cover_handler))
+        .route("/blogs/:id", get(get_admin_blog).put(update_admin_blog))
         .route("/tags", get(list_tags))
         .route("/categories", get(list_categories))
         .route("/comments", get(list_comments))
         .route("/comments/:id/approve", patch(approve_comment))
         .route("/comments/:id/reject", patch(reject_comment))
         .route("/analytics/discover", get(get_discover_analytics))
+}
+
+#[derive(Deserialize)]
+pub struct CreateBlogPayload {
+    pub slug: String,
+    pub title: String,
+    pub excerpt: String,
+    pub content_html: String,
+    pub content_markdown: String,
+    pub cover_image_url: String,
+    pub meta_title: String,
+    pub meta_description: String,
+    pub focus_keywords: String,
+    pub read_time_minutes: i32,
+    pub is_published: bool,
+    pub published_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub categories: Vec<String>,
+    pub tags: Vec<String>,
+}
+
+pub async fn create_admin_blog(
+    State(state): State<AppState>,
+    auth: RequireAdmin,
+    Json(payload): Json<CreateBlogPayload>,
+) -> Result<Json<Value>, AppError> {
+    let blog_id = Uuid::new_v4();
+    let published_at = if payload.is_published {
+        payload.published_at.or_else(|| Some(chrono::Utc::now()))
+    } else {
+        None
+    };
+    
+    let author_id: Uuid = auth.user_id.parse().map_err(|_| AppError::Internal("Invalid admin user id".into()))?;
+
+    sqlx::query(
+        r#"
+        INSERT INTO blogs (
+            id, slug, title, title_ar, title_en, excerpt, content_html, content_markdown,
+            cover_image_url, meta_title, meta_description, focus_keywords,
+            read_time_minutes, is_published, published_at,
+            author_id
+        ) VALUES (
+            $1, $2, $3, '', '', $4, $5, $6,
+            $7, $8, $9, $10,
+            $11, $12, $13,
+            $14
+        )
+        "#,
+    )
+    .bind(blog_id)
+    .bind(&payload.slug)
+    .bind(&payload.title)
+    .bind(&payload.excerpt)
+    .bind(&payload.content_html)
+    .bind(&payload.content_markdown)
+    .bind(&payload.cover_image_url)
+    .bind(&payload.meta_title)
+    .bind(&payload.meta_description)
+    .bind(&payload.focus_keywords)
+    .bind(payload.read_time_minutes)
+    .bind(payload.is_published)
+    .bind(published_at)
+    .bind(author_id)
+    .execute(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to create blog: {}", e);
+        AppError::Internal("Failed to create blog".into())
+    })?;
+
+    Ok(Json(json!({ "status": "success", "data": { "id": blog_id } })))
 }
 
 #[derive(Deserialize)]
@@ -271,4 +345,89 @@ pub async fn list_categories(State(state): State<AppState>) -> Result<Json<Value
         json!({ "id": r.get::<Uuid, _>("id"), "name": r.get::<String, _>("name"), "slug": r.get::<String, _>("slug") })
     }).collect();
     Ok(Json(json!({ "status": "success", "data": categories })))
+}
+
+pub async fn upload_blog_cover_handler(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    mut multipart: Multipart,
+) -> Result<Json<Value>, AppError> {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(format!("Multipart error: {}", e)))?
+    {
+        let name = field.name().unwrap_or("").to_string();
+
+        if name == "file" {
+            let file_name = field.file_name().unwrap_or("cover.jpg").to_string();
+            let target_dir = "assets/uploads/blogs/";
+            let url_prefix = "/assets/uploads/blogs/";
+
+            let processed = crate::services::media::process_and_save_upload(
+                field,
+                &file_name,
+                target_dir,
+                url_prefix,
+                5 * 1024 * 1024, // 5 MB max
+                1920,            // max dimension
+                &state.minio_client,
+            )
+            .await
+            .map_err(|e| {
+                tracing::error!("Blog cover upload failed: {:?}", e);
+                e
+            })?;
+
+            return Ok(Json(json!({
+                "status": "success",
+                "url": processed.file_url,
+            })));
+        }
+    }
+
+    Err(AppError::BadRequest("A valid image file attachment is required in the 'file' field.".to_string()))
+}
+pub async fn update_admin_blog(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<CreateBlogPayload>,
+) -> Result<Json<Value>, AppError> {
+    let published_at = if payload.is_published {
+        payload.published_at.or_else(|| Some(chrono::Utc::now()))
+    } else {
+        None
+    };
+
+    sqlx::query(
+        r#"
+        UPDATE blogs SET
+            slug = $1, title = $2, excerpt = $3, content_html = $4, content_markdown = $5,
+            cover_image_url = $6, meta_title = $7, meta_description = $8, focus_keywords = $9,
+            read_time_minutes = $10, is_published = $11, published_at = $12
+        WHERE id = $13
+        "#,
+    )
+    .bind(&payload.slug)
+    .bind(&payload.title)
+    .bind(&payload.excerpt)
+    .bind(&payload.content_html)
+    .bind(&payload.content_markdown)
+    .bind(&payload.cover_image_url)
+    .bind(&payload.meta_title)
+    .bind(&payload.meta_description)
+    .bind(&payload.focus_keywords)
+    .bind(payload.read_time_minutes)
+    .bind(payload.is_published)
+    .bind(published_at)
+    .bind(id)
+    .execute(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to update blog: {}", e);
+        AppError::Internal("Failed to update blog".into())
+    })?;
+
+    Ok(Json(json!({ "status": "success", "data": { "id": id } })))
 }

@@ -133,7 +133,7 @@
       <span class="mini-stat-value text-success">{successPercentage}%</span>
     </div>
     <div class="mini-stat card">
-      <span class="mini-stat-label">{$lang === 'ar' ? 'رسوم الدفع المقدرة (٢.٥٪)' : 'Est. Gateway Fees (2.5%)'}</span>
+      <span class="mini-stat-label">{$lang === 'ar' ? 'رسوم الدفع المقدرة (٢.٥٪)' : 'Est. Transaction Fees (2.5%)'}</span>
       <span class="mini-stat-value text-warning">SAR {fmt(totalStripeFees)}</span>
     </div>
   </div>
@@ -168,7 +168,7 @@
             <th style="text-align:end">{$lang === 'ar' ? 'إجمالي المبلغ' : 'Amount'}</th>
             <th style="text-align:end">{$lang === 'ar' ? 'الرسوم المقدرة (٢.٥٪)' : 'Est. Fee'}</th>
             <th>{$lang === 'ar' ? 'طريقة الدفع' : 'Method'}</th>
-            <th>{$lang === 'ar' ? 'البوابة' : 'Gateway'}</th>
+            <th>{$lang === 'ar' ? 'سجل' : 'Record'}</th>
             <th>{$lang === 'ar' ? 'التاريخ' : 'Date'}</th>
             <th>{$t('common.status')}</th>
           </tr>
@@ -193,9 +193,9 @@
                 {fmt(txn.totalPrice * 0.025)} SAR
               </td>
               <td class="text-muted">
-                {$lang === 'ar' ? 'بطاقة ائتمان' : 'Credit Card'}
+                {$lang === 'ar' ? 'غير محدد' : 'Unspecified'}
               </td>
-              <td><span class="badge badge-muted">Stripe</span></td>
+              <td><span class="badge badge-muted">Internal</span></td>
               <td class="text-muted" style="font-size:12px">
                 {fmtDate(txn.createdAt)}
               </td>

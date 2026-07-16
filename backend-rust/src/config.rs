@@ -432,7 +432,7 @@ impl AppConfig {
         let minio_app_user = env::var("MINIO_APP_USER").unwrap_or_default();
         let minio_app_password = env::var("MINIO_APP_PASSWORD").unwrap_or_default();
         let minio_root_prefix = env::var("MINIO_ROOT_PREFIX").unwrap_or_else(|_| "assets/uploads".to_string());
-        let wp_headless_base_url = env::var("WP_HEADLESS_BASE_URL").unwrap_or_else(|_| "https://cms.zafafworld.net".to_string());
+        let wp_headless_base_url = env::var("WP_HEADLESS_BASE_URL").unwrap_or_else(|_| "https://blog.zafafworld.net".to_string());
 
         Self {
             database_url,

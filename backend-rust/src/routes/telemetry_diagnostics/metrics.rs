@@ -1,7 +1,8 @@
 // GET /api/v1/metrics — Prometheus text format counter exposition.
-// NOTE: In production, restrict this endpoint to internal/loopback traffic only
-// (e.g., nginx allow 127.0.0.1; deny all;) — no authentication is applied here
-// as Prometheus scrapers do not send auth headers by default.
+// NOTE: This endpoint is currently publicly reachable (no nginx IP allow-list
+// restriction is configured for it). If Prometheus scraper access should be
+// limited, add an `allow 127.0.0.1; deny all;` block in infra/nginx/conf.d/10-api.conf
+// for a `location = /api/v1/metrics` stanza.
 
 use axum::{http::header, response::IntoResponse};
 use crate::services::metrics::render_prometheus_text;
@@ -21,9 +22,10 @@ async fn get_metrics() -> impl IntoResponse {
 }
 
 // ─── POST IMPRESSIONS: /api/v1/analytics/impressions ─────────────────────────
+// Intentional no-op: impression events are batched by the frontend BFF and
+// acknowledged here to avoid 404s, but no server-side persistence is
+// implemented. Raw impression volume can be inferred from nginx access logs.
+// If a server-side analytics store is added later, this is the integration point.
 async fn track_impressions() -> impl IntoResponse {
-    // Fire and forget endpoint for frontend batch impressions.
-    // In a real implementation this would write to Redis/Clickhouse or a queue.
-    // For now we just return 204 to complete the circuit and avoid 404s.
     axum::http::StatusCode::NO_CONTENT
 }

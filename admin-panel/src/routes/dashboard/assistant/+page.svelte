@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-    <title>Afrah Assistant Leads | ZafafWorld Admin</title>
+    <title>Afrah Planner Leads | ZafafWorld Admin</title>
 </svelte:head>
 
 <div class="assistant-container">
@@ -43,9 +43,9 @@
         <div class="banner-glow"></div>
         <div class="banner-content">
             <span class="badge-premium">
-                <Sparkles size={12} class="sparkle-icon" /> AI Assistant Leads
+                <Sparkles size={12} class="sparkle-icon" /> Planner Leads
             </span>
-            <h1>Afrah Assistant Management</h1>
+            <h1>Afrah Planner Management</h1>
             <p>Monitor platform-wide interactive planner leads, track client requests, and toggle resolution status.</p>
         </div>
     </header>
@@ -97,8 +97,8 @@
             <div class="empty-icon-wrapper">
                 <Sparkles size={42} class="sparkle-icon-large" />
             </div>
-            <h2>No Assistant Leads Found</h2>
-            <p>There are no inquiries recorded from the Afrah AI Planner yet.</p>
+            <h2>No Planner Leads Found</h2>
+            <p>There are no inquiries recorded from the Afrah Interactive Planner yet.</p>
         </div>
     {:else}
         <!-- Inquiries Table Grid -->

@@ -58,7 +58,7 @@
   <div class="page-header">
     <div class="page-header-left">
       <h1 class="page-title">{$t('nav.support')}</h1>
-      <p class="page-subtitle">{$lang === 'ar' ? 'إدارة استفسارات المساعد الذكي والعملاء' : 'Manage AI Assistant inquiries and customer support'}</p>
+      <p class="page-subtitle">{$lang === 'ar' ? 'إدارة استفسارات المساعد الذكي والعملاء' : 'Manage Interactive Planner inquiries and customer support'}</p>
     </div>
   </div>
 

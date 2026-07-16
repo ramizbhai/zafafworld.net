@@ -209,8 +209,8 @@ export function createMessagesState(getData: () => any) {
     }
     ui.setLoading(true);
     try {
-      const res = await fetch(`/api/v1/admin/messages/${messageId}/redact`, {
-        method: "POST"
+      const res = await fetch(`/api/v1/admin/messages/${messageId}`, {
+        method: "DELETE"
       });
       if (res.ok) {
         messages = messages.map(m => m.id === messageId ? { ...m, status: "redacted", isRedacted: true } : m);

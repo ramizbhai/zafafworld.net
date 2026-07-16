@@ -57,9 +57,10 @@ codegen-units = 1
 # backtraces (they still work when DWARF is stripped on Linux via debuginfod).
 strip = true
 
-# Abort on panic instead of unwinding. Smaller binary, no unwinding tables,
-# slightly faster panic paths. Safe for a server binary where all panics are
-# caught by `CatchPanicLayer` and converted to 500 responses.
+# Panic strategy: unwind (NOT abort). Unwind is required so that
+# tower-http's CatchPanicLayer can intercept panics and convert them
+# to 500 JSON responses rather than crashing the process. Switching to
+# abort would silence the tower catch layer and hard-crash on any panic.
 panic = "unwind"
 
 # Optimize for speed (default is already 3, but explicit for clarity).

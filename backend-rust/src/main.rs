@@ -572,8 +572,9 @@ async fn main() {
     // Start background Transactional Outbox Worker
     services::outbox_worker::start_outbox_worker(app_state.clone(), shutdown_token.clone());
 
-    // Start background WordPress Cache Sync task
-    services::wp_cache_sync::start_wp_cache_sync(app_state.clone(), shutdown_token);
+    // wp_cache_sync removed: WordPress retired July 2026; all historical posts
+    // are already in Postgres. The domain still responds with 0 posts so the
+    // worker was running every 10 min for zero effect. Removed 2026-07-16.
 
     // Spawn non-blocking Tokio background ticker loop running every 5 minutes to sweep and prune idempotency records older than 1 hour (3600 seconds)
     let idempotency_store_clone = app_state.idempotency_store.clone();

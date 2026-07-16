@@ -175,7 +175,7 @@ services:
     environment:
       BIND_MODE:    uds
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB}
-      REDIS_URL:    "redis://redis:6379"
+      REDIS_URL:    "redis://redis:6379"  # declared but not read by backend code — kept for future use
       JWT_SECRET:   "${JWT_SECRET}" # MANDATORY: backend will fail to validate and panic if empty or short
       RUST_LOG:     "${RUST_LOG:-info}"
       RUST_LOG_FORMAT: "${RUST_LOG_FORMAT:-json}" # json format for structured log aggregation
@@ -192,7 +192,7 @@ services:
       SMTP_TLS_MODE: "${SMTP_TLS_MODE:-}"
       APP_ENVIRONMENT: "production"
       FRONTEND_URL: "${FRONTEND_URL:-https://zafafworld.net}"
-      WP_HEADLESS_BASE_URL: "${WP_HEADLESS_BASE_URL:-https://cms.zafafworld.net}"
+      WP_HEADLESS_BASE_URL: "${WP_HEADLESS_BASE_URL:-https://blog.zafafworld.net}"
       CORS_ORIGINS: "${CORS_ORIGINS:-https://zafafworld.net,https://vendor.zafafworld.net,https://admin.zafafworld.net}"
       ADMIN_INITIAL_EMAIL: "${ADMIN_INITIAL_EMAIL:-}" # first-boot DB seed
       ADMIN_INITIAL_PASSWORD: "${ADMIN_INITIAL_PASSWORD:-}" # first-boot DB seed
@@ -235,7 +235,7 @@ services:
       PUBLIC_WS_URL: "${PUBLIC_WS_URL:-wss://api.zafafworld.net}"
       ORIGIN: "${PUBLIC_CLIENT_URL:-https://zafafworld.net}"
       BODY_SIZE_LIMIT: "209715200"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://redis:6379"  # declared but not read by client-web code — kept for future use
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
       PROTOCOL_HEADER: "x-forwarded-proto"
@@ -272,7 +272,7 @@ services:
       PUBLIC_WS_URL: "${PUBLIC_WS_URL:-wss://api.zafafworld.net}"
       ORIGIN: "${PUBLIC_VENDOR_URL:-https://vendor.zafafworld.net}"
       BODY_SIZE_LIMIT: "209715200"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://redis:6379"  # declared but not read by vendor-portal code — kept for future use
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
       PROTOCOL_HEADER: "x-forwarded-proto"
@@ -308,7 +308,7 @@ services:
       PUBLIC_API_URL: "${PUBLIC_API_URL:-https://api.zafafworld.net}"
       ORIGIN: "${PUBLIC_ADMIN_URL:-https://admin.zafafworld.net}"
       BODY_SIZE_LIMIT: "209715200"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://redis:6379"  # declared but not read by admin-panel code — kept for future use
       NODE_EXTRA_CA_CERTS: "${NODE_EXTRA_CA_CERTS:-/etc/nginx/ssl/zafafworld.net.crt}"
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
       PROTOCOL_HEADER: "x-forwarded-proto"
@@ -352,7 +352,7 @@ services:
       zafaf_network:
         aliases:
           - api.zafafworld.net
-          - cms.zafafworld.net
+          - cms.zafafworld.net  # RETIRED: no nginx server block handles this domain; 50-blog.conf was removed
     ports:
       - "80:80"
       - "443:443"

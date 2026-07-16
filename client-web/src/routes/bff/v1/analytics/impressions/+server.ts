@@ -47,8 +47,8 @@ export const POST = async ({ request }: RequestEvent) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ impressions: validImpressions }),
   }).catch((err) => {
-    // Backend may not have this endpoint yet — silently log
-    console.warn('[Impressions BFF] Backend forward failed (endpoint may not exist yet):', err.message);
+    // Backend is fire-and-forget: log failures but do not surface them to client
+    console.warn('[Impressions BFF] Backend forward failed:', err.message);
   });
 
   // Return 204 immediately — client doesn't need to wait for backend

@@ -5,4 +5,4 @@ pub mod metrics;
 pub mod outbox_worker;
 pub mod translation;
 pub mod whatsapp;
-pub mod wp_cache_sync;
+// wp_cache_sync removed 2026-07-16 — WordPress retired, worker was a no-op

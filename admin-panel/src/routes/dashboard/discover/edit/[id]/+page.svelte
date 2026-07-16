@@ -61,8 +61,7 @@
     
     isUploadingImage = true;
     try {
-      const apiBase = env.PUBLIC_API_URL && env.PUBLIC_API_URL.includes("localhost") ? "" : env.PUBLIC_API_URL || "";
-      const response = await fetch(`${apiBase}/api/v1/admin/blogs/upload`, {
+      const response = await fetch(`/dashboard/discover/edit/${blog.id || 'new'}/upload`, {
         method: 'POST',
         body: formData
       });

@@ -20,10 +20,10 @@ import { getLocalizedField } from '$lib/utils/localize.js';
     },
     {
       icon: '✨',
-      titleAr: 'المساعد الذكي سارة بلانر',
-      titleEn: 'AI Sarah Planner Assistant',
-      descAr: 'اكتشف إمكانيات مساعدة التخطيط الذكية سارة بلانر للحصول على مقترحات وإجابات فورية لأسئلتك التخطيطية.',
-      descEn: 'Explore how our interactive Sarah AI Assistant suggests venue options and answers questions to ease your organization journey.'
+      titleAr: 'المساعد التفاعلي',
+      titleEn: 'Interactive Planner',
+      descAr: 'اكتشف إمكانيات مساعدة التخطيط التفاعلية للحصول على مقترحات وإجابات فورية لأسئلتك التخطيطية.',
+      descEn: 'Explore how our interactive planner suggests venue options and answers questions to ease your organization journey.'
     }
   ]);
 </script>

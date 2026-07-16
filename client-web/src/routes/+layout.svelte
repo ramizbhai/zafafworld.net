@@ -33,9 +33,12 @@
     }
   });
 
+  let hasMounted = false;
   $effect(() => {
-    // Track page views on SPA navigation
-    trackPageView($page.url.pathname + $page.url.search);
+    const url = $page.url.pathname + $page.url.search;
+    if (hasMounted) {
+      trackPageView(url);
+    }
   });
 
   // ── SEO Routing ────────────────────────────────────────────────────────────
@@ -85,6 +88,8 @@
 
   onMount(() => {
     initAnalytics();
+    trackPageView($page.url.pathname + $page.url.search);
+    hasMounted = true;
 
     // UTM Campaign tracking for Blog Funnel
     if (browser) {

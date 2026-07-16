@@ -30,7 +30,7 @@
       Icon: MapPin,
     },
     {
-      value: serverStats?.satisfaction || 0,
+      value: serverStats?.satisfaction ?? null,
       suffix: "%",
       label: m.home_stats_satisfaction(),
       Icon: Star,
@@ -60,7 +60,11 @@
           <div
             class="font-display text-4xl sm:text-5xl font-bold text-gradient-gold mb-2 drop-shadow-sm transition-transform duration-500 group-hover:scale-105"
           >
-            {formatNumber(stat.value)}{stat.suffix}
+            {#if stat.value === null}
+              <span class="text-xl sm:text-2xl opacity-70 tracking-normal font-medium whitespace-nowrap">No reviews</span>
+            {:else}
+              {formatNumber(stat.value)}{stat.suffix}
+            {/if}
           </div>
 
           <div

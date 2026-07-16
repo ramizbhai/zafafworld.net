@@ -26,7 +26,7 @@ graph TB
     subgraph "Data Layer"
         PG["🐘 PostgreSQL 16<br/>:5432"]
         PB["🔄 PgBouncer<br/>:5432"]
-        RD["🔴 Redis 7<br/>:6379"]
+        RD["🔴 Redis 7<br/>:6379 — running, no app client"]
         MN["📦 MinIO S3<br/>:9000/:9001"]
     end
     
@@ -44,9 +44,7 @@ graph TB
     NG -->|"HTTP"| WPNG
     
     BE --> PB --> PG
-    BE --> RD
     BE --> MN
-    CW --> RD
     
     WPNG -->|"FastCGI"| WP
     WP --> MDB
@@ -143,7 +141,8 @@ graph TB
 | [admin.rs](backend-rust/src/routes/admin.rs) (56KB) | Users, vendors, listings, subscriptions, settings, system management |
 | [vendor_management/admin.rs](backend-rust/src/routes/vendor_management/admin.rs) (52KB) | Full vendor lifecycle management — approve, reject, suspend |
 | [inquiry_management/admin.rs](backend-rust/src/routes/inquiry_management/admin.rs) (41KB) | Inquiry escalation, assignment, analytics |
-| [cms_discover/admin_blogs.rs](backend-rust/src/routes/cms_discover/admin_blogs.rs) (20KB) | Native blog post CRUD editor |
+| [cms_discover/admin_articles.rs](backend-rust/src/routes/cms_discover/admin_articles.rs) | Native article CRUD editor |
+| [cms_discover/blog_moderation.rs](backend-rust/src/routes/cms_discover/blog_moderation.rs) | Blog post moderation queue |
 | [financial_ops/admin.rs](backend-rust/src/routes/financial_ops/admin.rs) | Commission management, payouts |
 | [content_moderation/admin.rs](backend-rust/src/routes/content_moderation/admin.rs) | Review moderation queue |
 | [identity/admin.rs](backend-rust/src/routes/identity/admin.rs) (15KB) | User management, role assignment |
@@ -158,7 +157,6 @@ graph TB
 #### 🔧 Internal/Utility Routes
 | Module | Description |
 |--------|-------------|
-| [cms_discover/sync.rs](backend-rust/src/routes/cms_discover/sync.rs) (19KB) | [DEPRECATED] WordPress → Rust sync webhook |
 | [telemetry_diagnostics](backend-rust/src/routes/telemetry_diagnostics) | Events tracking, feature flags, metrics endpoints |
 
 ---
@@ -189,7 +187,8 @@ Additional middleware:
 | [whatsapp.rs](backend-rust/src/services/whatsapp.rs) (7.6KB) | WhatsApp Business API (Meta Graph API) — notification templates for inquiry alerts |
 | [outbox_worker.rs](backend-rust/src/services/outbox_worker.rs) (20KB) | Transactional Outbox Pattern — guaranteed delivery for email/WhatsApp with retry schedule |
 | [category_schema.rs](backend-rust/src/services/category_schema.rs) (22KB) | Dynamic category-specific feature schema engine |
-| [metrics.rs](backend-rust/src/services/metrics.rs) | Application metrics collection |
+| [metrics.rs](backend-rust/src/services/metrics.rs) | Application metrics collection (Prometheus text format; no nginx IP restriction currently) |
+| [wp_cache_sync.rs](backend-rust/src/services/wp_cache_sync.rs) (16KB) | Background worker: polls `blog.zafafworld.net/wp-json/wp/v2/posts` every 10 min and caches posts to Postgres. WordPress is retired and returns 0 posts; this worker runs harmlessly but does nothing useful. |
 | **Media Pipeline** | |
 | [media/mod.rs](backend-rust/src/services/media/mod.rs) (12KB) | Orchestrates image + video processing |
 | [media/image_processing.rs](backend-rust/src/services/media/image_processing.rs) (12KB) | WebP conversion, multi-size derivatives (thumb, card, medium, large) |
@@ -268,7 +267,7 @@ Backend → PgBouncer (transaction pooling, 1000 max clients, pool size 55) → 
 
 ## 3️⃣ MinIO Object Storage
 
-- **Image**: `docker.io/minio/minio:latest`
+- **Image**: `docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`
 - **Data volume**: `/var/lib/zafafworld/minio`
 - **Bucket**: `zafafworld-media`
 - **Root prefix**: `assets/uploads`
@@ -295,8 +294,8 @@ Request → Try MinIO first → Not found? Try derivative fallback from original
 
 - **Image**: `redis:7-alpine`
 - **Volume**: `/var/lib/zafafworld/redis`
-- **Usage**: SvelteKit server-side session cache for `client-web`
 - **Persistence**: AOF (`appendonly yes`)
+- **Status**: Running and healthy, but **no application code currently connects to it**. The `REDIS_URL` env var is configured in all four services (backend, client-web, vendor-portal, admin-panel) but none reads it at runtime. Redis is a provisioned-but-idle resource as of the current codebase. If session caching or rate-limit persistence is added, this is the integration point.
 
 ---
 
@@ -600,20 +599,20 @@ sequenceDiagram
 
 | Service | Memory | CPUs | Notes |
 |---------|--------|------|-------|
-| PostgreSQL | 3GB | 4 | Heavy query workload |
-| Backend Rust | 1GB | 2 | API + media processing |
-| Client Web | 1.5GB | 1 | SSR rendering |
-| MinIO | 1.5GB | 0.5 | Object storage |
-| Redis | 512MB | 1 | Session cache |
-| Vendor Portal | 512MB | 1 | SSR |
+| PostgreSQL | 4GB | 4 | Heavy query workload |
+| Backend Rust | 1.5GB | 2 | API + media processing |
+| Client Web | 2GB | 2 | SSR rendering |
+| MinIO | 2GB | 2 | Object storage |
+| Redis | 1GB | 1 | Provisioned, currently unused by app code |
+| Vendor Portal | 1GB | 1 | SSR |
 | [RETIRED] WordPress | — | — | Stopped as of July 2026 |
 | [RETIRED] MariaDB | — | — | Stopped as of July 2026 |
-| Admin Panel | 384MB | 0.5 | SSR |
-| Nginx | 256MB | 1 | Reverse proxy |
+| Admin Panel | 512MB | 0.5 | SSR |
+| Nginx | 512MB | 2 | Reverse proxy |
 | PgBouncer | 128MB | 0.5 | Connection pooler |
 | [RETIRED] CMS Nginx | — | — | Stopped as of July 2026 |
 
-**Total**: ~8.9GB RAM, ~13 CPU cores allocated
+**Total**: ~11.6GB RAM, ~14.5 CPU cores allocated
 
 ---
 
@@ -635,4 +634,4 @@ sequenceDiagram
 
 ---
 
-> **Total codebase size estimate**: ~700K+ lines across all modules. This is a production-grade, enterprise-level wedding marketplace platform with comprehensive security, real-time communication, media processing, CMS integration, and automated DevOps infrastructure.
+> **Note**: This is a production-grade, enterprise-level wedding marketplace platform with comprehensive security, real-time communication, media processing, and automated DevOps infrastructure.

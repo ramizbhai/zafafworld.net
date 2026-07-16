@@ -2115,8 +2115,8 @@ async fn get_platform_stats(State(state): State<AppState>) -> Result<Json<Value>
         .unwrap_or(None);
 
     let satisfaction = match avg_rating {
-        Some(avg) => (avg / 5.0 * 100.0).round() as i64,
-        None => 98,
+        Some(avg) => Some((avg / 5.0 * 100.0).round() as i64),
+        None => None,
     };
 
     Ok(Json(json!({

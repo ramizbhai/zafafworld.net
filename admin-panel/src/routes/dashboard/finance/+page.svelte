@@ -97,28 +97,24 @@
       <span class="fin-kpi-value" style="color: var(--gold)">
         SAR {fmt(data.summary?.total_revenue || 0)}
       </span>
-      <span class="stat-trend stat-trend-up">+100% {$lang === 'ar' ? 'فعلي' : 'Live'}</span>
     </div>
     <div class="fin-kpi-card card">
       <span class="fin-kpi-label">{$lang === 'ar' ? 'تقدير العمولات (' + ((data.summary as any)?.commission_rate || 10.0) + '٪)' : 'Commissions Estimate (' + ((data.summary as any)?.commission_rate || 10.0) + '%)'}</span>
       <span class="fin-kpi-value" style="color: var(--success)">
         SAR {fmt(data.summary?.commission_estimate || 0)}
       </span>
-      <span class="stat-trend stat-trend-up">{((data.summary as any)?.commission_rate || 10.0)}% Platform Standard</span>
     </div>
     <div class="fin-kpi-card card">
       <span class="fin-kpi-label">{$lang === 'ar' ? 'تقدير مستحقات الموردين' : 'Estimated Vendor Payouts'}</span>
       <span class="fin-kpi-value" style="color: var(--info)">
         SAR {fmt(data.summary?.payout_totals || 0)}
       </span>
-      <span class="stat-trend stat-trend-up">{(100.0 - ((data.summary as any)?.commission_rate || 10.0))}% Vendor Share</span>
     </div>
     <div class="fin-kpi-card card">
       <span class="fin-kpi-label">{$lang === 'ar' ? 'إجمالي الحجوزات المعالجة' : 'Processed Bookings'}</span>
       <span class="fin-kpi-value" style="color: var(--purple)">
         {data.summary?.total_bookings_count || 0}
       </span>
-      <span class="stat-trend stat-trend-up">Escrow Secured</span>
     </div>
   </div>
 

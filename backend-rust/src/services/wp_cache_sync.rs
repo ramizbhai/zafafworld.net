@@ -17,7 +17,6 @@ pub struct WpPost {
     pub date_gmt: String,
     pub pll_lang: Option<String>,
     pub pll_translations: Option<HashMap<String, i64>>,
-    #[serde(alias = "seo_meta_payload")]
     pub rank_math_meta: Option<WpRankMathMeta>,
     #[serde(rename = "_embedded")]
     pub embedded: Option<WpEmbedded>,
