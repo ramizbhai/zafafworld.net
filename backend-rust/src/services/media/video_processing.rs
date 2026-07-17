@@ -296,6 +296,7 @@ pub async fn process_video(
 
     if let Err(e) = minio.upload(&processed.disk_path, target_dir, &final_filename, &processed.mime_type).await {
         tracing::error!("MinIO: failed to upload video: {}", e);
+        return Err(AppError::Internal(format!("MinIO: failed to upload video: {}", e)));
     }
 
     Ok(processed)
