@@ -260,181 +260,238 @@ async fn run_sync(state: &AppState) -> Result<(usize, usize, u64), String> {
             chrono::Utc::now()
         };
 
-        // Determine if this is a creation or an update
-        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blogs WHERE wp_post_id = $1)")
+        let decoded_slug = percent_encoding::percent_decode_str(&post.slug)
+            .decode_utf8_lossy()
+            .to_string();
+
+        let process_post = async {
+            // Check for duplicate slug
+            let duplicate_id: Option<i64> = sqlx::query_scalar("SELECT wp_post_id FROM blogs WHERE slug = $1 AND wp_post_id != $2")
+                .bind(&decoded_slug)
+                .bind(post.id)
+                .fetch_optional(&state.db)
+                .await
+                .map_err(|e| format!("Failed to check for duplicate slug: {}", e))?;
+
+            if let Some(dup_id) = duplicate_id {
+                warn!("Duplicate slug detected! WP post ID {} and {} both share the slug '{}'. This should be fixed in WordPress.", post.id, dup_id, decoded_slug);
+            }
+
+            // Determine if this is a creation or an update
+            let existing_cover: Option<String> = sqlx::query_scalar("SELECT cover_image_url FROM blogs WHERE wp_post_id = $1")
+                .bind(post.id)
+                .fetch_optional(&state.db)
+                .await
+                .unwrap_or(None);
+            
+            let exists = existing_cover.is_some();
+            
+            let mut final_cover_image_url = existing_cover.unwrap_or_default();
+            if final_cover_image_url.is_empty() || !final_cover_image_url.starts_with("/assets") {
+                if !cover_image_url.is_empty() {
+                    let temp_id = Uuid::new_v4();
+                    let temp_path = format!("assets/uploads/temp/blog_sync_{}.tmp", temp_id);
+                    let _ = tokio::fs::create_dir_all("assets/uploads/temp").await;
+                    if let Ok(response) = reqwest::get(&cover_image_url).await {
+                        if let Ok(bytes) = response.bytes().await {
+                            if tokio::fs::write(&temp_path, &bytes).await.is_ok() {
+                                if let Ok(processed) = crate::services::media::image_processing::process_image(
+                                    temp_path,
+                                    temp_id,
+                                    "cover.jpg",
+                                    "assets/uploads/blogs/",
+                                    "/assets/uploads/blogs/",
+                                    1920,
+                                    &state.minio_client
+                                ).await {
+                                    final_cover_image_url = processed.file_url;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let mut tx = state.db.begin().await.map_err(|e| format!("DB transaction begin failed: {}", e))?;
+
+            let content_html = post.content.rendered.replace(" loading=\"lazy\"", "").replace("<img ", "<img loading=\"lazy\" ");
+
+            let blog_row: (Uuid,) = sqlx::query_as(
+                r#"
+                INSERT INTO blogs (
+                    wp_post_id,
+                    slug,
+                    title,
+                    title_en,
+                    title_ar,
+                    content_html,
+                    content_markdown,
+                    excerpt,
+                    cover_image_url,
+                    author_id,
+                    is_published,
+                    published_at,
+                    source,
+                    lang,
+                    translation_group_id,
+                    meta_title,
+                    meta_title_en,
+                    meta_title_ar,
+                    meta_description,
+                    meta_description_en,
+                    meta_description_ar,
+                    focus_keywords,
+                    canonical_url
+                )
+                VALUES (
+                    $1, $2, CASE WHEN $9 = 'ar' THEN $4 ELSE $3 END, $3, $4, $5, '', $6, $7,
+                    (SELECT id FROM global_users WHERE email = 'afrah@zafafworld.net' LIMIT 1),
+                    true, $8, 'wordpress', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+                )
+                ON CONFLICT (wp_post_id) DO UPDATE
+                SET
+                    slug                 = EXCLUDED.slug,
+                    title                = EXCLUDED.title,
+                    title_en             = EXCLUDED.title_en,
+                    title_ar             = EXCLUDED.title_ar,
+                    content_html         = EXCLUDED.content_html,
+                    excerpt              = EXCLUDED.excerpt,
+                    cover_image_url      = EXCLUDED.cover_image_url,
+                    published_at         = EXCLUDED.published_at,
+                    lang                 = EXCLUDED.lang,
+                    translation_group_id = EXCLUDED.translation_group_id,
+                    meta_title           = EXCLUDED.meta_title,
+                    meta_title_en        = EXCLUDED.meta_title_en,
+                    meta_title_ar        = EXCLUDED.meta_title_ar,
+                    meta_description     = EXCLUDED.meta_description,
+                    meta_description_en  = EXCLUDED.meta_description_en,
+                    meta_description_ar  = EXCLUDED.meta_description_ar,
+                    focus_keywords       = EXCLUDED.focus_keywords,
+                    canonical_url        = EXCLUDED.canonical_url,
+                    updated_at           = now()
+                RETURNING id
+                "#,
+            )
             .bind(post.id)
-            .fetch_one(&state.db)
+            .bind(&decoded_slug)
+            .bind(&title_en)
+            .bind(&title_ar)
+            .bind(&content_html)
+            .bind(&post.excerpt.rendered)
+            .bind(&final_cover_image_url)
+            .bind(published_at)
+            .bind(&lang)
+            .bind(translation_group_id)
+            .bind(&meta_title)
+            .bind(&meta_title_en)
+            .bind(&meta_title_ar)
+            .bind(&meta_description)
+            .bind(&meta_description_en)
+            .bind(&meta_description_ar)
+            .bind(&focus_keywords)
+            .bind(&canonical_url)
+            .fetch_one(&mut *tx)
             .await
-            .unwrap_or(false);
+            .map_err(|e| format!("DB upsert failed for post ID {}: {:?}", post.id, e))?;
 
-        let mut tx = state.db.begin().await.map_err(|e| format!("DB transaction begin failed: {:?}", e))?;
+            let blog_id = blog_row.0;
 
-        let blog_row: (Uuid,) = sqlx::query_as(
-            r#"
-            INSERT INTO blogs (
-                wp_post_id,
-                slug,
-                title,
-                title_en,
-                title_ar,
-                content_html,
-                content_markdown,
-                excerpt,
-                cover_image_url,
-                author_id,
-                is_published,
-                published_at,
-                source,
-                lang,
-                translation_group_id,
-                meta_title,
-                meta_title_en,
-                meta_title_ar,
-                meta_description,
-                meta_description_en,
-                meta_description_ar,
-                focus_keywords,
-                canonical_url
-            )
-            VALUES (
-                $1, $2, CASE WHEN $9 = 'ar' THEN $4 ELSE $3 END, $3, $4, $5, '', $6, $7,
-                (SELECT id FROM global_users WHERE email = 'afrah@zafafworld.net' LIMIT 1),
-                true, $8, 'wordpress', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-            )
-            ON CONFLICT (wp_post_id) DO UPDATE
-            SET
-                slug                 = EXCLUDED.slug,
-                title                = EXCLUDED.title,
-                title_en             = EXCLUDED.title_en,
-                title_ar             = EXCLUDED.title_ar,
-                content_html         = EXCLUDED.content_html,
-                excerpt              = EXCLUDED.excerpt,
-                cover_image_url      = EXCLUDED.cover_image_url,
-                published_at         = EXCLUDED.published_at,
-                lang                 = EXCLUDED.lang,
-                translation_group_id = EXCLUDED.translation_group_id,
-                meta_title           = EXCLUDED.meta_title,
-                meta_title_en        = EXCLUDED.meta_title_en,
-                meta_title_ar        = EXCLUDED.meta_title_ar,
-                meta_description     = EXCLUDED.meta_description,
-                meta_description_en  = EXCLUDED.meta_description_en,
-                meta_description_ar  = EXCLUDED.meta_description_ar,
-                focus_keywords       = EXCLUDED.focus_keywords,
-                canonical_url        = EXCLUDED.canonical_url,
-                updated_at           = now()
-            RETURNING id
-            "#,
-        )
-        .bind(post.id)
-        .bind(&post.slug)
-        .bind(&title_en)
-        .bind(&title_ar)
-        .bind(&post.content.rendered)
-        .bind(&post.excerpt.rendered)
-        .bind(&cover_image_url)
-        .bind(published_at)
-        .bind(&lang)
-        .bind(translation_group_id)
-        .bind(&meta_title)
-        .bind(&meta_title_en)
-        .bind(&meta_title_ar)
-        .bind(&meta_description)
-        .bind(&meta_description_en)
-        .bind(&meta_description_ar)
-        .bind(&focus_keywords)
-        .bind(&canonical_url)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(|e| format!("DB upsert failed for post ID {}: {:?}", post.id, e))?;
-
-        let blog_id = blog_row.0;
-
-        // Categories Sync
-        sqlx::query("DELETE FROM blog_category_map WHERE blog_id = $1")
-            .bind(blog_id)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| format!("Failed to clear category map: {:?}", e))?;
-
-        for cat in &categories {
-            let existing: Option<Uuid> = sqlx::query_scalar(
-                "SELECT id FROM blog_categories WHERE slug = $1 OR name = $2"
-            )
-            .bind(&cat.slug)
-            .bind(&cat.name)
-            .fetch_optional(&mut *tx)
-            .await
-            .map_err(|e| format!("Failed to check category: {:?}", e))?;
-
-            let cat_id = match existing {
-                Some(id) => id,
-                None => {
-                    let cat_row: (Uuid,) = sqlx::query_as(
-                        "INSERT INTO blog_categories (name, slug) VALUES ($1, $2) RETURNING id"
-                    )
-                    .bind(&cat.name)
-                    .bind(&cat.slug)
-                    .fetch_one(&mut *tx)
-                    .await
-                    .map_err(|e| format!("Failed to create category: {:?}", e))?;
-                    cat_row.0
-                }
-            };
-
-            sqlx::query("INSERT INTO blog_category_map (blog_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+            // Categories Sync
+            sqlx::query("DELETE FROM blog_category_map WHERE blog_id = $1")
                 .bind(blog_id)
-                .bind(cat_id)
                 .execute(&mut *tx)
                 .await
-                .map_err(|e| format!("Failed to link category: {:?}", e))?;
-        }
+                .map_err(|e| format!("Failed to clear category map: {:?}", e))?;
 
-        // Tags Sync
-        sqlx::query("DELETE FROM blog_tags_map WHERE blog_id = $1")
-            .bind(blog_id)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| format!("Failed to clear tag map: {:?}", e))?;
+            for cat in &categories {
+                let existing: Option<Uuid> = sqlx::query_scalar(
+                    "SELECT id FROM blog_categories WHERE slug = $1 OR name = $2"
+                )
+                .bind(&cat.slug)
+                .bind(&cat.name)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(|e| format!("Failed to check category: {:?}", e))?;
 
-        for tag in &tags {
-            let existing: Option<Uuid> = sqlx::query_scalar(
-                "SELECT id FROM blog_tags WHERE slug = $1 OR name = $2"
-            )
-            .bind(&tag.slug)
-            .bind(&tag.name)
-            .fetch_optional(&mut *tx)
-            .await
-            .map_err(|e| format!("Failed to check tag: {:?}", e))?;
+                let cat_id = match existing {
+                    Some(id) => id,
+                    None => {
+                        let cat_row: (Uuid,) = sqlx::query_as(
+                            "INSERT INTO blog_categories (name, slug) VALUES ($1, $2) RETURNING id"
+                        )
+                        .bind(&cat.name)
+                        .bind(&cat.slug)
+                        .fetch_one(&mut *tx)
+                        .await
+                        .map_err(|e| format!("Failed to create category: {:?}", e))?;
+                        cat_row.0
+                    }
+                };
 
-            let tag_id = match existing {
-                Some(id) => id,
-                None => {
-                    let tag_row: (Uuid,) = sqlx::query_as(
-                        "INSERT INTO blog_tags (name, slug) VALUES ($1, $2) RETURNING id"
-                    )
-                    .bind(&tag.name)
-                    .bind(&tag.slug)
-                    .fetch_one(&mut *tx)
+                sqlx::query("INSERT INTO blog_category_map (blog_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                    .bind(blog_id)
+                    .bind(cat_id)
+                    .execute(&mut *tx)
                     .await
-                    .map_err(|e| format!("Failed to create tag: {:?}", e))?;
-                    tag_row.0
-                }
-            };
+                    .map_err(|e| format!("Failed to link category: {:?}", e))?;
+            }
 
-            sqlx::query("INSERT INTO blog_tags_map (blog_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+            // Tags Sync
+            sqlx::query("DELETE FROM blog_tags_map WHERE blog_id = $1")
                 .bind(blog_id)
-                .bind(tag_id)
                 .execute(&mut *tx)
                 .await
-                .map_err(|e| format!("Failed to link tag: {:?}", e))?;
-        }
+                .map_err(|e| format!("Failed to clear tag map: {:?}", e))?;
 
-        tx.commit().await.map_err(|e| format!("Failed to commit tx: {:?}", e))?;
+            for tag in &tags {
+                let existing: Option<Uuid> = sqlx::query_scalar(
+                    "SELECT id FROM blog_tags WHERE slug = $1 OR name = $2"
+                )
+                .bind(&tag.slug)
+                .bind(&tag.name)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(|e| format!("Failed to check tag: {:?}", e))?;
 
-        if exists {
-            updated_count += 1;
-        } else {
-            created_count += 1;
+                let tag_id = match existing {
+                    Some(id) => id,
+                    None => {
+                        let tag_row: (Uuid,) = sqlx::query_as(
+                            "INSERT INTO blog_tags (name, slug) VALUES ($1, $2) RETURNING id"
+                        )
+                        .bind(&tag.name)
+                        .bind(&tag.slug)
+                        .fetch_one(&mut *tx)
+                        .await
+                        .map_err(|e| format!("Failed to create tag: {:?}", e))?;
+                        tag_row.0
+                    }
+                };
+
+                sqlx::query("INSERT INTO blog_tags_map (blog_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                    .bind(blog_id)
+                    .bind(tag_id)
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e| format!("Failed to link tag: {:?}", e))?;
+            }
+
+            tx.commit().await.map_err(|e| format!("Failed to commit tx: {:?}", e))?;
+
+            Ok::<bool, String>(exists)
+        };
+
+        match process_post.await {
+            Ok(exists) => {
+                if exists {
+                    updated_count += 1;
+                } else {
+                    created_count += 1;
+                }
+            }
+            Err(e) => {
+                warn!("WP Cache Sync Error for post {} (slug: {}): {}", post.id, decoded_slug, e);
+            }
         }
     }
 

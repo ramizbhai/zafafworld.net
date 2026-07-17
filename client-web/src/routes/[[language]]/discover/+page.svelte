@@ -8,13 +8,46 @@
 
   let { data }: { data: any } = $props();
 
-  // Posts come exclusively from the SSR server loader (+page.server.ts).
-  // No client-side fetch — SSR data is what Googlebot indexes, and duplicating
-  // the fetch in onMount was silently discarding it and causing a loading flicker.
-  const posts = $derived(data.posts ?? []);
+  let currentPosts = $state(data.posts ?? []);
+  let currentPage = $state(1);
+  let hasMore = $state((data.posts ?? []).length === 12);
+  let isLoading = $state(false);
 
-  const featuredPost = $derived(posts.length > 0 ? posts[0] : null);
-  const restPosts = $derived(posts.length > 1 ? posts.slice(1) : []);
+  $effect(() => {
+    currentPosts = data.posts ?? [];
+    currentPage = 1;
+    hasMore = currentPosts.length === 12;
+  });
+
+  const featuredPost = $derived(currentPosts.length > 0 ? currentPosts[0] : null);
+  const restPosts = $derived(currentPosts.length > 1 ? currentPosts.slice(1) : []);
+
+  async function loadMore() {
+    if (isLoading || !hasMore) return;
+    isLoading = true;
+    try {
+      const nextPage = currentPage + 1;
+      const lang = getLocale();
+      const res = await fetch(`/api/v1/public/blogs?lang=${lang}&page=${nextPage}&limit=12`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
+          currentPosts = [...currentPosts, ...json.data];
+          currentPage = nextPage;
+          hasMore = json.data.length === 12;
+        } else {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.error(e);
+      hasMore = false;
+    } finally {
+      isLoading = false;
+    }
+  }
 
   function l(path: string) {
     return i18n.resolveRoute(path, getLocale());
@@ -131,6 +164,23 @@
             </div>
           </article>
         {/each}
+      </div>
+    {/if}
+
+    {#if hasMore}
+      <div class="mt-12 text-center">
+        <button
+          class="px-6 py-3 rounded-full bg-[var(--color-primary)] text-[var(--color-secondary)] font-bold text-sm hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[200px]"
+          onclick={loadMore}
+          disabled={isLoading}
+        >
+          {#if isLoading}
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Loading...
+          {:else}
+            Load More Articles
+          {/if}
+        </button>
       </div>
     {/if}
 

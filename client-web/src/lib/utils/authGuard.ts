@@ -5,13 +5,15 @@ export function requireAuth(action: () => void) {
   if (authStore.isAuthenticated) {
     action();
   } else {
-    goto('/auth/login');
+    const currentUrl = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/';
+    goto(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
   }
 }
 
 export function authGuard(e: Event) {
   if (!authStore.isAuthenticated) {
     e.preventDefault();
-    goto('/auth/login');
+    const currentUrl = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/';
+    goto(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
   }
 }

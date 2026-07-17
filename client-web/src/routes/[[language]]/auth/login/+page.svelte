@@ -37,9 +37,9 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         } : null);
         toasts.push('success', 'Authentication Successful! Redirecting...');
         const redirectTo = $page.url.searchParams.get('redirect') ?? '/dashboard';
-        // CRITICAL: Use full page navigation (not goto()) so +layout.server.ts
-        // re-runs with the newly-set session cookie, fully hydrating auth state.
-        window.location.href = decodeURIComponent(redirectTo);
+        // Use SvelteKit's goto router to avoid blocking main thread with full page reload.
+        // invalidateAll forces root +layout.server.ts to re-run, hydrating the new session.
+        goto(decodeURIComponent(redirectTo), { invalidateAll: true });
       } else if (result.type === 'failure') {
         toasts.push('error', result.data?.message || 'An unexpected validation exception occurred.');
       } else {

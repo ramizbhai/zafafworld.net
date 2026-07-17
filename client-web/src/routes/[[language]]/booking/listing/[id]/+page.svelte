@@ -110,7 +110,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
   async function handleConfirm() {
     if (!listing) return;
     if (!user?.session?.access_token) {
-      window.location.href = `/auth/login?redirect=/booking/listing/${listing.id}`;
+      goto(`/auth/login?redirect=/booking/listing/${listing.id}`);
       return;
     }
 

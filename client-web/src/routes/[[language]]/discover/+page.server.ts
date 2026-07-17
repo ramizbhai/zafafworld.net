@@ -8,22 +8,23 @@ export const load: PageServerLoad = async ({ fetch }) => {
     const lang = getLocale();
     console.log('[discover PageServerLoad] resolved lang from getLocale:', lang);
 
-    const posts = await getCached('discover:blogs_list', async () => {
+    const cacheKey = `discover:blogs_list:${lang}:1`;
+    const dataResponse = await getCached(cacheKey, async () => {
         try {
-            const response = await fetch(`${API_BASE}/api/v1/public/blogs`);
+            const response = await fetch(`${API_BASE}/api/v1/public/blogs?lang=${lang}&page=1&limit=12`);
             if (!response.ok) {
                 console.warn(`[Blog Server Loader] Blogs endpoint returned status ${response.status}`);
-                return [];
+                return { data: [] };
             }
-            const data = await response.json();
-            return data.status === 'success' && Array.isArray(data.data) ? data.data : [];
+            const json = await response.json();
+            return json;
         } catch (err) {
             console.error('[Blog Server Loader] Failed to fetch blogs:', err);
-            return [];
+            return { data: [] };
         }
     }, 60 * 1000); // Cache the blogs list for 60 seconds
 
-    const filteredPosts = posts.filter((p: any) => p.lang === lang);
+    const posts = dataResponse.status === 'success' && Array.isArray(dataResponse.data) ? dataResponse.data : [];
 
-    return { posts: filteredPosts };
+    return { posts };
 };

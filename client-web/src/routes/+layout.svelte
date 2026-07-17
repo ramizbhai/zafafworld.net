@@ -1,6 +1,5 @@
 <script lang="ts">
   import "../app.css";
-  import { ParaglideJS } from "@inlang/paraglide-sveltekit";
   import { i18n } from "$lib/i18n.js";
   import * as m from "$lib/paraglide/messages.js";
   import Navbar from "$lib/components/shared/Navbar.svelte";
@@ -12,6 +11,13 @@
   import { page, navigating } from "$app/stores";
   import { uiStore } from "$lib/stores/ui.svelte.js";
   import Loading from "$lib/components/Loading.svelte";
+  import { setParaglideContext } from "@inlang/paraglide-sveltekit/internal";
+
+  // Provide dummy context to prevent Paraglide preprocessor from throwing an error
+  // on client-side navigation. We use manual l(path) calls for routing.
+  setParaglideContext({
+    translateHref: (href: string) => href
+  });
 
   import { authStore } from "$lib/stores/auth.svelte.js";
   import { countryStore } from "$lib/stores/country.svelte.js";
@@ -189,7 +195,6 @@
   <link rel="alternate" hreflang="x-default" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), "ar")}`} data-seo="x-default" />
 </svelte:head>
 
-<ParaglideJS {i18n}>
   <Loading show={!!$navigating || uiStore.globalLoading} />
   <div id="app" dir={currentDir} class="flex flex-col min-h-screen overflow-x-hidden">
     <Navbar user={data.user} />
@@ -213,4 +218,3 @@
     {/if}
     <ToastContainer />
   </div>
-</ParaglideJS>

@@ -9,27 +9,7 @@ export const load: LayoutServerLoad = async ({ fetch: svelteFetch, cookies }) =>
     const sessionToken = cookies.get('zafaf_client_session');
     let user = null;
 
-    if (sessionToken) {
-        try {
-            const meData = await apiClient.get<any>('/api/v1/auth/me', {
-                fetch: svelteFetch,
-                token: sessionToken,
-                isServer: true
-            });
-            if (meData?.status === 'success') {
-                user = {
-                    ...meData.user,
-                    session: {
-                        access_token: sessionToken
-                    }
-                };
-            }
-        } catch (err) {
-            console.error('[Root Layout Loader] Handshake error:', err);
-        }
-    }
-
-    // Dynamic fallback arrays (removed static definitions)
+    // Dynamic fallback arrays
     let categories: any[] = [];
     let cities: any[] = [];
     let countries: any[] = [];
@@ -39,8 +19,15 @@ export const load: LayoutServerLoad = async ({ fetch: svelteFetch, cookies }) =>
     const country = cookies.get('zafaf_selected_country') || 'sa';
 
     try {
-        // Perform parallel queries to categories, cities, countries, amenities, venueTypes (using server-side cache)
-        const [categoriesRes, citiesRes, countriesRes, amenitiesRes, venueTypesRes] = await Promise.all([
+        const [meData, categoriesRes, citiesRes, countriesRes, amenitiesRes, venueTypesRes] = await Promise.all([
+            sessionToken ? apiClient.get<any>('/api/v1/auth/me', {
+                fetch: svelteFetch,
+                token: sessionToken,
+                isServer: true
+            }).catch((err) => {
+                console.error('[Root Layout Loader] Handshake error:', err);
+                return null;
+            }) : Promise.resolve(null),
             getCached(`layout:categories:${country.toLowerCase()}`, () =>
                 apiClient.get<any>('/api/v1/public/categories', {
                     fetch: svelteFetch,
@@ -69,6 +56,15 @@ export const load: LayoutServerLoad = async ({ fetch: svelteFetch, cookies }) =>
                 apiClient.get<any>('/api/v1/public/venue-types', { fetch: svelteFetch, isServer: true }).catch(() => null)
             )
         ]);
+
+        if (meData?.status === 'success') {
+            user = {
+                ...meData.user,
+                session: {
+                    access_token: sessionToken
+                }
+            };
+        }
 
         // Transform partitioned categories map (venues, services) into a flat array
         if (categoriesRes) {

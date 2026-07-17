@@ -1,3 +1,5 @@
+import { goto } from '$app/navigation';
+
 export type User = {
   id: string;
   name: string;
@@ -20,8 +22,8 @@ class AuthStore {
     } catch (err) {
       console.error('[authStore] Logout request failed:', err);
     }
-    // Perform a full reload to clear all SvelteKit layout cache and return to landing page
-    window.location.href = '/';
+    // Use goto to avoid blocking the main thread with a full page reload
+    goto('/', { invalidateAll: true });
   }
 }
 

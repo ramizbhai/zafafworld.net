@@ -80,7 +80,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         } : null);
         toasts.push('success', 'Registration Successful! Redirecting...');
         const redirectTo = $page.url.searchParams.get('redirect') ?? '/dashboard';
-        window.location.href = decodeURIComponent(redirectTo);
+        goto(decodeURIComponent(redirectTo), { invalidateAll: true });
       } else if (result.type === 'failure') {
         toasts.push('error', result.data?.message || 'Registration failed. Please check your constraints.');
       } else {
