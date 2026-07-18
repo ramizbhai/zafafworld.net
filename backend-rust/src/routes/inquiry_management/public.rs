@@ -16,7 +16,6 @@ pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/inquiries", post(submit_vendor_inquiry))
         .route("/inquiries/guest", post(submit_guest_inquiry))
-        .route("/assistant/inquiry", post(submit_assistant_inquiry))
         .route("/afrah/inquiry", post(submit_afrah_inquiry))
 }
 
@@ -507,47 +506,6 @@ async fn submit_guest_inquiry(
     Ok(Json(json!({
         "status": "success",
         "message": "Guest inquiry submitted successfully"
-    })))
-}
-
-#[derive(serde::Deserialize)]
-pub struct SubmitAssistantInquiryRequest {
-    pub message: String,
-}
-
-/// POST /api/v1/public/assistant/inquiry
-/// Submits an inquiry to the platform AI assistant. Requires client authentication.
-async fn submit_assistant_inquiry(
-    auth: RequireAuth,
-    mut rls_tx: RlsTx,
-    Json(payload): Json<SubmitAssistantInquiryRequest>,
-) -> Result<Json<Value>, AppError> {
-    let client_uuid = Uuid::parse_str(&auth.user_id)
-        .map_err(|_| AppError::BadRequest("Invalid client ID".to_string()))?;
-
-    if payload.message.trim().is_empty() {
-        return Err(AppError::BadRequest("Message cannot be empty".to_string()));
-    }
-
-    let clean_message = sanitize_str(&payload.message, limits::MESSAGE);
-    let new_id = Uuid::new_v4();
-
-    sqlx::query(
-        "INSERT INTO assistant_inquiries (id, client_id, message, response, status) \
-         VALUES ($1, $2, $3, 'Under review by our team.', 'pending')"
-    )
-    .bind(new_id)
-    .bind(client_uuid)
-    .bind(clean_message)
-    .execute(&mut *rls_tx.tx)
-    .await?;
-
-    rls_tx.tx.commit().await?;
-
-    Ok(Json(json!({
-        "status": "success",
-        "message": "Assistant inquiry submitted successfully",
-        "id": new_id.to_string()
     })))
 }
 

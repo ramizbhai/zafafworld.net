@@ -31,7 +31,6 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.subscriptions':  'إدارة الاشتراكات',
     'nav.discover':       'الاستكشاف والمدونات',
     'nav.blog_comments':  'تعليقات المدونة',
-    'nav.assistant':      'مساعد الأفراح / Afrah Assistant',
 
     // Sections
     'section.executive':  'وحدة التحكم التنفيذية',
@@ -145,7 +144,6 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.subscriptions':  'Subscriptions Management',
     'nav.discover':       'Discover & Blogs',
     'nav.blog_comments':  'Blog Comments',
-    'nav.assistant':      'Afrah Assistant / مساعد الأفراح',
 
     // Sections
     'section.executive':  'Executive Console',

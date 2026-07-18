@@ -129,13 +129,7 @@
               <td><span class={statusClass(tk.status)}>{statusLabel(tk.status)}</span></td>
               <td>
                 {#if tk.status === 'pending'}
-                  <form method="POST" action="?/resolve" use:enhance>
-                    <input type="hidden" name="id" value={tk.id} />
-                    <button type="submit" class="btn btn-gold btn-xs">
-                      <CheckCircle2 size={12} />
-                      {$lang === 'ar' ? 'حل التذكرة' : 'Resolve'}
-                    </button>
-                  </form>
+                  <span class="text-muted" style="font-size: 12px;">{$lang === 'ar' ? 'معلق' : 'Pending'}</span>
                 {:else}
                   <span class="text-muted" style="font-size: 12px;">{$lang === 'ar' ? 'محلول' : 'Resolved'}</span>
                 {/if}

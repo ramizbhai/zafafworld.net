@@ -103,6 +103,7 @@ CREATE TABLE public.afrah_inquiries (
 );
 
 --
+-- NOTE: The assistant_inquiries table is unused as of 2026-07-17 and is safe to drop after a grace period.
 -- Name: assistant_inquiries; Type: TABLE; Schema: public; Owner: zafaf_schema_owner
 --
 

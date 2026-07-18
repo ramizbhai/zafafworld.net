@@ -60,7 +60,6 @@
       items: [
         { href: '/dashboard/support',       icon: HeadphonesIcon, key: 'nav.support',     badge: 'urgent' },
         { href: '/dashboard/notifications', icon: Bell,           key: 'nav.notifications',badge: null },
-        { href: '/dashboard/assistant',     icon: Sparkles,       key: 'nav.assistant',    badge: null },
       ]
     },
     {

@@ -13,11 +13,6 @@ use serde::Deserialize;
 
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
-        .route("/assistant/inquiries", get(list_assistant_inquiries))
-        .route(
-            "/assistant/inquiries/:id/status",
-            patch(update_assistant_inquiry_status),
-        )
         .route("/afrah/inquiries", get(list_afrah_inquiries))
         .route(
             "/afrah/inquiries/:id/status",
@@ -36,95 +31,6 @@ pub fn router(state: AppState) -> Router<AppState> {
             "/inquiries/:id/management",
             patch(update_inquiry_management),
         )
-}
-
-async fn list_assistant_inquiries(
-    mut rls_tx: RlsTx,
-    _auth: RequireAdmin,
-) -> Result<Json<Value>, AppError> {
-    tracing::info!("Querying database for all assistant inquiries...");
-    let rows = sqlx::query(
-        "SELECT 
-            ai.id,
-            ai.client_id,
-            ai.message,
-            ai.status,
-            ai.created_at,
-            gu.email AS client_email
-         FROM assistant_inquiries ai
-         LEFT JOIN global_users gu ON ai.client_id = gu.id
-         ORDER BY ai.created_at DESC",
-    )
-    .fetch_all(&mut *rls_tx.tx)
-    .await?;
-
-    let mut inquiries = Vec::new();
-    for row in rows {
-        let id: Uuid = row.get("id");
-        let client_id: Uuid = row.get("client_id");
-        let message: String = row.get("message");
-        let status: String = row.get("status");
-        let created_at: chrono::DateTime<chrono::Utc> = row.get("created_at");
-        let client_email: Option<String> = row.get("client_email");
-
-        inquiries.push(json!({
-            "id": id.to_string(),
-            "client_id": client_id.to_string(),
-            "client_email": client_email.unwrap_or_else(|| "unknown@zafaf.net".to_string()),
-            "message": message,
-            "status": status,
-            "created_at": created_at.to_rfc3339(),
-        }));
-    }
-
-    rls_tx.tx.commit().await?;
-
-    Ok(Json(json!({
-        "status": "success",
-        "inquiries": inquiries
-    })))
-}
-
-#[derive(serde::Deserialize)]
-pub struct UpdateAssistantInquiryStatusInput {
-    pub status: String,
-}
-
-async fn update_assistant_inquiry_status(
-    mut rls_tx: RlsTx,
-    _auth: RequireAdmin,
-    Path(id): Path<String>,
-    Json(input): Json<UpdateAssistantInquiryStatusInput>,
-) -> Result<Json<Value>, AppError> {
-    tracing::info!(
-        "Updating assistant inquiry {} status to: {}",
-        id,
-        input.status
-    );
-
-    let inquiry_uuid = Uuid::parse_str(&id)
-        .map_err(|_| AppError::BadRequest("Invalid inquiry UUID format".to_string()))?;
-
-    if input.status != "pending" && input.status != "resolved" {
-        return Err(AppError::BadRequest(
-            "Status must be either 'pending' or 'resolved'".to_string(),
-        ));
-    }
-
-    sqlx::query(
-        "UPDATE assistant_inquiries SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-    )
-    .bind(&input.status)
-    .bind(inquiry_uuid)
-    .execute(&mut *rls_tx.tx)
-    .await?;
-
-    rls_tx.tx.commit().await?;
-
-    Ok(Json(json!({
-        "status": "success",
-        "message": "Assistant inquiry status updated successfully"
-    })))
 }
 
 // ─── ADMIN AFRAH INQUIRIES ───────────────────────────────────────────────────
