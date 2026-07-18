@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="%paraglide.lang%" dir="%paraglide.textDirection%">
 	<head>
+		<script>
+			window.addEventListener("error", (e) => fetch("/__log_error", { method: "POST", body: JSON.stringify({ error: e.message, stack: e.error?.stack, filename: e.filename, lineno: e.lineno }) }));
+			window.addEventListener("unhandledrejection", (e) => fetch("/__log_error", { method: "POST", body: JSON.stringify({ error: e.reason?.message, stack: e.reason?.stack }) }));
+		</script>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.webp" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />

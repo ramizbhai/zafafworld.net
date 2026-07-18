@@ -19,8 +19,6 @@ pub fn router() -> Router<AppState> {
         .route("/inquiries/:id/close", patch(close_inquiry))
         .route("/inquiries/:id/status", patch(update_inquiry_status))
         .route("/inquiries/:id/convert-to-booking", post(convert_inquiry_to_booking))
-        .route("/vendor_inquiries", get(list_vendor_inquiries))
-        .route("/vendor_inquiries/:id/status", patch(update_vendor_inquiry_status))
 }
 
 #[derive(Deserialize)]
@@ -416,88 +414,3 @@ async fn convert_inquiry_to_booking(
     })))
 }
 
-async fn list_vendor_inquiries(
-    auth: RequireVendor,
-    mut rls_tx: RlsTx,
-) -> Result<Json<Value>, AppError> {
-    let vendor_user_uuid = Uuid::parse_str(&auth.user_id)
-        .map_err(|_| AppError::BadRequest("Invalid vendor ID format".to_string()))?;
-
-    let inquiries = sqlx::query_as::<_, VendorInquiryDto>(
-        "SELECT \
-            vi.id, vi.client_id, vi.vendor_id, vi.event_date, vi.guest_count, vi.message, vi.status, vi.created_at, vi.updated_at, \
-            cp.first_name AS client_first_name, \
-            cp.last_name AS client_last_name, \
-            cp.phone AS client_phone, \
-            gu.email AS client_email, \
-            vi.name, vi.phone, vi.email \
-         FROM vendor_inquiries vi \
-         LEFT JOIN client_profiles cp ON vi.client_id = cp.client_id \
-         LEFT JOIN global_users gu ON vi.client_id = gu.id \
-         WHERE vi.vendor_id = $1 \
-         ORDER BY vi.created_at DESC"
-    )
-    .bind(vendor_user_uuid)
-    .fetch_all(&mut *rls_tx.tx)
-    .await?;
-
-    rls_tx.tx.commit().await?;
-
-    Ok(Json(json!({
-        "status": "success",
-        "inquiries": inquiries
-    })))
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct UpdateVendorInquiryStatusRequest {
-    pub status: String,
-}
-
-async fn update_vendor_inquiry_status(
-    auth: RequireVendor,
-    axum::extract::Path(inquiry_id): axum::extract::Path<Uuid>,
-    mut rls_tx: RlsTx,
-    Json(payload): Json<UpdateVendorInquiryStatusRequest>,
-) -> Result<Json<Value>, AppError> {
-    let vendor_user_uuid = Uuid::parse_str(&auth.user_id)
-        .map_err(|_| AppError::BadRequest("Invalid vendor ID format".to_string()))?;
-
-    // Validate status parameter
-    let valid_statuses = [
-        "unread", "viewed", "pending", "replied", "closed", "declined",
-    ];
-    if !valid_statuses.contains(&payload.status.as_str()) {
-        return Err(AppError::BadRequest(format!(
-            "Invalid status literal: {}. Must be one of {:?}",
-            payload.status, valid_statuses
-        )));
-    }
-
-    let rows_affected = sqlx::query(
-        "UPDATE vendor_inquiries \
-         SET status = $1, updated_at = CURRENT_TIMESTAMP \
-         WHERE id = $2 AND vendor_id = $3",
-    )
-    .bind(&payload.status)
-    .bind(inquiry_id)
-    .bind(vendor_user_uuid)
-    .execute(&mut *rls_tx.tx)
-    .await?
-    .rows_affected();
-
-    if rows_affected == 0 {
-        return Err(AppError::NotFound(
-            "Inquiry not found or access denied".to_string(),
-        ));
-    }
-
-    rls_tx.tx.commit().await?;
-
-    Ok(Json(json!({
-        "status": "success",
-        "message": "Inquiry status updated successfully",
-        "status": payload.status
-    })))
-}

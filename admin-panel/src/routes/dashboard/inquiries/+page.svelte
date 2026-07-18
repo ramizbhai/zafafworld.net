@@ -11,7 +11,7 @@
 
   let inquiries = $derived(data.inquiries || []);
   let pagination = $derived(data.pagination || { page: 1, limit: 20, totalItems: 0, totalPages: 0 });
-  let metrics = $derived(data.metrics || { total: 0, unread: 0, waitingVendor: 0, escalated: 0, resolvedToday: 0, highPriority: 0 });
+  let metrics = $derived(data.metrics || { total: 0, unread: 0, active: 0, escalated: 0, resolvedToday: 0, highPriority: 0 });
 
   let searchQuery = $state('');
   let selectedStatus = $state('');
@@ -96,10 +96,10 @@
 
     <div class="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm">
       <div class="flex items-center justify-between text-amber-700 text-xs font-semibold">
-        <span>Waiting Response</span>
+        <span>Active</span>
         <Clock class="w-4 h-4 text-amber-600" />
       </div>
-      <div class="text-2xl font-bold mt-2 text-amber-900">{metrics.waitingVendor}</div>
+      <div class="text-2xl font-bold mt-2 text-amber-900">{metrics.active}</div>
     </div>
 
     <div class="bg-white p-4 rounded-xl border border-purple-200 bg-purple-50/30 shadow-sm">
@@ -146,12 +146,14 @@
       <label for="filter-status" class="sr-only">Filter by status</label>
       <select id="filter-status" bind:value={selectedStatus} onchange={() => applyFilters()} class="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20">
         <option value="">All Statuses</option>
-        <option value="unread">Unread</option>
-        <option value="viewed">Viewed</option>
-        <option value="pending">Pending</option>
-        <option value="replied">Replied</option>
-        <option value="closed">Closed</option>
-        <option value="declined">Declined</option>
+        <option value="new">New</option>
+        <option value="read">Read</option>
+        <option value="negotiation">Negotiation</option>
+        <option value="paid">Paid</option>
+        <option value="done">Done</option>
+        <option value="expired">Expired</option>
+        <option value="rejected">Rejected</option>
+        <option value="unreachable">Unreachable</option>
       </select>
 
       <label for="filter-priority" class="sr-only">Filter by priority</label>
@@ -203,11 +205,11 @@
             </tr>
           {:else}
             {#each inquiries as item (item.id)}
-              <tr class="hover:bg-slate-50/80 transition-colors {item.status === 'unread' ? 'bg-rose-50/20 font-medium' : ''}">
+              <tr class="hover:bg-slate-50/80 transition-colors {item.status === 'new' ? 'bg-rose-50/20 font-medium' : ''}">
                 <td class="py-3.5 px-4">
                   <div class="flex items-center gap-2">
-                    {#if item.status === 'unread'}
-                      <span class="w-2 h-2 rounded-full bg-rose-600 shrink-0" title="Unread Lead"></span>
+                    {#if item.status === 'new'}
+                      <span class="w-2 h-2 rounded-full bg-rose-600 shrink-0" title="New Lead"></span>
                     {/if}
                     <div>
                       <div class="text-slate-900 font-semibold">{item.client?.name || 'Guest User'}</div>
@@ -267,12 +269,16 @@
                 </td>
 
                 <td class="py-3.5 px-4 whitespace-nowrap">
-                  {#if item.status === 'unread'}
-                    <span class="px-2.5 py-1 text-xs font-semibold bg-rose-100 text-rose-800 rounded-full">Unread</span>
-                  {:else if item.status === 'replied'}
-                    <span class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">Replied</span>
-                  {:else if item.status === 'closed'}
-                    <span class="px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-full">Closed</span>
+                  {#if item.status === 'new'}
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-rose-100 text-rose-800 rounded-full">New</span>
+                  {:else if item.status === 'read'}
+                    <span class="px-2.5 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Read</span>
+                  {:else if item.status === 'negotiation'}
+                    <span class="px-2.5 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">Negotiation</span>
+                  {:else if item.status === 'paid' || item.status === 'done'}
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full">{item.status === 'paid' ? 'Paid' : 'Done'}</span>
+                  {:else if item.status === 'rejected' || item.status === 'expired' || item.status === 'unreachable'}
+                    <span class="px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-full capitalize">{item.status}</span>
                   {:else}
                     <span class="px-2.5 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">{item.status}</span>
                   {/if}

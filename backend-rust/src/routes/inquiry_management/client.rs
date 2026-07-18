@@ -29,11 +29,11 @@ async fn get_client_inquiries(
 
     let rows = sqlx::query(
         r#"SELECT 
-            vi.id, vi.vendor_id, vi.product_id, vi.conversation_id, vi.name, vi.phone, vi.email,
-            vi.event_date::text, vi.guest_count, vi.message, vi.status, vi.created_at::text, vi.updated_at::text,
+            vi.id, vi.vendor_id, vi.product_id, vi.conversation_id, vi.customer_name as name, vi.phone, vi.email,
+            vi.wedding_date::text as event_date, vi.guest_count, vi.message, vi.status, vi.created_at::text, vi.updated_at::text,
             v.name_en AS vendor_name_en, v.name_ar AS vendor_name_ar,
             p.title AS product_name_en, p.title AS product_name_ar
-         FROM vendor_inquiries vi
+         FROM lead_inquiries vi
          LEFT JOIN vendors v ON vi.vendor_id = v.user_id
          LEFT JOIN vendor_products p ON vi.product_id = p.id
          WHERE vi.client_id = $1

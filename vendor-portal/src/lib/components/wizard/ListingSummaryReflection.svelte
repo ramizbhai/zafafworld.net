@@ -89,10 +89,6 @@
         align-items: center;
         gap: 6px;
     }
-    .lock-icon {
-        color: var(--text-muted, #6b7280);
-        flex-shrink: 0;
-    }
     .card-title {
         font-size: 0.85rem;
         font-weight: 600;
@@ -115,9 +111,6 @@
         opacity: 0.8;
         text-decoration: underline;
     }
-    .arrow-icon {
-        flex-shrink: 0;
-    }
     .card-body {
         display: flex;
         flex-direction: row;
@@ -137,10 +130,6 @@
         font-size: 0.85rem;
         color: var(--text, #1a1a2e);
         min-width: 0;
-    }
-    .info-icon {
-        color: var(--text-muted, #6b7280);
-        flex-shrink: 0;
     }
     .info-label {
         font-weight: 500;

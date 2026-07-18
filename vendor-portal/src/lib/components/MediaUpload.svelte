@@ -573,14 +573,6 @@
         background: rgba(16, 185, 129, 0.18);
     }
 
-    .animate-spin {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
 
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(4px); }

@@ -613,6 +613,7 @@ CREATE TABLE public.system_events (
 );
 
 --
+-- NOTE: vendor_inquiries is unused as of 2026-07-18, superseded by lead_inquiries. Safe to drop after a grace period.
 -- Name: vendor_inquiries; Type: TABLE; Schema: public; Owner: zafaf_schema_owner
 --
 

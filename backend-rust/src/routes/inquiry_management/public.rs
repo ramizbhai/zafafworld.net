@@ -140,7 +140,7 @@ async fn submit_vendor_inquiry(
     let customer_email = match payload.email {
         Some(e) => sanitize_str(&e, limits::EMAIL),
         None => {
-            sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
+            sqlx::query_scalar("SELECT email FROM global_users WHERE id = $1")
                 .bind(client_uuid)
                 .fetch_optional(&mut *rls_tx.tx)
                 .await?
@@ -153,21 +153,24 @@ async fn submit_vendor_inquiry(
 
     // 3. Create core inquiry row
     sqlx::query(
-        "INSERT INTO inquiries (id, client_id, vendor_id, product_id, event_date, guest_count, message, status) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')"
+        "INSERT INTO lead_inquiries (id, client_id, vendor_id, product_id, wedding_date, guest_count, message, status, customer_name, phone, email) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', $8, $9, $10)"
     )
     .bind(new_id)
     .bind(client_uuid)
-    .bind(vendor_id)
+    .bind(vendor_user_id)
     .bind(payload.listing_id)
     .bind(date)
     .bind(payload.guest_count)
     .bind(&clean_message)
+    .bind(&customer_name)
+    .bind(&customer_phone)
+    .bind(&customer_email)
     .execute(&mut *rls_tx.tx)
     .await?;
 
     // 4. Resolve vendor email & configuration parameters
-    let vendor_email: String = sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
+    let vendor_email: String = sqlx::query_scalar("SELECT email FROM global_users WHERE id = $1")
         .bind(vendor_user_id)
         .fetch_one(&mut *rls_tx.tx)
         .await?;
@@ -435,13 +438,13 @@ async fn submit_guest_inquiry(
     let clean_message = sanitize_str(&payload.message, limits::MESSAGE);
     let new_id = Uuid::new_v4();
 
-    // Create guest inquiry row (no client_id, status = 'pending')
+    // Create guest inquiry row (no client_id, status = 'new')
     sqlx::query(
-        "INSERT INTO inquiries (id, vendor_id, product_id, event_date, guest_count, message, status, guest_name, guest_phone, guest_email) \
-         VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)"
+        "INSERT INTO lead_inquiries (id, vendor_id, product_id, wedding_date, guest_count, message, status, customer_name, phone, email) \
+         VALUES ($1, $2, $3, $4, $5, $6, 'new', $7, $8, $9)"
     )
     .bind(new_id)
-    .bind(vendor_id)
+    .bind(vendor_user_id)
     .bind(payload.listing_id)
     .bind(date)
     .bind(payload.guest_count)
@@ -454,7 +457,7 @@ async fn submit_guest_inquiry(
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Resolve vendor email & phone
-    let vendor_email: String = sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
+    let vendor_email: String = sqlx::query_scalar("SELECT email FROM global_users WHERE id = $1")
         .bind(vendor_user_id)
         .fetch_one(&mut *tx)
         .await

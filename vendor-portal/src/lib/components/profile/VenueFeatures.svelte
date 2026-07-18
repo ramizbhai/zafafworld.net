@@ -221,10 +221,6 @@
         transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s;
     }
 
-    [dir="rtl"] .toggle-slider::before {
-        left: auto;
-        right: 2px;
-    }
 
     .custom-toggle input:checked + .toggle-slider {
         background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary) 100%);
@@ -235,9 +231,6 @@
         background: var(--white);
     }
 
-    [dir="rtl"] .custom-toggle input:checked + .toggle-slider::before {
-        transform: translateX(-22px);
-    }
 
     .toggle-label-text {
         display: flex;

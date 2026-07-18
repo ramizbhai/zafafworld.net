@@ -6,17 +6,20 @@
   import { i18n } from '$lib/i18n.js';
   import { resolveMediaUrl, getOptimizedImage } from '$lib/shared/utils/media.js';
 
+  import { untrack } from 'svelte';
+
   let { data }: { data: any } = $props();
 
-  let currentPosts = $state(data.posts ?? []);
+  let currentPosts = $state(untrack(() => data.posts ?? []));
   let currentPage = $state(1);
-  let hasMore = $state((data.posts ?? []).length === 12);
+  let hasMore = $state(untrack(() => (data.posts ?? []).length === 12));
   let isLoading = $state(false);
 
   $effect(() => {
-    currentPosts = data.posts ?? [];
+    const posts = data.posts ?? [];
+    currentPosts = posts;
     currentPage = 1;
-    hasMore = currentPosts.length === 12;
+    hasMore = posts.length === 12;
   });
 
   const featuredPost = $derived(currentPosts.length > 0 ? currentPosts[0] : null);

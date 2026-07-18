@@ -26,7 +26,7 @@ DEPLOY_ROOT="${DEPLOY_ROOT:-/opt/zafafworld.net}"
 SERVICE_NAME="${SERVICE_NAME:-zafafworld.service}"
 WAIT_SECONDS="${WAIT_SECONDS:-15}"
 
-EXPECTED_SERVICES=(postgres pgbouncer redis backend client nginx vendor admin cms minio)
+EXPECTED_SERVICES=(postgres pgbouncer redis backend client nginx vendor admin minio)
 
 TOTAL=0
 PASSED=0

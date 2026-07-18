@@ -19,13 +19,7 @@ export function getNavItems(i18n: any, isOwner: boolean) {
             icon: Building2,
             match: ['/dashboard/products']
         },
-        {
-            id: 'vendor_inquiries',
-            href: '/dashboard/inquiries',
-            label: i18n.t.nav.inquiries,
-            icon: MessageSquare,
-            match: ['/dashboard/inquiries']
-        },
+
         {
             id: 'vendor_inbox',
             href: '/dashboard/inbox',
@@ -38,7 +32,7 @@ export function getNavItems(i18n: any, isOwner: boolean) {
             href: '/dashboard/couples',
             label: i18n.t.nav.couples,
             icon: Users,
-            match: ['/dashboard/couples', '/dashboard/inquiries']
+            match: ['/dashboard/couples']
         },
         {
             id: 'offers',
@@ -116,7 +110,7 @@ export function getBreadcrumbsAndTitle(i18n: any, currentRoute: string) {
     const map: Record<string, any> = {
         '/dashboard':                        { title: t.nav.dashboard,              crumbs: [base, { label: t.nav.dashboard }] },
         '/dashboard/couples':                { title: t.nav.couples,                crumbs: [base, { label: t.nav.couples }] },
-        '/dashboard/inquiries':              { title: t.nav.inquiries,              crumbs: [base, { label: t.nav.inquiries }] },
+
         '/dashboard/inbox':                  { title: t.nav.inbox,                  crumbs: [base, { label: t.nav.inbox }] },
         '/dashboard/offers':                 { title: t.nav.offers,                 crumbs: [base, { label: t.nav.offers }] },
         '/dashboard/reviews':                { title: t.nav.reviews,                crumbs: [base, { label: t.nav.reviews }] },

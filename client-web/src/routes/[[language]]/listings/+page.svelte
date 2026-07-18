@@ -20,7 +20,6 @@
   import { goto } from "$app/navigation";
   import { untrack, onMount } from "svelte";
   import { countryStore } from "$lib/stores/country.svelte.js";
-  import { uiStore } from '$lib/stores/ui.svelte';
 
   const activeCountryCode = $derived(
     countryStore.activeCode?.toLowerCase() || "sa",
@@ -133,7 +132,10 @@
       currentPage = 1;
     }
     isFilterOpen = false;
-    uiStore.setLoading(true);
+    // NOTE: Do NOT call uiStore.setLoading(true) here.
+    // goto() sets $navigating = truthy, which drives the global loading overlay
+    // via +layout.svelte. Adding a manual setLoading call creates a race where
+    // globalLoading can stay true if the user navigates away before goto() resolves.
 
     // Update URL query params
     const url = new URL($page.url);
@@ -159,8 +161,6 @@
       replaceState: false,
       keepFocus: true,
       noScroll: true,
-    }).finally(() => {
-      uiStore.setLoading(false);
     });
   }
   function resetFilters() {

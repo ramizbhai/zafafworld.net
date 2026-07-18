@@ -278,7 +278,7 @@ async fn list_all_inquiries(
     };
 
     let count_sql = format!(
-        "SELECT COUNT(*)::bigint FROM vendor_inquiries vi
+        "SELECT COUNT(*)::bigint FROM lead_inquiries vi
          JOIN vendors v ON vi.vendor_id = v.id
          LEFT JOIN vendor_products vp ON vi.product_id = vp.id
          LEFT JOIN global_users gu ON vi.client_id = gu.id
@@ -288,7 +288,7 @@ async fn list_all_inquiries(
     );
 
     let select_sql = format!(
-        "SELECT vi.id, vi.client_id, vi.vendor_id, vi.product_id, vi.event_date, vi.guest_count, vi.message, vi.status, vi.name, vi.phone, vi.email, vi.city_id, vi.created_at, vi.updated_at,
+        "SELECT vi.id, vi.client_id, vi.vendor_id, vi.product_id, vi.wedding_date as event_date, vi.guest_count, vi.message, vi.status, vi.customer_name as name, vi.phone, vi.email, vi.city_id, vi.created_at, vi.updated_at,
                 v.name_en as vendor_name_en, v.name_ar as vendor_name_ar,
                 vp.title_en as listing_title_en, vp.title_ar as listing_title_ar,
                 c.name_en as city_name_en, c.name_ar as city_name_ar,
@@ -298,7 +298,7 @@ async fn list_all_inquiries(
                 COALESCE(vim.resolution_status, 'unresolved') as resolution_status,
                 vim.assigned_admin_id,
                 admin_cp.first_name as admin_first_name, admin_cp.last_name as admin_last_name
-         FROM vendor_inquiries vi
+         FROM lead_inquiries vi
          JOIN vendors v ON vi.vendor_id = v.id
          LEFT JOIN vendor_products vp ON vi.product_id = vp.id
          LEFT JOIN global_users gu ON vi.client_id = gu.id
@@ -445,17 +445,18 @@ async fn get_inquiries_metrics(
     State(state): State<AppState>,
     _auth: RequireAdmin,
 ) -> Result<Json<Value>, AppError> {
-    let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM vendor_inquiries")
+    let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM lead_inquiries")
         .fetch_one(&state.db)
         .await?;
 
     let unread: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM vendor_inquiries WHERE status = 'unread'")
+        sqlx::query_scalar("SELECT COUNT(*) FROM lead_inquiries WHERE status = 'new'")
             .fetch_one(&state.db)
             .await?;
 
-    let waiting_vendor: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM vendor_inquiries WHERE status IN ('unread', 'viewed', 'pending')",
+    let active: i64 =
+        sqlx::query_scalar(
+        "SELECT COUNT(*) FROM lead_inquiries WHERE status IN ('new', 'read', 'negotiation')",
     )
     .fetch_one(&state.db)
     .await?;
@@ -481,7 +482,7 @@ async fn get_inquiries_metrics(
         "metrics": {
             "total": total,
             "unread": unread,
-            "waitingVendor": waiting_vendor,
+            "active": active,
             "escalated": escalated,
             "resolvedToday": resolved_today,
             "highPriority": high_priority
@@ -499,7 +500,7 @@ async fn get_inquiry_detail(
         Uuid::parse_str(&id).map_err(|_| AppError::BadRequest("Invalid inquiry ID".to_string()))?;
 
     let row = sqlx::query(
-        "SELECT vi.id, vi.client_id, vi.vendor_id, vi.product_id, vi.event_date, vi.guest_count, vi.message, vi.status, vi.name, vi.phone, vi.email, vi.conversation_id, vi.city_id, vi.created_at, vi.updated_at,
+        "SELECT vi.id, vi.client_id, vi.vendor_id, vi.product_id, vi.wedding_date as event_date, vi.guest_count, vi.message, vi.status, vi.customer_name as name, vi.phone, vi.email, vi.conversation_id, vi.city_id, vi.created_at, vi.updated_at,
                 v.name_en as vendor_name_en, v.name_ar as vendor_name_ar, v.email as vendor_email, v.phone as vendor_phone,
                 vp.title_en as listing_title_en, vp.title_ar as listing_title_ar,
                 c.name_en as city_name_en, c.name_ar as city_name_ar,
@@ -509,7 +510,7 @@ async fn get_inquiry_detail(
                 COALESCE(vim.resolution_status, 'unresolved') as resolution_status,
                 vim.assigned_admin_id, vim.assigned_at, vim.escalated_at, vim.resolved_at,
                 admin_cp.first_name as admin_first_name, admin_cp.last_name as admin_last_name
-         FROM vendor_inquiries vi
+         FROM lead_inquiries vi
          JOIN vendors v ON vi.vendor_id = v.id
          LEFT JOIN vendor_products vp ON vi.product_id = vp.id
          LEFT JOIN global_users gu ON vi.client_id = gu.id
@@ -748,14 +749,14 @@ async fn update_inquiry_status(
     let admin_uuid = Uuid::parse_str(&auth.user_id).unwrap_or_default();
 
     let valid_statuses = [
-        "unread", "viewed", "pending", "replied", "closed", "declined",
+        "new", "read", "negotiation", "closed", "declined",
     ];
     if !valid_statuses.contains(&input.status.as_str()) {
         return Err(AppError::BadRequest("Invalid status value".to_string()));
     }
 
     let res =
-        sqlx::query("UPDATE vendor_inquiries SET status = $1, updated_at = NOW() WHERE id = $2")
+        sqlx::query("UPDATE lead_inquiries SET status = $1, updated_at = NOW() WHERE id = $2")
             .bind(&input.status)
             .bind(inq_uuid)
             .execute(&state.db)
@@ -880,7 +881,7 @@ async fn update_inquiry_note(
     .await?;
 
     if res.rows_affected() == 0 {
-        return Err(AppError::NotFound("Note not found".to_string()));
+        return Err(AppError::NotFound("Note not found".to_string()))
     }
 
     let _ = sqlx::query(
@@ -958,13 +959,13 @@ async fn update_inquiry_management(
         Uuid::parse_str(&id).map_err(|_| AppError::BadRequest("Invalid inquiry ID".to_string()))?;
     let super_admin_uuid = Uuid::parse_str(&auth.user_id).unwrap_or_default();
 
-    let exists: bool =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM vendor_inquiries WHERE id = $1)")
+    let inquiry_exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM lead_inquiries WHERE id = $1)")
             .bind(inq_uuid)
             .fetch_one(&state.db)
             .await?;
 
-    if !exists {
+    if !inquiry_exists {
         return Err(AppError::NotFound("Inquiry not found".to_string()));
     }
 

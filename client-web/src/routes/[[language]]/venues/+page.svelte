@@ -11,8 +11,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
   import SearchBar from '$lib/components/shared/SearchBar.svelte';
   import type { Venue, VenueSearchParams, VenueCategory, AmenityKey } from '$lib/types/index.js';
 
-  import { untrack, onMount } from 'svelte';
-  import { uiStore } from '$lib/stores/ui.svelte';
+  import { untrack, onMount, onDestroy } from 'svelte';
   
   // ── Permanent redirect: /venues → /listings ───────────────────────────────
   // The catalog has been migrated to a listing-centric architecture.
@@ -63,9 +62,21 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
 
   const limit = 9;
 
+  // ── Local loading state (never touches the global overlay) ───────────────
+  let isLoading = $state(false);
+
+  // AbortController for the current in-flight fetch. Replaced on every new
+  // call so stale responses are silently dropped.
+  let currentAbortController: AbortController | null = null;
+
   // ── Load venues ──────────────────────────────────────────────────────────
   async function loadVenues() {
-    uiStore.setLoading(true);
+    // Cancel any in-flight request before starting a new one.
+    currentAbortController?.abort();
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+
+    isLoading = true;
     const params: VenueSearchParams = {
       city:       city || undefined,
       category:   category || undefined,
@@ -81,18 +92,25 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
       maxCapacity: maxCapacity ? Number(maxCapacity) : undefined,
       amenities:  selectedAmenities.length > 0 ? selectedAmenities : undefined,
     };
-    vendorService.getAll(params).then((result) => {
+    vendorService.getAll(params, undefined, signal).then((result) => {
+      if (signal.aborted) return;
       venues     = result.data;
       total      = result.total;
       totalPages = result.totalPages;
-    }).catch(() => {
+    }).catch((err) => {
+      if (signal.aborted) return; // Silently ignore cancellations
       venues = [];
       total = 0;
       totalPages = 1;
     }).finally(() => {
-      uiStore.setLoading(false);
+      if (!signal.aborted) isLoading = false;
     });
   }
+
+  // Abort any pending request when the component is destroyed (i.e., user navigates away)
+  onDestroy(() => {
+    currentAbortController?.abort();
+  });
 
   // Sync URL changes to local state, which is needed when navigating via Navbar links
   // because the component doesn't remount when only query params change.
@@ -450,7 +468,13 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
       </div>
 
       <!-- Venues grid -->
-      {#if venues.length === 0}
+      {#if isLoading}
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" aria-busy="true" aria-label="Loading venues">
+          {#each Array(limit) as _}
+            <VenueCardSkeleton />
+          {/each}
+        </div>
+      {:else if venues.length === 0}
         <div class="flex flex-col items-center justify-center py-24 text-center">
           <div class="text-5xl mb-4" aria-hidden="true">🔍</div>
           <h3 class="font-display text-xl font-semibold text-[var(--color-secondary)] mb-2">

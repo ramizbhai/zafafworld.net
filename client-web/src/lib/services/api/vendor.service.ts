@@ -85,7 +85,7 @@ function mapPublicVendorToVenue(v: any): Venue {
 }
 
 export class VendorService {
-  async getAll(params: VenueSearchParams = {}, customFetch?: typeof fetch): Promise<PaginatedResult<Venue>> {
+  async getAll(params: VenueSearchParams = {}, customFetch?: typeof fetch, signal?: AbortSignal): Promise<PaginatedResult<Venue>> {
     const fetcher = customFetch || (typeof window !== 'undefined' ? window.fetch.bind(window) : fetch);
     const url = new URL(`http://localhost/api/v1/public/vendors`); // Base URL ignored by apiClient, used for path/search parsing
     const activeCountry = typeof window !== 'undefined' ? countryStore.activeCode : 'sa';
@@ -108,7 +108,7 @@ export class VendorService {
     if (params.minCapacity !== undefined) url.searchParams.append('min_capacity', params.minCapacity.toString());
     if (params.maxCapacity !== undefined) url.searchParams.append('max_capacity', params.maxCapacity.toString());
 
-    const res = await apiClient.get<any>(url.pathname + url.search, { fetch: customFetch, isServer: typeof window === 'undefined' });
+    const res = await apiClient.get<any>(url.pathname + url.search, { fetch: customFetch, isServer: typeof window === 'undefined', signal });
     const vendors = res?.vendors || [];
     return {
       data: vendors.map(mapPublicVendorToVenue),

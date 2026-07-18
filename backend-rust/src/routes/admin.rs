@@ -118,7 +118,7 @@ async fn get_dashboard_analytics(
         "SELECT
             (SELECT COUNT(*) FROM vendors WHERE status = 'active')::bigint AS total_active_vendors,
             (SELECT COUNT(*) FROM vendor_reviews WHERE status = 'pending_approval')::bigint AS pending_reviews_count,
-            (SELECT COUNT(*) FROM vendor_inquiries)::bigint AS total_inquiries_count,
+            (SELECT COUNT(*) FROM lead_inquiries)::bigint AS total_inquiries_count,
             (SELECT COUNT(*) FROM vendors WHERE subscription_status IN ('trial', 'active'))::bigint AS active_subscriptions_count,
             (SELECT COUNT(*) FROM vendor_products WHERE status = 'pending_approval')::bigint AS pending_approvals_count"
     )
@@ -1356,7 +1356,7 @@ async fn get_unread_messages_count(
     State(state): State<AppState>,
     _auth: RequireAdmin,
 ) -> Result<Json<Value>, AppError> {
-    let inquiries_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM vendor_inquiries WHERE status = 'unread'")
+    let inquiries_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM lead_inquiries WHERE status = 'new'")
         .fetch_one(&state.db)
         .await?;
 

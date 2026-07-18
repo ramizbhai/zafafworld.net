@@ -749,11 +749,6 @@
         align-items: center;
         justify-content: center;
     }
-    .banner-preview img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: cover;
-    }
     .remove-preview {
         position: absolute;
         top: 8px;

@@ -130,12 +130,14 @@
       <form method="POST" action="?/updateStatus" use:enhance>
         <label for="inquiry-status-select" class="sr-only">Inquiry Status</label>
         <select id="inquiry-status-select" name="status" value={inquiry.status} onchange={(e) => e.currentTarget.form?.requestSubmit()} class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20">
-          <option value="unread">Status: Unread</option>
-          <option value="viewed">Status: Viewed</option>
-          <option value="pending">Status: Pending</option>
-          <option value="replied">Status: Replied</option>
-          <option value="closed">Status: Closed</option>
-          <option value="declined">Status: Declined</option>
+          <option value="new">Status: New</option>
+          <option value="read">Status: Read</option>
+          <option value="negotiation">Status: Negotiation</option>
+          <option value="paid">Status: Paid</option>
+          <option value="done">Status: Done</option>
+          <option value="expired">Status: Expired</option>
+          <option value="rejected">Status: Rejected</option>
+          <option value="unreachable">Status: Unreachable</option>
         </select>
       </form>
     </div>

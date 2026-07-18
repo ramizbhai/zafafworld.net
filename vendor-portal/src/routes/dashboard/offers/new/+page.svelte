@@ -702,44 +702,7 @@
         gap: 12px;
         position: relative;
     }
-    .banner-preview {
-        position: relative;
-        max-width: 100%;
-        border-radius: var(--radius-sm);
-        overflow: hidden;
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow-sm);
-        aspect-ratio: 16 / 9;
-        background: var(--bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .banner-preview img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: cover;
-    }
-    .remove-preview {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 12px;
-        transition: background 0.15s;
-    }
-    .remove-preview:hover {
-        background: rgba(220, 38, 38, 0.9);
-    }
+
 
     /* ─── RESPONSIVE ──────────────────────────────────────────── */
     @media (max-width: 768px) {

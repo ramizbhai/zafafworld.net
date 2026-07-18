@@ -9,6 +9,7 @@
   import { env } from "$env/dynamic/public";
   import type { Snippet } from "svelte";
   import { page, navigating } from "$app/stores";
+  import { beforeNavigate } from "$app/navigation";
   import { uiStore } from "$lib/stores/ui.svelte.js";
   import Loading from "$lib/components/Loading.svelte";
   import { setParaglideContext } from "@inlang/paraglide-sveltekit/internal";
@@ -45,6 +46,15 @@
     if (hasMounted) {
       trackPageView(url);
     }
+  });
+
+  // Hard-reset any stale global loading state before every navigation.
+  // Using beforeNavigate (a synchronous SvelteKit hook) instead of a reactive
+  // $effect guarantees this runs FIRST — before any page-level onMount or
+  // $effect can re-set globalLoading, closing the ordering race that made the
+  // previous $effect-based approach fail.
+  beforeNavigate(() => {
+    uiStore.setLoading(false);
   });
 
   // ── SEO Routing ────────────────────────────────────────────────────────────
