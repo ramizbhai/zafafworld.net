@@ -59,7 +59,7 @@
 
   // Filter state
   let city = $state($page.url.searchParams.get("city") ?? "");
-  let category = $state($page.url.searchParams.get("category") ?? "");
+  let category = $state($page.params.category === 'all' ? "" : $page.params.category);
   let gender = $state<GenderSection | "">(
     ($page.url.searchParams.get("gender") as GenderSection) ?? "",
   );
@@ -85,7 +85,7 @@
   $effect(() => {
     const url = $page.url;
     let urlCity = url.searchParams.get("city") ?? "";
-    let urlCategory = url.searchParams.get("category") ?? "";
+    let urlCategory = $page.params.category === 'all' ? "" : $page.params.category;
     let urlGender = (url.searchParams.get("gender") as GenderSection) ?? "";
     let urlPriceMin = url.searchParams.get("priceMin") ?? "";
     let urlPriceMax = url.searchParams.get("priceMax") ?? "";
@@ -137,12 +137,15 @@
     // via +layout.svelte. Adding a manual setLoading call creates a race where
     // globalLoading can stay true if the user navigates away before goto() resolves.
 
-    // Update URL query params
+    // Update URL path and query params
     const url = new URL($page.url);
+    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
+    const newCategory = category || 'all';
+    url.pathname = `${langPrefix}/listings/${$page.params.country}/${newCategory}`;
+
     if (city) url.searchParams.set("city", city);
     else url.searchParams.delete("city");
-    if (category) url.searchParams.set("category", category);
-    else url.searchParams.delete("category");
+    url.searchParams.delete("category"); // Ensure no category query param is left
     if (gender) url.searchParams.set("gender", gender);
     else url.searchParams.delete("gender");
     if (priceMin) url.searchParams.set("priceMin", priceMin);
@@ -174,8 +177,10 @@
     sortBy = "featured";
     currentPage = 1;
 
-    // Clear URL parameters
+    // Clear URL parameters and reset category path
     const url = new URL($page.url);
+    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
+    url.pathname = `${langPrefix}/listings/${$page.params.country}/all`;
     url.search = "";
     goto(url.toString(), {
       replaceState: false,
