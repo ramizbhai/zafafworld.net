@@ -89,7 +89,7 @@
 </script>
 
 <svelte:head>
-  <title>ZafafWorld — لوحة التحكم الإدارية</title>
+  <title>ZafafWorld - لوحة التحكم الإدارية</title>
 </svelte:head>
 
 <div class="ambient-orb orb-gold" aria-hidden="true"></div>

@@ -21,6 +21,17 @@
   const activeMetaTitle = $derived(lang === 'ar' ? (post.meta_title_ar || post.meta_title || post.title_ar || post.title) : (post.meta_title_en || post.meta_title || post.title_en || post.title));
   const activeMetaDesc = $derived(lang === 'ar' ? (post.meta_description_ar || post.meta_description || post.excerpt) : (post.meta_description_en || post.meta_description || post.excerpt));
 
+  const sanitizedContentHtml = $derived.by(() => {
+    if (!post.content_html) return '';
+    // Fix Heading Hierarchy: Demote headings to prevent H1 duplication and ensure logical structure for SEO.
+    return post.content_html
+      .replace(/<h5/gi, '<h6').replace(/<\/h5>/gi, '</h6>')
+      .replace(/<h4/gi, '<h5').replace(/<\/h4>/gi, '</h5>')
+      .replace(/<h3/gi, '<h4').replace(/<\/h3>/gi, '</h4>')
+      .replace(/<h2/gi, '<h3').replace(/<\/h2>/gi, '</h3>')
+      .replace(/<h1/gi, '<h2').replace(/<\/h1>/gi, '</h2>');
+  });
+
   let parsedBlocks = $derived.by(() => {
     if (!post.content_html) return [];
     try {
@@ -235,7 +246,7 @@
     {/each}
     {#if parsedBlocks.length === 0 && post.content_html}
       <div class="prose prose-lg prose-gold max-w-none">
-        {@html post.content_html}
+        {@html sanitizedContentHtml}
       </div>
     {/if}
   </div>

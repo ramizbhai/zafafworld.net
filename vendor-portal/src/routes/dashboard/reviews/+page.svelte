@@ -50,7 +50,7 @@
 </script>
 
 <svelte:head>
-  <title>{i18n.t.nav?.reviews || 'Reviews'} – {i18n.t.common?.appName || 'Zafaf Portal'}</title>
+  <title>{i18n.t.nav?.reviews || 'Reviews'} - {i18n.t.common?.appName || 'Zafaf Portal'}</title>
 </svelte:head>
 
 <div class="reviews-page">

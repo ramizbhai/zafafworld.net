@@ -37,7 +37,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 </script>
 
 <svelte:head>
-  <title>{title} — {m.meta_siteName()}</title>
+  <title>{title} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-[var(--color-surface)] px-4 py-12" dir={getLocale() === 'ar' ? 'rtl' : 'ltr'}>

@@ -33,7 +33,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 
 <svelte:head>
   <title>
-    {m.auto_forgot_password()} — {m.meta_siteName()}
+    {m.auto_forgot_password()} - {m.meta_siteName()}
   </title>
 </svelte:head>
 

@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-    <title>{i18n.t.listings.title} — {i18n.t.common.appName}</title>
+    <title>{i18n.t.listings.title} - {i18n.t.common.appName}</title>
 </svelte:head>
 
 <div class="products-page" dir={i18n.locale === 'ar' ? 'rtl' : 'ltr'}>

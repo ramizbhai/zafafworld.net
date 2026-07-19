@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-    <title>{vendor?.name_en ?? "Vendor Detail"} — Admin Panel</title>
+    <title>{vendor?.name_en ?? "Vendor Detail"} - Admin Panel</title>
 </svelte:head>
 
 <div class="vendor-detail-page">

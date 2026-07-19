@@ -79,7 +79,7 @@
 </script>
 
 <svelte:head>
-  <title>{i18n.t.pricing.title} – {i18n.t.common.appName}</title>
+  <title>{i18n.t.pricing.title} - {i18n.t.common.appName}</title>
 </svelte:head>
 
 <div class="pricing-container" dir={i18n.isRtl ? 'rtl' : 'ltr'}>

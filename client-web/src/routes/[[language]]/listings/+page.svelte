@@ -210,7 +210,7 @@
 </script>
 
 <svelte:head>
-  <title>{m.auto_browse_listings()} — {m.meta_siteName()}</title>
+  <title>{m.auto_browse_listings()} - {m.meta_siteName()}</title>
   <meta name="description" content={m.auto_discover_the_perfect()} />
 </svelte:head>
 

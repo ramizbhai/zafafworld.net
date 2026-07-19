@@ -43,7 +43,7 @@
 </script>
 
 <svelte:head>
-    <title>{i18n.locale === 'ar' ? 'الباقات والاشتراكات' : 'Subscriptions'} — ZafafWorld</title>
+    <title>{i18n.locale === 'ar' ? 'الباقات والاشتراكات' : 'Subscriptions'} - ZafafWorld</title>
 </svelte:head>
 
 <div class="subscription-page" dir={i18n.locale === 'ar' ? 'rtl' : 'ltr'}>

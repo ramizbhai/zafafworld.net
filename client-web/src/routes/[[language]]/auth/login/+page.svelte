@@ -50,7 +50,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 </script>
 
 <svelte:head>
-  <title>{m.auth_login_title()} — {m.meta_siteName()}</title>
+  <title>{m.auth_login_title()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-[var(--color-surface-alt)] px-4 py-12">

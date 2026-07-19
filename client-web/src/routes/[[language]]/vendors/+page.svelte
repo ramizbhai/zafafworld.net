@@ -13,7 +13,7 @@ import Button from "$lib/components/ui/Button.svelte";
 </script>
 
 <svelte:head>
-  <title>{m.nav_vendors()} — {m.meta_siteName()}</title>
+  <title>{m.nav_vendors()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <!-- Header -->

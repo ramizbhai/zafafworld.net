@@ -67,7 +67,7 @@
 </script>
 
 <svelte:head>
-    <title>{i18n.t.statisticsInsights.title} — {i18n.t.common.appName}</title>
+    <title>{i18n.t.statisticsInsights.title} - {i18n.t.common.appName}</title>
 </svelte:head>
 
 <div class="stats-page" dir={i18n.locale === 'ar' ? 'rtl' : 'ltr'}>

@@ -76,7 +76,7 @@
 </script>
 
 <svelte:head>
-  <title>{i18n.t.nav.statisticsCompetitors} – {i18n.t.common.appName}</title>
+  <title>{i18n.t.nav.statisticsCompetitors} - {i18n.t.common.appName}</title>
 </svelte:head>
 
 <div class="competitors-page" dir={i18n.isRtl ? 'rtl' : 'ltr'}>

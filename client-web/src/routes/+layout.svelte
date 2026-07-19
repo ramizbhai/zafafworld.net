@@ -179,7 +179,7 @@
 </script>
 
 <svelte:head>
-  <title>{m.meta_siteName()} — {m.meta_tagline()}</title>
+  <title>{m.meta_siteName()} - {m.meta_tagline()}</title>
   <meta name="description" content={m.meta_description()} />
   <meta property="og:site_name" content={m.meta_siteName()} />
   <meta property="og:type" content="website" />

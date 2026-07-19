@@ -145,7 +145,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
 
 <svelte:head>
   <title>
-    {listing ? `${m.booking_title()} — ${listingName}` : m.booking_title()} | {m.meta_siteName()}
+    {listing ? `${m.booking_title()} - ${listingName}` : m.booking_title()} | {m.meta_siteName()}
   </title>
 </svelte:head>
 

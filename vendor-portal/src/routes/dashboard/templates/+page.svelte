@@ -55,7 +55,7 @@
 </script>
 
 <svelte:head>
-  <title>{i18n.t.nav?.templates || 'Templates'} – {i18n.t.common?.appName || 'Zafaf Portal'}</title>
+  <title>{i18n.t.nav?.templates || 'Templates'} - {i18n.t.common?.appName || 'Zafaf Portal'}</title>
 </svelte:head>
 
 <div class="templates-layout">

@@ -204,10 +204,10 @@
 
 <svelte:head>
   {#if venue}
-    <title>{metaTitle || `${name} — ${m.meta_siteName()}`}</title>
+    <title>{metaTitle || `${name} - ${m.meta_siteName()}`}</title>
     <meta name="description" content={metaDescription || description.slice(0, 160)} />
   {:else}
-    <title>{m.venues_title()} — {m.meta_siteName()}</title>
+    <title>{m.venues_title()} - {m.meta_siteName()}</title>
   {/if}
 </svelte:head>
 

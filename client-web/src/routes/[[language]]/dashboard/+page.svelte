@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-  <title>{m.auto_my_dashboard()} — {m.meta_siteName()}</title>
+  <title>{m.auto_my_dashboard()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-warm-ivory pb-16">

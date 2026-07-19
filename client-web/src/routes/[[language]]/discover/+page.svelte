@@ -58,7 +58,7 @@
 </script>
 
 <svelte:head>
-  <title>{m.blog_title()} — {m.meta_siteName()}</title>
+  <title>{m.blog_title()} - {m.meta_siteName()}</title>
   <meta name="description" content={m.blog_subtitle()} />
 </svelte:head>
 

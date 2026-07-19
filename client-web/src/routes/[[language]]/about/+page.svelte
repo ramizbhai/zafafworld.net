@@ -18,7 +18,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 </script>
 
 <svelte:head>
-  <title>{m.about_title()} — {m.meta_siteName()}</title>
+  <title>{m.about_title()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <!-- Hero -->

@@ -163,7 +163,7 @@
 </script>
 
 <svelte:head>
-  <title>{m.booking_title()} — {m.meta_siteName()}</title>
+  <title>{m.booking_title()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <!-- Page header -->

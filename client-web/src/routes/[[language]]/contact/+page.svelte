@@ -31,7 +31,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 </script>
 
 <svelte:head>
-  <title>{m.contact_title()} — {m.meta_siteName()}</title>
+  <title>{m.contact_title()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <div class="bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">

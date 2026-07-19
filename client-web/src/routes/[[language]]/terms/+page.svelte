@@ -36,7 +36,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 </script>
 
 <svelte:head>
-  <title>{m.footer_terms()} — {m.meta_siteName()}</title>
+  <title>{m.footer_terms()} - {m.meta_siteName()}</title>
 </svelte:head>
 
 <div class="bg-[var(--color-surface-alt)]">

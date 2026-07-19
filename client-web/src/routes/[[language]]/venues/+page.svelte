@@ -192,7 +192,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
 </script>
 
 <svelte:head>
-  <title>{m.venues_title()} — {m.meta_siteName()}</title>
+  <title>{m.venues_title()} - {m.meta_siteName()}</title>
   <meta name="description" content={m.venues_subtitle()} />
 </svelte:head>
 
