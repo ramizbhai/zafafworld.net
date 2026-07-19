@@ -46,7 +46,20 @@ export function buildFilteredRoute(
   // ── /venues → /listings migration remapping ─────────────────────────────
   const resolvedBase = basePath === '/venues' ? '/listings' : basePath;
 
-  const rawUrl = `${resolvedBase}?${params.toString()}`;
+  let rawUrl = `${resolvedBase}?${params.toString()}`;
+
+  if (resolvedBase === '/listings') {
+    const country = countryStore.activeCode?.toLowerCase() || 'sa';
+    const cat = filters.category || 'all';
+    // Remove the country/category from search params if they were added
+    params.delete('country');
+    params.delete('category');
+    
+    // Construct the semantic URL path
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    rawUrl = `/listings/${country}/${cat}${queryString}`;
+  }
+
   // Ensure the route maintains the current language state
   return i18n.resolveRoute(rawUrl, getLocale());
 }

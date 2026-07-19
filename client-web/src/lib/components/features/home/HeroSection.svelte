@@ -119,11 +119,15 @@
 
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
-    const route = buildFilteredRoute("/listings", {
-      city: city || undefined,
-      category: category || undefined,
-    });
-    const url = new URL(route, window.location.origin);
+    
+    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
+    const currentCountry = $page.params.country || 'sa';
+    const targetCategory = category || $page.params.category || 'all';
+
+    const url = new URL(`${langPrefix}/listings/${currentCountry}/${targetCategory}`, window.location.origin);
+
+    if (city) url.searchParams.set('city', city);
+
     goto(url.pathname + url.search);
   }
 

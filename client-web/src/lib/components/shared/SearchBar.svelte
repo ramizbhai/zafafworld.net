@@ -104,16 +104,24 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
-    const route = buildFilteredRoute('/listings', {
-      q: compact ? query : undefined,
-      city: city || undefined,
-      category: !compact ? category : undefined
-    });
-    const url = new URL(route, window.location.origin);
+    
+    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
+    const country = $page.params.country || 'sa';
+    
+    // For compact search, category is not used as a filter directly here.
+    // Use the explicit component category or fallback to current page category
+    const targetCategory = (!compact && category) ? category : ($page.params.category || 'all');
+    
+    const url = new URL(`${langPrefix}/listings/${country}/${targetCategory}`, window.location.origin);
+
+    if (compact && query) url.searchParams.set('q', query);
+    if (city) url.searchParams.set('city', city);
+    
     if (compact) {
       if (date) url.searchParams.set('date', date);
       if (guestCount) url.searchParams.set('guests', guestCount);
     }
+
     goto(url.pathname + url.search);
   }
 </script>

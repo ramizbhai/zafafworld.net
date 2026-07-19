@@ -127,40 +127,35 @@
     });
   });
 
-  function applyFilters(keepPage: any = false) {
-    if (keepPage !== true) {
+  function applyFilters(e?: Event | boolean, keepPage: any = false) {
+    if (e && typeof (e as Event).preventDefault === 'function') {
+      (e as Event).preventDefault();
+    }
+    const actualKeepPage = typeof e === 'boolean' ? e : keepPage;
+    if (actualKeepPage !== true) {
       currentPage = 1;
     }
     isFilterOpen = false;
-    // NOTE: Do NOT call uiStore.setLoading(true) here.
-    // goto() sets $navigating = truthy, which drives the global loading overlay
-    // via +layout.svelte. Adding a manual setLoading call creates a race where
-    // globalLoading can stay true if the user navigates away before goto() resolves.
 
-    // Update URL path and query params
-    const url = new URL($page.url);
     const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
-    const newCategory = category || 'all';
-    url.pathname = `${langPrefix}/listings/${$page.params.country}/${newCategory}`;
+    const activeCountry = $page.params.country || 'sa';
+    const activeCategory = category || $page.params.category || 'all';
 
-    if (city) url.searchParams.set("city", city);
-    else url.searchParams.delete("city");
-    url.searchParams.delete("category"); // Ensure no category query param is left
-    if (gender) url.searchParams.set("gender", gender);
-    else url.searchParams.delete("gender");
-    if (priceMin) url.searchParams.set("priceMin", priceMin);
-    else url.searchParams.delete("priceMin");
-    if (priceMax) url.searchParams.set("priceMax", priceMax);
-    else url.searchParams.delete("priceMax");
-    if (minCapacity) url.searchParams.set("minCapacity", minCapacity);
-    else url.searchParams.delete("minCapacity");
-    if (maxCapacity) url.searchParams.set("maxCapacity", maxCapacity);
-    else url.searchParams.delete("maxCapacity");
-    if (sortBy) url.searchParams.set("sort", sortBy);
-    else url.searchParams.delete("sort");
-    url.searchParams.set("page", currentPage.toString());
+    const targetPath = `${langPrefix}/listings/${activeCountry.toLowerCase()}/${activeCategory.toLowerCase()}`;
 
-    goto(url.toString(), {
+    // Append ONLY secondary search filters to searchParams (like city, sort, page)
+    const nextUrl = new URL(targetPath, window.location.origin);
+    
+    if (city) nextUrl.searchParams.set("city", city);
+    if (gender) nextUrl.searchParams.set("gender", gender);
+    if (priceMin) nextUrl.searchParams.set("priceMin", priceMin);
+    if (priceMax) nextUrl.searchParams.set("priceMax", priceMax);
+    if (minCapacity) nextUrl.searchParams.set("minCapacity", minCapacity);
+    if (maxCapacity) nextUrl.searchParams.set("maxCapacity", maxCapacity);
+    if (sortBy && sortBy !== "weighted") nextUrl.searchParams.set("sort", sortBy);
+    if (currentPage > 1) nextUrl.searchParams.set("page", currentPage.toString());
+
+    goto(nextUrl.pathname + nextUrl.search, {
       replaceState: false,
       keepFocus: true,
       noScroll: true,
@@ -180,7 +175,8 @@
     // Clear URL parameters and reset category path
     const url = new URL($page.url);
     const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
-    url.pathname = `${langPrefix}/listings/${$page.params.country}/all`;
+    const currentCountry = $page.params.country || 'sa';
+    url.pathname = `${langPrefix}/listings/${currentCountry}/all`;
     url.search = "";
     goto(url.toString(), {
       replaceState: false,
@@ -257,7 +253,7 @@
           </button>
         </div>
 
-        <div class="flex flex-col gap-5">
+        <form onsubmit={applyFilters} class="flex flex-col gap-5">
           <!-- City -->
           <div>
             <label
@@ -372,12 +368,12 @@
           </div>
 
           <button
-            onclick={applyFilters}
+            type="submit"
             class="w-full rounded-xl bg-[var(--color-primary)] text-[var(--color-secondary)] py-3 font-bold text-sm hover:bg-[var(--color-primary-dark)] transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             {m.auto_apply_filters()}
           </button>
-        </div>
+        </form>
       </div>
     </aside>
 
