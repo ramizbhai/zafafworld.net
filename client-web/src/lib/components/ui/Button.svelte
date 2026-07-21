@@ -12,6 +12,8 @@
     loading?: boolean;
     fullWidth?: boolean;
     href?: string;
+    target?: string;
+    rel?: string;
     class?: string;
     onclick?: (e: MouseEvent) => void;
     children: Snippet;
@@ -25,6 +27,8 @@
     loading = false,
     fullWidth = false,
     href,
+    target,
+    rel,
     class: extraClass = '',
     onclick,
     children,
@@ -56,7 +60,7 @@
 </script>
 
 {#if href}
-  <a {href} class={classes} aria-disabled={disabled}>
+  <a {href} {target} {rel} class={classes} aria-disabled={disabled}>
     {@render children()}
   </a>
 {:else}

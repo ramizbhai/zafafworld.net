@@ -3,7 +3,7 @@
   import * as m from "$lib/paraglide/messages.js";
   import { getLocale } from "$lib/paraglide/runtime.js";
   import { getLocalizedField } from "$lib/utils/localize.js";
-  import { buildFilteredRoute } from "$lib/utils/navigation";
+  import { buildListingsUrl } from "$lib/utils/navigation";
   import { i18n } from "$lib/i18n.js";
   import Button from "$lib/components/ui/Button.svelte";
   import NavSearch from "./NavSearch.svelte";
@@ -83,7 +83,7 @@
         {m.auto_planning_assistance_() || "Quick Links"}
       </span>
       <div class="grid grid-cols-3 gap-2">
-        <a href={l("/listings")} onclick={state.closeMenu} class="flex flex-col items-center justify-center p-3 rounded-xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] text-center transition-all hover:bg-[var(--color-border)]">
+        <a href={l("/")} onclick={state.closeMenu} class="flex flex-col items-center justify-center p-3 rounded-xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] text-center transition-all hover:bg-[var(--color-border)]">
           <span class="text-xl mb-1">🏛️</span>
           <span class="text-[10px] font-bold text-[var(--color-secondary)] leading-tight">{m.auto_wedding_planning_dep()}</span>
         </a>
@@ -106,7 +106,7 @@
       <div class="grid grid-cols-2 gap-2">
         {#each $page.data?.metadata?.categories || [] as cat}
           {@const meta = getCategoryMetadata(cat.key || cat.slug)}
-          <a href={buildFilteredRoute("/listings", { category: meta.slug })} onclick={state.closeMenu} class="flex items-center gap-2.5 p-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-alt)]/50 transition-all text-xs font-semibold text-[var(--color-secondary)]">
+          <a href={buildListingsUrl({ category: meta.slug })} onclick={state.closeMenu} class="flex items-center gap-2.5 p-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-[var(--color-surface-alt)]/50 transition-all text-xs font-semibold text-[var(--color-secondary)]">
             <span class="text-lg flex-shrink-0">{meta.icon}</span>
             <span class="truncate">{meta.label}</span>
           </a>

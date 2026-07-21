@@ -1,30 +1,24 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages.js';
-import { getLocale } from '$lib/paraglide/runtime.js';
-import { getLocalizedField } from '$lib/utils/localize.js';
+  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { getLocalizedField } from '$lib/utils/localize.js';
   import Button from '$lib/components/ui/Button.svelte';
   import Input from '$lib/components/ui/Input.svelte';
+  import { enhance } from '$app/forms';
 
-  let name    = $state('');
-  let email   = $state('');
-  let phone   = $state('');
-  let subject = $state('');
-  let message = $state('');
-  let sent    = $state(false);
+  let { form }: { form?: { success?: boolean; error?: string; values?: any } } = $props();
+
+  let name = $state(form?.values?.name || '');
+  let email = $state(form?.values?.email || '');
+  let phone = $state(form?.values?.phone || '');
+  let subject = $state(form?.values?.subject || '');
+  let message = $state(form?.values?.message || '');
+
   let sending = $state(false);
 
-  async function handleSubmit(e: SubmitEvent) {
-    e.preventDefault();
-    sending = true;
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 1500));
-    sent    = true;
-    sending = false;
-  }
-
   const contactInfo = $derived([
-    { icon: '📞', label: m.contact_info_phone(),   value: '+966 11 000 0000' },
-    { icon: '✉️', label: m.contact_info_email(),   value: 'hello@zafafworld.net' },
+    { icon: '📞', label: m.contact_info_phone(),   value: '+966 59 211 2517' },
+    { icon: '✉️', label: m.contact_info_email(),   value: 'contact@zafafworld.net' },
     { icon: '📍', label: m.contact_info_address(), value: m.auto_riyadh_saudi_arabia() },
     { icon: '🕐', label: m.contact_info_hours(),   value: m.contact_info_hoursValue() },
   ]);
@@ -64,7 +58,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 
     <!-- Contact form -->
     <div class="lg:col-span-2">
-      {#if sent}
+      {#if form?.success}
         <div class="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-[var(--color-border)]">
           <div class="text-5xl mb-4" aria-hidden="true">✅</div>
           <h2 class="font-display text-2xl font-bold text-[var(--color-secondary)] mb-3">
@@ -73,20 +67,34 @@ import { getLocalizedField } from '$lib/utils/localize.js';
           <p class="text-[var(--color-muted)] mb-6">
             {getLocale() === 'ar' ? 'سنتواصل معك قريباً' : "We'll get back to you soon"}
           </p>
-          <Button onclick={() => sent = false} variant="outline">
+          <a href="/contact" class="px-6 py-3 rounded-xl border border-[var(--color-border)] text-sm font-semibold hover:bg-[var(--color-surface-alt)] transition-colors">
             {m.auto_send_another_message()}
-          </Button>
+          </a>
         </div>
       {:else}
-        <form onsubmit={handleSubmit} novalidate class="bg-white rounded-2xl border border-[var(--color-border)] p-8 flex flex-col gap-5">
+        <form method="POST" use:enhance={() => {
+          sending = true;
+          return async ({ update }) => {
+            sending = false;
+            await update();
+          };
+        }} class="bg-white rounded-2xl border border-[var(--color-border)] p-8 flex flex-col gap-5">
+          {#if form?.error}
+            <div class="bg-red-50 text-red-600 border border-red-200 rounded-xl p-4 text-sm" role="alert">
+              {form.error}
+            </div>
+          {/if}
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Input
+              name="name"
               label={m.contact_form_name()}
               bind:value={name}
               required
               placeholder={m.auto_john_smith()}
             />
             <Input
+              name="email"
               type="email"
               label={m.contact_form_email()}
               bind:value={email}
@@ -97,12 +105,14 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Input
+              name="phone"
               type="tel"
               label={m.contact_form_phone()}
               bind:value={phone}
               placeholder="+966 5X XXX XXXX"
             />
             <Input
+              name="subject"
               label={m.contact_form_subject()}
               bind:value={subject}
               required
@@ -117,6 +127,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
             </label>
             <textarea
               id="contact-message"
+              name="message"
               bind:value={message}
               required
               rows="5"

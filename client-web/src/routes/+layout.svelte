@@ -12,6 +12,7 @@
   import { beforeNavigate } from "$app/navigation";
   import { uiStore } from "$lib/stores/ui.svelte.js";
   import Loading from "$lib/components/Loading.svelte";
+  import NavigationProgressBar from "$lib/components/ui/NavigationProgressBar.svelte";
   import { setParaglideContext } from "@inlang/paraglide-sveltekit/internal";
 
   // Provide dummy context to prevent Paraglide preprocessor from throwing an error
@@ -205,6 +206,7 @@
   <link rel="alternate" hreflang="x-default" href={`https://zafafworld.net${i18n.resolveRoute(i18n.route($page.url.pathname), "ar")}`} data-seo="x-default" />
 </svelte:head>
 
+  <NavigationProgressBar />
   <Loading show={!!$navigating || uiStore.globalLoading} />
   <div id="app" dir={currentDir} class="flex flex-col min-h-screen overflow-x-hidden">
     <Navbar user={data.user} />
@@ -212,8 +214,12 @@
       <!-- Global Layout Spacing to prevent content hiding under the fixed Navbar -->
       <div class="h-20 lg:h-[120px] shrink-0" aria-hidden="true"></div>
     {/if}
-    <main id="main-content" tabindex="-1" class="flex-grow flex flex-col">
-      {@render children()}
+    <main id="main-content" tabindex="-1" class="flex-grow flex flex-col bg-[var(--color-surface)] min-h-[calc(100vh-120px)] relative">
+      {#key $page.url.pathname}
+        <div class="flex-grow flex flex-col page-fade-animation">
+          {@render children()}
+        </div>
+      {/key}
     </main>
     <Footer />
     {#if sseMessage}
@@ -228,3 +234,21 @@
     {/if}
     <ToastContainer />
   </div>
+
+<style>
+  .page-fade-animation {
+    animation: pageFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: opacity, transform;
+  }
+
+  @keyframes pageFadeIn {
+    0% {
+      opacity: 0.85;
+      transform: translateY(4px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

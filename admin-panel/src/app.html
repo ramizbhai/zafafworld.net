@@ -11,9 +11,15 @@
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 		<!-- Cairo: Arabic-first | Outfit: English headings | Inter: English body -->
 		<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+		<style>
+			html, body {
+				background-color: #0f172a;
+				color: #f8fafc;
+			}
+		</style>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="hover" style="background-color: #0f172a; color: #f8fafc; margin: 0;">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

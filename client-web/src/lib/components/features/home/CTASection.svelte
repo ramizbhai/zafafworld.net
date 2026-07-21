@@ -45,7 +45,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         <p class="text-white/60 text-base mb-8 max-w-sm mx-auto leading-relaxed">
           {m.home_cta_vendorSubtitle()}
         </p>
-        <Button href="{env.PUBLIC_VENDOR_URL || 'http://localhost:5174'}/register" variant="primary" size="lg">
+        <Button href="https://vendor.zafafworld.net/" target="_blank" rel="noopener noreferrer" variant="primary" size="lg">
           {m.home_cta_vendorButton()}
         </Button>
       </div>

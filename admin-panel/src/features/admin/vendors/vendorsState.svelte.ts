@@ -22,10 +22,21 @@ export function createVendorsState() {
     let chatInput = $state('');
     let isFetchingMessages = $state(false);
     let isSendingMessage = $state(false);
+    let accountStatusFilter = $state('all');
+    let subTierFilter = $state('all');
+    let subStatusFilter = $state('all');
     let chatError = $state('');
-    let pollInterval: any = null;
+    let pollInterval = $state<any>(null);
 
     return {
+        get accountStatusFilter() { return accountStatusFilter; },
+        set accountStatusFilter(v) { accountStatusFilter = v; },
+
+        get subTierFilter() { return subTierFilter; },
+        set subTierFilter(v) { subTierFilter = v; },
+
+        get subStatusFilter() { return subStatusFilter; },
+        set subStatusFilter(v) { subStatusFilter = v; },
         get activeTab() { return activeTab; },
         set activeTab(v) { activeTab = v; },
 

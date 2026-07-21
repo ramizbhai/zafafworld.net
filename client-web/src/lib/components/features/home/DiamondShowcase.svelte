@@ -144,7 +144,7 @@
       <!-- View More Button -->
       <div class="mt-12 text-center">
         <a
-          href="/listings?tier=diamond"
+          href="/"
           class="inline-block px-10 py-3.5 rounded-full font-bold text-sm bg-[#F6A7B5] hover:bg-[#e293a1] text-[#2D2620] transition-all duration-300 shadow-md text-center"
         >
           {isAr ? "عرض المزيد" : "View More"}

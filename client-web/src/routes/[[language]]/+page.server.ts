@@ -3,6 +3,7 @@ import { listingService } from '$lib/services/api/listing.service.js';
 import type { PageServerLoad } from './$types';
 import { getCached } from '$lib/services/api/cache';
 import { apiClient } from '$lib/services/api/client.js';
+import { buildListingsUrl } from '$lib/utils/navigation.js';
 
 export const load: PageServerLoad = async ({ fetch: svelteFetch, setHeaders, cookies }) => {
   setHeaders({
@@ -85,7 +86,7 @@ export const load: PageServerLoad = async ({ fetch: svelteFetch, setHeaders, coo
             titleEn: c.en,
             subtitleAr: c.ar_subtitle || `أفضل مزودي ${c.ar} لمناسبتك السعيدة`,
             subtitleEn: c.en_subtitle || `Best ${c.en} selected for your premium event`,
-            href: `/listings?category=${c.slug}`,
+            href: buildListingsUrl({ category: c.slug }),
             listings,
             listingsCount: c.listingsCount || 0,
             layoutType
@@ -141,7 +142,7 @@ export const load: PageServerLoad = async ({ fetch: svelteFetch, setHeaders, coo
         titleEn: c.en,
         subtitleAr: c.ar_subtitle || `أفضل مزودي ${c.ar} لمناسبتك السعيدة`,
         subtitleEn: c.en_subtitle || `Best ${c.en} selected for your premium event`,
-        href: `/listings?category=${c.slug}`,
+        href: buildListingsUrl({ category: c.slug }),
         listings: [],
         listingsCount: c.listingsCount || 0,
         layoutType

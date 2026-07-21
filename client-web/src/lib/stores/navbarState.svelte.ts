@@ -1,6 +1,6 @@
 import { env } from "$env/dynamic/public";
 import { goto } from "$app/navigation";
-import { buildFilteredRoute } from "$lib/utils/navigation";
+import { buildListingsUrl } from "$lib/utils/navigation";
 import { countryStore } from "$lib/stores/country.svelte.js";
 
 export function createNavbarState() {
@@ -59,7 +59,7 @@ export function createNavbarState() {
   function handleSearchSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (searchQuery.trim()) {
-      goto(buildFilteredRoute("/listings", { q: searchQuery.trim() }));
+      goto(buildListingsUrl({}));
     }
   }
 

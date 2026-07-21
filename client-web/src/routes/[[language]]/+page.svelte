@@ -11,7 +11,7 @@
   import CTASection from '$lib/components/features/home/CTASection.svelte';
   import ListingCard from '$lib/components/shared/ListingCard.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import { buildFilteredRoute } from '$lib/utils/navigation.js';
+  import { buildListingsUrl } from '$lib/utils/navigation.js';
   import { getCategoryImageUrl } from '$lib/constants/categoryImages';
   import { listingService } from '$lib/services/api/listing.service.js';
 
@@ -84,7 +84,7 @@
       labelAr: c.labelAr || c.key,
       labelEn: c.labelEn || c.key,
       listingsCount: c.listingsCount || 0,
-      href: buildFilteredRoute('/listings', { category: c.key })
+      href: buildListingsUrl({ category: c.key })
     }))
   );
 
@@ -363,7 +363,7 @@
 
     <!-- Show All Categories Link -->
     <div class="text-center mt-12">
-      <Button href="/listings" variant="outline" size="md" class="group hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
+      <Button href="/" variant="outline" size="md" class="group hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
         {m.common_showAll()}
         <svg viewBox="0 0 20 20" class="w-4 h-4 rtl:rotate-180 ms-2 inline-block transition-transform duration-300 group-hover:translate-x-1 rtl:group-hover:-translate-x-1" fill="currentColor">
           <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/>

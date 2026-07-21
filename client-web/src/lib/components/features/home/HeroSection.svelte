@@ -9,7 +9,7 @@
   import { env } from "$env/dynamic/public";
   import { trackBlogFunnelEvent } from "$lib/utils/analytics.js";
   import { page } from "$app/stores";
-  import { buildFilteredRoute } from "$lib/utils/navigation.js";
+  import { buildListingsUrl } from "$lib/utils/navigation.js";
   import { getCategoryIcon } from "$lib/constants/categoryIcons.js";
 
   // Props: accept pre-loaded data from layout/page to avoid redundant onMount fetch
@@ -120,15 +120,9 @@
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
     
-    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
-    const currentCountry = $page.params.country || 'sa';
-    const targetCategory = category || $page.params.category || 'all';
-
-    const url = new URL(`${langPrefix}/listings/${currentCountry}/${targetCategory}`, window.location.origin);
-
-    if (city) url.searchParams.set('city', city);
-
-    goto(url.pathname + url.search);
+    const targetCategory = category || undefined;
+    const cleanPath = buildListingsUrl({ city: city || undefined, category: targetCategory });
+    goto(cleanPath);
   }
 
   const isAr = $derived(getLocale() === 'ar');
@@ -506,7 +500,7 @@
         </span>
         {#each getLocale() === "ar" ? ["الرياض", "جدة", "الدمام", "قاعات زفاف", "حفلات خطوبة"] : ["Riyadh", "Jeddah", "Weddings", "Engagement", "Corporate"] as tag}
           <a
-            href="/listings?q={encodeURIComponent(tag)}"
+            href="/"
             class="text-xs bg-white/10 hover:bg-[#C9A96E]/30 border border-white/20 text-white/90 hover:text-white rounded-full px-4 py-1.5 transition-all duration-200 shadow-sm"
           >
             {tag}

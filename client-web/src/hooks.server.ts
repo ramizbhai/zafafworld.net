@@ -40,7 +40,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch }) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     try {
         return await fetch(request, { signal: controller.signal });

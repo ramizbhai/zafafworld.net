@@ -221,7 +221,7 @@
         </li>
         <li aria-hidden="true" class="rtl:rotate-180">/</li>
         <li>
-          <a href="/listings" class="hover:text-[var(--color-primary)] transition-colors">{t("مزوّدي الخدمات", "Vendors")}</a>
+          <a href="/" class="hover:text-[var(--color-primary)] transition-colors">{t("مزوّدي الخدمات", "Vendors")}</a>
         </li>
         <li aria-hidden="true" class="rtl:rotate-180">/</li>
         <li class="text-[var(--color-text)] font-semibold truncate max-w-[150px] md:max-w-xs" aria-current="page">
@@ -254,7 +254,7 @@
     <div class="text-6xl mb-6">✨</div>
     <h1 class="font-display text-3xl font-bold text-[var(--color-secondary)] mb-4">{m.errors_notFound()}</h1>
     <p class="text-[var(--color-muted)] mb-8 max-w-md mx-auto">{m.errors_notFoundDescription()}</p>
-    <Button href="/listings" variant="primary">{m.errors_goHome()}</Button>
+    <Button href="/" variant="primary">{m.errors_goHome()}</Button>
   </div>
 {:else}
   <VenueHeroGallery 

@@ -5,7 +5,7 @@ import { getLocale } from '$lib/paraglide/runtime.js';
 import { getLocalizedField } from '$lib/utils/localize.js';
   import { countryStore } from '$lib/stores/country.svelte.js';
   import { page } from '$app/stores';
-  import { buildFilteredRoute } from '$lib/utils/navigation.js';
+  import { buildListingsUrl } from '$lib/utils/navigation.js';
   import { untrack, onMount } from 'svelte';
   import { env } from '$env/dynamic/public';
 
@@ -105,24 +105,25 @@ import { getLocalizedField } from '$lib/utils/localize.js';
   function handleSearch(e: SubmitEvent) {
     e.preventDefault();
     
-    const langPrefix = $page.params.language ? `/${$page.params.language}` : '';
-    const country = $page.params.country || 'sa';
-    
     // For compact search, category is not used as a filter directly here.
     // Use the explicit component category or fallback to current page category
-    const targetCategory = (!compact && category) ? category : ($page.params.category || 'all');
+    const targetCategory = (!compact && category) ? category : (($page.params as any).category || undefined);
     
-    const url = new URL(`${langPrefix}/listings/${country}/${targetCategory}`, window.location.origin);
+    const cleanPath = buildListingsUrl({
+      city:     city           || undefined,
+      category: targetCategory || undefined,
+    });
 
-    if (compact && query) url.searchParams.set('q', query);
-    if (city) url.searchParams.set('city', city);
-    
+    // Compact search may append additional non-path params
     if (compact) {
-      if (date) url.searchParams.set('date', date);
-      if (guestCount) url.searchParams.set('guests', guestCount);
+      const qs = new URLSearchParams();
+      if (query)      qs.set('q',      query);
+      if (date)       qs.set('date',   date);
+      if (guestCount) qs.set('guests', guestCount);
+      goto(cleanPath + (qs.toString() ? `?${qs.toString()}` : ''));
+    } else {
+      goto(cleanPath);
     }
-
-    goto(url.pathname + url.search);
   }
 </script>
 

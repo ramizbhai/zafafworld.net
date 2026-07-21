@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getLocale } from "$lib/paraglide/runtime.js";
   import * as m from "$lib/paraglide/messages.js";
-  import { buildFilteredRoute } from "$lib/utils/navigation";
+  import { buildListingsUrl } from "$lib/utils/navigation";
   import type { NavbarState } from "$lib/stores/navbarState.svelte.js";
 
   let { state, isGlass, isMobile = false } = $props<{ state: NavbarState, isGlass: boolean, isMobile?: boolean }>();
@@ -64,7 +64,7 @@
         {#if state.suggestions.categories.length > 0}
           <div class="px-4 py-2 bg-gray-50 text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">Categories</div>
           {#each state.suggestions.categories as cat}
-            <a href={buildFilteredRoute("/listings", { category: cat.slug })} onclick={() => { state.showSuggestions = false; if (isMobile) state.isMenuOpen = false; }} class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+            <a href={buildListingsUrl({ category: cat.slug })} onclick={() => { state.showSuggestions = false; if (isMobile) state.isMenuOpen = false; }} class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
               <span class="text-xl">{cat.emoji || '📂'}</span>
               <span class="text-sm font-medium text-[var(--color-secondary)] truncate">{getLocale() === 'ar' ? cat.name_ar : cat.name_en}</span>
             </a>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getLocale } from "$lib/paraglide/runtime.js";
   import * as m from "$lib/paraglide/messages.js";
+  import { i18n } from "$lib/i18n.js";
   import type { NavbarState } from "$lib/stores/navbarState.svelte.js";
 
   let { isGlass, state, isMobile = false } = $props<{ isGlass: boolean; state: NavbarState; isMobile?: boolean }>();
@@ -8,12 +9,15 @@
   function toggleLanguage() {
     const current = getLocale();
     const next = current === "ar" ? "en" : "ar";
+    const canonicalPath = i18n.route(location.pathname);
+    const targetPath = i18n.resolveRoute(canonicalPath, next);
     const url = new URL(location.href);
-    if (url.pathname.startsWith("/" + current)) {
-      url.pathname = url.pathname.replace("/" + current, "/" + next);
-    } else {
-      url.pathname = "/" + next + url.pathname;
-    }
+    url.pathname = targetPath;
+
+    // Set cookie explicitly for both paraglide_lang and PARAGLIDE_LOCALE
+    document.cookie = `paraglide_lang=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `PARAGLIDE_LOCALE=${next}; path=/; max-age=31536000; SameSite=Lax`;
+
     window.location.href = url.href;
     if (isMobile) {
       state.closeMenu();

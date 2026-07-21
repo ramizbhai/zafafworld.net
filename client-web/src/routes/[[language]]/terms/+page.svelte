@@ -1,36 +1,36 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages.js';
-import { getLocale } from '$lib/paraglide/runtime.js';
-import { getLocalizedField } from '$lib/utils/localize.js';
+  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { getLocalizedField } from '$lib/utils/localize.js';
 
   const sections = $derived([
     {
       id: 'agreement',
       titleAr: '١. الاتفاقية العامة',
       titleEn: '1. General Agreement',
-      contentAr: 'هذا القسم مخصص للبنود العامة الحاكمة للعلاقة التعاقدية بين مستخدمي المنصة وإدارتها. يرجى مراجعة وتحديث هذا النص بما يتوافق مع السياسات التجارية الخاصة بكم.\n\n[Business-Approved Policy Segment: General Platform Agreement]',
-      contentEn: 'This section contains the general terms governing the relationship between platform users and management. Please review and update this text to align with your approved commercial policies.\n\n[Business-Approved Policy Segment: General Platform Agreement]'
+      contentAr: 'مرحبًا بكم في زفاف وورلد (zafafworld.net). باستخدامك للمنصة أو وصولك إليها، فإنك توافق على الالتزام بشروط وأحكام الاستخدام هذه بالكامل. زفاف وورلد هو سوق إلكتروني رائد ومخصص لخدمات الزفاف يربط بين المقبلين على الزواج وبين قاعات الأفراح، الفنادق، ومنظمي الحفلات، ومزودي الخدمات في المملكة العربية السعودية. تحكم هذه الشروط استخدامك للموقع الإلكتروني، إصدار الهاتف المحمول، وأي خدمات مساعدة تقدمها المنصة.',
+      contentEn: 'Welcome to Zafaf World (zafafworld.net). By accessing or using our platform, you agree to comply with and be bound by these Terms & Conditions. Zafaf World is a premier wedding marketplace connecting engaged couples with wedding venues, hotel ballrooms, planners, and service vendors across the Kingdom of Saudi Arabia. These terms govern your use of the website, mobile interfaces, and any helper services.'
     },
     {
       id: 'roles',
       titleAr: '٢. أدوار المنصة ومسؤولياتها',
       titleEn: '2. Platform Roles & Responsibilities',
-      contentAr: 'تحدد هذه الفقرة مسؤوليات وحقوق العملاء (المقبلين على الزواج) والموردين (مقدمي الخدمات وقاعات الأفراح) عبر المنصة.\n\n[Business-Approved Policy Segment: Platform Roles and Responsibilities]',
-      contentEn: 'This clause outlines the respective roles and responsibilities of couples (clients) and vendors (service and hall providers) on the marketplace.\n\n[Business-Approved Policy Segment: Platform Roles and Responsibilities]'
+      contentAr: 'تعمل منصة زفاف وورلد كمنصة وسيطة لتسهيل اكتشاف مزودي الخدمات والمقارنة بينهم وتقديم طلبات الحجز والاستفسارات.\n\n- للمقبلين على الزواج: تصفح المنصة وتقديم الاستفسارات مجاني بالكامل. يجب عليك تقديم معلومات حقيقية ودقيقة عند إرسال طلبات التواصل أو الحجز.\n- للموردين وقاعات الأفراح: الموردون وقاعات الأفراح المسجلون هم جهات مستقلة تمامًا. يتحمل المورد المسؤولية الكاملة عن صحة ودقة الصور، والأسعار، والتفاصيل، والتوافر المعروض لخدماته. يعتبر عقد تقديم الخدمة النهائي اتفاقًا مباشرًا وملزمًا بين المقبلين على الزواج والمورد دون أدنى مسؤولية على المنصة.',
+      contentEn: 'Zafaf World operates as an intermediary matchmaking marketplace designed to facilitate service discovery, comparisons, and booking inquiries.\n\n- For Couples: Browsing the platform and submitting inquiries is completely free. You agree to submit authentic, accurate, and current information when creating booking requests.\n- For Vendors & Venues: Registered vendors are independent business entities. Each vendor bears sole responsibility for the accuracy of their listings, images, pricing, availability, and services. The actual contract of service is executed directly between the couple and the vendor, without any platform involvement.'
     },
     {
       id: 'accounts',
       titleAr: '٣. تسجيل الحسابات والأمان',
       titleEn: '3. Account Registration & Security',
-      contentAr: 'مخصص للالتزامات المتعلقة بأمان كلمات المرور وحسابات المستخدمين وسرية بيانات الدخول الخاصة بهم.\n\n[Business-Approved Policy Segment: Account Registration and Security]',
-      contentEn: 'Dedicated to user responsibilities regarding password safety, account security, and data access confidentiality.\n\n[Business-Approved Policy Segment: Account Registration and Security]'
+      contentAr: 'للاستفادة من ميزات التخطيط المتقدمة وحفظ المفضلات وإرسال طلبات الحجز، يتوجب على المستخدمين والموردين إنشاء حساب. أنت مسؤول مسؤولية كاملة عن الحفاظ على سرية بيانات حسابك وكلمة المرور الخاصة بك. أي نشاط يتم تحت حسابك يعتبر مسؤوليتك. تحتفظ منصة زفاف وورلد بالحق في تعليق أو إغلاق أي حسابات تقدم معلومات غير صحيحة أو تنتهك معايير أمان مجتمعنا.',
+      contentEn: 'To utilize advanced planning tools, save favorites, and submit booking inquiries, users and vendors must create an account. You are solely responsible for maintaining the confidentiality of your account credentials and passwords. All activities under your account are your responsibility. Zafaf World reserves the right to suspend or terminate accounts that provide fraudulent information or violate our security guidelines.'
     },
     {
       id: 'commercial',
       titleAr: '٤. الشروط التجارية والمالية',
       titleEn: '4. Commercial & Financial Terms',
-      contentAr: 'يشمل هذا القسم سياسات الرسوم والدفعات والعروض المدرجة من قبل الشركاء في المنصة.\n\n[Business-Approved Policy Segment: Commercial and Financial Terms]',
-      contentEn: 'Includes payment guidelines, fee structures, and commercial offerings published by marketplace partners.\n\n[Business-Approved Policy Segment: Commercial and Financial Terms]'
+      contentAr: 'الأسعار المعروضة على المنصة يتم توفيرها مباشرة من الموردين وتخضع للتحديث المستمر. شروط دفع العربون، والضمان المالي، والإلغاء، واسترداد الأموال تخضع تمامًا للسياسات التجارية الخاصة بكل مورد ومضمون عقده المباشر مع العميل. لا تعتبر منصة زفاف وورلد طرفًا ماليًا في هذه المعاملات ولا تتحمل أي مسؤولية عن أي نزاع يتعلق بالعربون أو جودة تقديم الخدمات أو عدم الالتزام بالاتفاقيات.',
+      contentEn: 'Pricing shown on the platform is provided directly by vendors and is subject to change. Deposit requirements, cancellation windows, and refunds are strictly governed by the specific vendor\'s commercial policies and their direct agreement with the client. Zafaf World is not a party to these transactions and bears no liability for deposit disputes, service failures, or contract breaches.'
     }
   ]);
 </script>
@@ -81,7 +81,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
       <!-- Terms details -->
       <main class="lg:col-span-8 bg-white rounded-2xl border border-[var(--color-border)] p-6 sm:p-8 flex flex-col gap-8">
         {#each sections as sec}
-          <section id={sec.id} class="scroll-">
+          <section id={sec.id} class="scroll-mt-24">
             <h2 class="font-display text-xl font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2">
               <span class="text-[var(--color-primary)]">•</span>
               {getLocalizedField(sec, 'title', getLocale())}

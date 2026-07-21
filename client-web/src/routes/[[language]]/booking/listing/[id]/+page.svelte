@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import * as m from '$lib/paraglide/messages.js';
 import { getLocale } from '$lib/paraglide/runtime.js';
 import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$lib/utils/localize.js';
@@ -153,7 +154,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
 <div class="bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
   <div class="container-page py-8">
     <div class="flex items-center gap-2 text-sm text-[var(--color-muted)] mb-4">
-      <a href="/listings" class="hover:text-[var(--color-primary)] transition-colors">
+      <a href="/" class="hover:text-[var(--color-primary)] transition-colors">
         {m.auto_listings()}
       </a>
       {#if listing}
@@ -235,7 +236,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
 
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
         <Button href="/" variant="primary">{m.booking_success_home()}</Button>
-        <Button href="/listings" variant="outline">{m.auto_browse_listings()}</Button>
+        <Button href="/" variant="outline">{m.auto_browse_listings()}</Button>
       </div>
     </div>
 
@@ -259,7 +260,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
         {m.auto_listing_not_found()}
       </h2>
       <p class="text-[var(--color-muted)] mb-6">{m.errors_notFound()}</p>
-      <Button href="/listings" variant="primary">{m.auto_browse_listings()}</Button>
+      <Button href="/" variant="primary">{m.auto_browse_listings()}</Button>
     </div>
 
   <!-- ═══ Main form ═══ -->

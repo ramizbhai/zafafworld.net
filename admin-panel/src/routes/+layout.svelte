@@ -5,6 +5,7 @@
   import { navigating } from '$app/stores';
   import { ui } from '$lib/stores/ui.store.js';
   import Loading from '$lib/components/Loading.svelte';
+  import NavigationProgressBar from '$lib/components/NavigationProgressBar.svelte';
 
   let { children } = $props();
 
@@ -23,6 +24,7 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
+<NavigationProgressBar />
 <Loading show={!!$navigating || $ui.globalLoading} />
 
 {@render children()}

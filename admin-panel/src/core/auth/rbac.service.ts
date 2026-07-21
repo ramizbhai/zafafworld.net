@@ -10,7 +10,7 @@ export interface User {
 export class RBACService {
     static isSuperAdmin(user?: User | null): boolean {
         if (!user) return false;
-        return user.scopes?.includes('super_admin') || false;
+        return user.role === 'Admin' || user.scopes?.includes('super_admin') || false;
     }
 
     static hasScope(user: User | null | undefined, scope: string): boolean {

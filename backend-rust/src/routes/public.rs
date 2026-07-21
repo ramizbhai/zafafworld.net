@@ -33,6 +33,7 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route("/listings/:slug", get(get_listing_by_slug))
 
         .route("/platform/stats", get(get_platform_stats))
+        .route("/support", post(create_support_message))
 }
 
 
@@ -2214,7 +2215,59 @@ async fn get_search_suggestions(
     })))
 }
 
+#[derive(Deserialize, Validate)]
+pub struct CreateSupportMessageRequest {
+    #[validate(length(min = 1, max = 255))]
+    pub name: String,
+    #[validate(email)]
+    pub email: String,
+    #[validate(length(max = 50))]
+    pub phone: Option<String>,
+    #[validate(length(min = 1, max = 255))]
+    pub subject: String,
+    #[validate(length(min = 1, max = 10000))]
+    pub message: String,
+}
 
+pub async fn create_support_message(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateSupportMessageRequest>,
+) -> Result<Json<Value>, AppError> {
+    payload.validate()?;
+
+    let sanitized_name = sanitize_str(&payload.name, limits::LABEL);
+    let sanitized_email = sanitize_str(&payload.email, limits::EMAIL).to_lowercase();
+    let sanitized_phone = payload.phone.as_ref().map(|p| sanitize_str(p, limits::PHONE));
+    let sanitized_subject = sanitize_str(&payload.subject, limits::LABEL);
+    let sanitized_message = sanitize_str(&payload.message, 10000);
+
+    let row = sqlx::query(
+        "INSERT INTO public.support_messages (name, email, phone, subject, message)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, status, created_at"
+    )
+    .bind(sanitized_name)
+    .bind(sanitized_email)
+    .bind(sanitized_phone)
+    .bind(sanitized_subject)
+    .bind(sanitized_message)
+    .fetch_one(&state.db)
+    .await?;
+
+    let message_id: Uuid = row.get("id");
+    let status: String = row.get("status");
+    let created_at: chrono::DateTime<chrono::Utc> = row.get("created_at");
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Support message submitted successfully",
+        "data": {
+            "id": message_id.to_string(),
+            "status": status,
+            "created_at": created_at.to_rfc3339()
+        }
+    })))
+}
 
 #[cfg(test)]
 mod tests {

@@ -51,7 +51,7 @@
                         </span>
 
                         <!-- Tier & Quota Badges -->
-                        <span class="tier-badge" title="Current Tier">
+                        <span class="tier-badge" class:free={!vendor.current_tier || vendor.current_tier === 'Free'} class:gold={vendor.current_tier === 'Gold' || vendor.current_tier === 'Golden'} class:vip={vendor.current_tier === 'VIP'} class:diamond={vendor.current_tier === 'Diamond'} title="Current Tier">
                             🌟 {vendor.current_tier || 'Free'}
                         </span>
                         <span class="quota-badge" title="Usage Quota">

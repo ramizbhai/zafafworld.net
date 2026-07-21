@@ -1,36 +1,36 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages.js';
-import { getLocale } from '$lib/paraglide/runtime.js';
-import { getLocalizedField } from '$lib/utils/localize.js';
+  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { getLocalizedField } from '$lib/utils/localize.js';
 
   const sections = $derived([
     {
       id: 'collection',
       titleAr: '١. جمع البيانات الشخصية',
       titleEn: '1. Collection of Personal Data',
-      contentAr: 'هذا القسم مخصص لتوضيح فئات البيانات الشخصية التي تجمعها المنصة من العملاء والموردين. يرجى مراجعة وتحديث هذا النص بما يتوافق مع السياسات التجارية الخاصة بكم.\n\n[Business-Approved Policy Segment: Personal Data Collection]',
-      contentEn: 'This section details the categories of personal data collected from couples and vendors on the platform. Please review and update this text to align with your approved data handling policies.\n\n[Business-Approved Policy Segment: Personal Data Collection]'
+      contentAr: 'نقوم بجمع البيانات الشخصية اللازمة لتمكين وتسهيل خدمات تخطيط حفلات الزفاف وتوصيلك بمقدمي الخدمات وقاعات الأفراح. تشمل هذه البيانات: الاسم، عنوان البريد الإلكتروني، رقم الهاتف، الموقع الجغرافي، تاريخ الزفاف المتوقع، الميزانية التقديرية، عدد الضيوف، وأي تفاصيل ترسلها في طلب الاستفسار. بالنسبة للموردين، نقوم أيضًا بجمع تفاصيل التسجيل التجاري، والأسعار، وبيانات الفواتير والتحصيل.',
+      contentEn: 'We collect personal data necessary to facilitate wedding planning services and connect you with venues and vendors. This includes your name, email address, phone number, location, expected wedding date, budget preferences, guest count, and any details sent via inquiry forms. For vendors, we also collect business registration details, pricing, and bank account details for billing.'
     },
     {
       id: 'processing',
       titleAr: '٢. معالجة البيانات واستخدامها',
       titleEn: '2. Data Processing & Usage',
-      contentAr: 'هنا يتم بيان الأغراض التي لأجلها تتم معالجة البيانات، كمعالجة الحجوزات أو تفعيل الخدمات المساعدة للعملاء.\n\n[Business-Approved Policy Segment: Data Processing and Usage]',
-      contentEn: 'Outlines the purposes for which user data is processed, such as completing venue bookings or empowering helper services.\n\n[Business-Approved Policy Segment: Data Processing and Usage]'
+      contentAr: 'تتم معالجة بياناتك للأغراض التالية: مطابقتك مع قاعات الزفاف والموردين المناسبين لتفضيلاتك، إرسال طلبات الحجز والاستفسارات، إدارة حسابك الشخصي، توفير تنبيهات المتابعة عبر الرسائل النصية القصيرة، وتحسين كفاءة استخدام المنصة. قد نستخدم بريدك الإلكتروني أو رقم هاتفك لإرسال إشعارات المعاملات، والنشرات التسويقية الدورية (والتي يمكنك إلغاء الاشتراك فيها في أي وقت).',
+      contentEn: 'Your data is processed for the following purposes: matching you with appropriate wedding venues and service vendors, transmitting booking inquiries, managing your user account, providing follow-up SMS alerts, and improving platform usability. We may use your email or phone number to send transactional notifications, updates, and marketing newsletters (which you can opt-out of at any time).'
     },
     {
       id: 'cookies',
       titleAr: '٣. ملفات تعريف الارتباط والتخزين',
       titleEn: '3. Cookies & Local Storage',
-      contentAr: 'توضيح كيفية استخدام ملفات تعريف الارتباط والتقنيات المشابهة لتحسين أداء المنصة وتخصيص تجربة المستخدم.\n\n[Business-Approved Policy Segment: Cookies and Local Storage]',
-      contentEn: 'Explains how cookies and similar local storage mechanisms are utilized to enhance site performance and save preferences.\n\n[Business-Approved Policy Segment: Cookies and Local Storage]'
+      contentAr: 'تستخدم منصة زفاف وورلد ملفات تعريف الارتباط وتخزين البيانات المحلي لتحسين تجربة التصفح وحفظ تفضيلاتك. نستخدم هذه التقنيات لحفظ لغتك المفضلة (العربية أو الإنجليزية)، تتبع الجلسة النشطة، والاحتفاظ ببيانات تسجيل الدخول المؤقتة لتسريع الاستخدام، وتحليل حركة الزوار الإحصائية. يمكنك التحكم بملفات تعريف الارتباط أو تعطيلها من إعدادات متصفحك في أي وقت.',
+      contentEn: 'Zafaf World uses cookies and local storage configurations to enhance your browsing experience and save preferences. These technologies help us remember your language choice (Arabic/English), manage active sessions, preserve temporary authentication tokens, and analyze anonymized site traffic statistics. You can configure your browser to reject cookies, though some interactive platform features may become limited.'
     },
     {
       id: 'sharing',
       titleAr: '٤. مشاركة البيانات والإفصاح عنها',
       titleEn: '4. Data Sharing & Disclosures',
-      contentAr: 'تفصيل الحالات المسموح فيها بمشاركة البيانات مع الموردين لإتمام الحجوزات أو الإجراءات القانونية المخولة.\n\n[Business-Approved Policy Segment: Data Sharing and Disclosures]',
-      contentEn: 'Details the occurrences under which user details may be shared with partners to fulfill bookings or legal obligations.\n\n[Business-Approved Policy Segment: Data Sharing and Disclosures]'
+      contentAr: 'نحن لا نبيع ولا نؤجر بياناتك الشخصية لأي جهات تسويقية خارجية. عندما تقوم بإرسال استفسار أو طلب حجز لقاعة أو خدمة زفاف، فإننا نقوم بمشاركة بيانات الاتصال وتفاصيل الحجز المدخلة مع ذلك المورد المحدد فقط ليتمكن من معالجة طلبك والرد عليك. قد نقوم بالإفصاح عن البيانات لمزودي الخدمات المساعدين (كخدمات الاستضافة والرسائل النصية)، أو في الحالات التي يتطلبها القانون والأنظمة المعتمدة بالمملكة العربية السعودية.',
+      contentEn: 'We do not sell or lease your personal data to external marketing agencies. When you submit a booking or inquiry request for a venue or service, we share your input contact details and wedding requirements with that specific vendor to allow them to process and respond to your request. We may disclose data to auxiliary service providers (e.g. cloud hosting, SMS gateways) or where required to comply with Saudi laws and security regulations.'
     }
   ]);
 </script>
@@ -81,7 +81,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
       <!-- Privacy details -->
       <main class="lg:col-span-8 bg-white rounded-2xl border border-[var(--color-border)] p-6 sm:p-8 flex flex-col gap-8">
         {#each sections as sec}
-          <section id={sec.id} class="scroll-">
+          <section id={sec.id} class="scroll-mt-24">
             <h2 class="font-display text-xl font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2">
               <span class="text-[var(--color-primary)]">•</span>
               {getLocalizedField(sec, 'title', getLocale())}

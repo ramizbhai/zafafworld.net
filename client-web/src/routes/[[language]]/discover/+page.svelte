@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { navigating } from '$app/stores';
   import * as m from '$lib/paraglide/messages.js';
   import { getLocale } from '$lib/paraglide/runtime.js';
   import { formatDate } from '$lib/utils/localize.js';
   import Badge from '$lib/components/ui/Badge.svelte';
+  import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import { i18n } from '$lib/i18n.js';
   import { resolveMediaUrl, getOptimizedImage } from '$lib/shared/utils/media.js';
 
@@ -74,7 +76,20 @@
 </div>
 
 <div class="container-page py-12">
-  {#if featuredPost}
+  {#if $navigating}
+    <div class="space-y-8 animate-pulse">
+      <div class="h-96 rounded-3xl bg-gray-200 w-full"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {#each Array(6) as _}
+          <div class="h-80 bg-gray-100 rounded-2xl flex flex-col gap-4 p-4">
+            <div class="h-48 bg-gray-200 rounded-xl w-full"></div>
+            <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {:else if featuredPost}
 
       <!-- Featured post -->
       <article class="relative rounded-3xl overflow-hidden mb-12 border border-[var(--color-border)] bg-white/95 backdrop-blur-sm shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 group" aria-label="Featured post">

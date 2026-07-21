@@ -1,16 +1,15 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages.js';
-import { getLocale } from '$lib/paraglide/runtime.js';
-import { getLocalizedField } from '$lib/utils/localize.js';
-import { i18n } from '$lib/i18n.js';
-import { env } from '$env/dynamic/public';
+  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { getLocalizedField } from '$lib/utils/localize.js';
+  import { i18n } from '$lib/i18n.js';
+  import { env } from '$env/dynamic/public';
 
   const currentYear = new Date().getFullYear();
 
   const quickLinks = $derived([
     { href: i18n.resolveRoute('/', getLocale()),        label: m.nav_home() },
     { href: i18n.resolveRoute('/venues', getLocale()),  label: m.nav_venues() },
-    { href: i18n.resolveRoute('/vendors', getLocale()), label: m.nav_vendors() },
     { href: i18n.resolveRoute('/offers', getLocale()),  label: getLocale() === 'ar' ? 'العروض الحصرية' : 'Exclusive Offers' },
     { href: i18n.resolveRoute('/discover', getLocale()),    label: m.nav_blog() },
     { href: i18n.resolveRoute('/about', getLocale()),   label: m.nav_about() },
@@ -25,6 +24,8 @@ import { env } from '$env/dynamic/public';
   const legalLinks = $derived([
     { href: i18n.resolveRoute('/terms', getLocale()),   label: m.footer_terms() },
     { href: i18n.resolveRoute('/privacy', getLocale()), label: m.footer_privacy() },
+    { href: i18n.resolveRoute('/cookies', getLocale()), label: getLocale() === 'ar' ? 'سياسة ملفات تعريف الارتباط' : 'Cookie Policy' },
+    { href: i18n.resolveRoute('/cancellation', getLocale()), label: getLocale() === 'ar' ? 'سياسة الإلغاء والاسترجاع' : 'Cancellation & Refund Policy' },
   ]);
 
   const socialLinks = [
@@ -69,9 +70,26 @@ import { env } from '$env/dynamic/public';
         <p class="text-[var(--color-primary)] font-display text-lg italic mb-3">
           {m.footer_tagline()}
         </p>
-        <p class="text-sm text-white/60 leading-relaxed mb-6">
+        <p class="text-sm text-white/60 leading-relaxed mb-4">
           {m.footer_description()}
         </p>
+
+        <!-- Contact Information -->
+        <div class="mb-6 space-y-2.5 text-sm text-white/70">
+          <div class="flex items-center gap-2.5">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-[var(--color-primary)] shrink-0">
+              <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+              <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+            </svg>
+            <a href="mailto:contact@zafafworld.net" class="hover:text-[var(--color-primary)] transition-colors">contact@zafafworld.net</a>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-[var(--color-primary)] shrink-0">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+            </svg>
+            <a href="tel:+966592112517" class="hover:text-[var(--color-primary)] transition-colors" dir="ltr">+966 59 211 2517</a>
+          </div>
+        </div>
 
         <!-- Social Links -->
         <div>
@@ -101,11 +119,6 @@ import { env } from '$env/dynamic/public';
               </a>
             </li>
           {/each}
-          <li>
-            <a href="{env.PUBLIC_VENDOR_URL || 'http://localhost:5174'}/register" class="text-sm text-white/70 hover:text-[var(--color-primary)] transition-colors">
-              {m.nav_listYourVenue()}
-            </a>
-          </li>
         </ul>
       </div>
 
@@ -158,7 +171,7 @@ import { env } from '$env/dynamic/public';
               />
               <button
                 type="submit"
-                class="w-full rounded-lg bg-[var(--color-primary)] text-[var(--color-secondary)] px-4 py-3 text-sm font-semibold hover:bg-[var(--color-primary-dark)] transition-colors"
+                class="w-full rounded-lg bg-[var(--color-primary)] text-[var(--color-secondary)] px-4 py-3 text-sm font-semibold hover:bg-[var(--color-primary-dark)] transition-colors cursor-pointer"
               >
                 {m.footer_newsletter_submit()}
               </button>
@@ -177,7 +190,7 @@ import { env } from '$env/dynamic/public';
         © {currentYear} {m.meta_siteName()}. {m.footer_allRights()}
       </p>
       <div class="flex items-center gap-6">
-        {#each legalLinks as link}
+        {#each legalLinks.slice(0, 2) as link}
           <a href={link.href} class="text-xs text-white/40 hover:text-[var(--color-primary)] transition-colors">
             {link.label}
           </a>

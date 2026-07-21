@@ -26,8 +26,9 @@ pub struct UpdateVendorFeaturedInput {
 
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
+        .route("/approvals", get(list_pending_listings))
         .route("/vendors/:id", get(get_vendor_detail))
-        .route("/vendors/:id/product-status", patch(update_vendor_product_status))
+        .route("/vendors/:id/products/:product_id/status", patch(update_vendor_product_status))
         .route("/vendors/:id/promote", post(promote_vendor_product))
         .route("/vendors/pending-listings", get(list_pending_listings))
         .route("/vendors/all-listings", get(list_all_listings))
@@ -1366,10 +1367,15 @@ async fn get_admin_vendors_context(
     // 1. Vendors
     let vendors_rows = sqlx::query(
         "SELECT v.id, v.slug, v.name_en, v.name_ar, v.email, v.phone, v.category, v.status, 
-                v.subscription_status, v.subscription_tier_id, v.is_featured, v.featured_expires_at, v.created_at,
-                c.name_en as city_name_en, c.name_ar as city_name_ar
+                v.subscription_status, v.subscription_tier_id, v.subscription_expires_at, v.is_featured, v.featured_expires_at, v.created_at,
+                c.name_en as city_name_en, c.name_ar as city_name_ar,
+                COALESCE(
+                    CASE WHEN v.subscription_expires_at < CURRENT_TIMESTAMP THEN 'Free' ELSE st.name END, 
+                    'Free'
+                ) AS current_tier
          FROM vendors v
          LEFT JOIN cities c ON v.city_id = c.id
+         LEFT JOIN subscription_tiers st ON v.subscription_tier_id = st.id
          ORDER BY v.created_at DESC"
     )
     .fetch_all(&mut *rls_tx.tx)
@@ -1388,6 +1394,8 @@ async fn get_admin_vendors_context(
             "status": row.get::<String, _>("status"),
             "subscription_status": row.get::<String, _>("subscription_status"),
             "subscription_tier_id": row.try_get::<Option<Uuid>, _>("subscription_tier_id").unwrap_or_default().map(|u| u.to_string()),
+            "subscription_expires_at": row.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("subscription_expires_at").unwrap_or_default().map(|t| t.to_rfc3339()),
+            "current_tier": row.get::<String, _>("current_tier"),
             "is_featured": row.get::<bool, _>("is_featured"),
             "featured_expires_at": row.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("featured_expires_at").unwrap_or_default().map(|t| t.to_rfc3339()),
             "created_at": row.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("created_at").unwrap_or_default().map(|t| t.to_rfc3339()),

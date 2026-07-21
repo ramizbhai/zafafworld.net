@@ -40,11 +40,36 @@ export function getCategoryLabel(category: string | null | undefined): string {
     return mapping[category] || category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-export function filterVendors(vendors: any[], activeTab: string, search: string) {
+export function filterVendors(
+    vendors: any[],
+    activeTab: string,
+    search: string,
+    accountStatus: string = 'all',
+    subTier: string = 'all',
+    subStatus: string = 'all'
+) {
     return vendors.filter(v => {
+        // Tab filtering
         if (activeTab === 'active' && (v.status !== 'active' || v.subscription_status === 'stopped')) return false;
         if (activeTab === 'stopped' && v.subscription_status !== 'stopped') return false;
 
+        // Account status filter
+        if (accountStatus !== 'all' && v.status !== accountStatus) return false;
+
+        // Subscription Tier filter
+        if (subTier !== 'all') {
+            const tierName = v.current_tier || 'Free';
+            if (subTier === 'Gold' || subTier === 'Golden') {
+                if (tierName !== 'Gold' && tierName !== 'Golden') return false;
+            } else if (tierName.toLowerCase() !== subTier.toLowerCase()) {
+                return false;
+            }
+        }
+
+        // Subscription status filter
+        if (subStatus !== 'all' && v.subscription_status !== subStatus) return false;
+
+        // Search text matching
         if (search) {
             const q = search.toLowerCase();
             const nameEn = (v.name_en || '').toLowerCase();

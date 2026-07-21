@@ -78,7 +78,7 @@
     >
       <!-- Link 1: Wedding Halls -->
       <a
-        href={l("/listings")}
+        href={l("/")}
         onmouseenter={() => state.setDropdown("wedding-halls")}
         onmouseleave={state.handleMouseLeave}
         class="flex items-center gap-2 transition-all duration-200 pb-1.5 group
@@ -160,7 +160,7 @@
 
       <!-- Link 3: Wedding Planning Department -->
       <a
-        href={l("/listings")}
+        href={l("/")}
         class="flex items-center gap-2 transition-all duration-200 pb-1.5 group
           {isGlass
           ? 'hover:text-[var(--color-primary)]'
@@ -307,10 +307,10 @@
               {m.auto_planning_assistance_()}
             </span>
             <div class="flex flex-col gap-3 font-semibold text-[#2D2620]">
-              <a href={l("/listings")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_interactive_budget_p()}</a>
-              <a href={l("/listings")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_checklist_scheduler_()}</a>
+              <a href={l("/")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_interactive_budget_p()}</a>
+              <a href={l("/")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_checklist_scheduler_()}</a>
               <a href={l("/vendors")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_supplier_recommendat()}</a>
-              <a href={l("/listings")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_bridal_checklist__t()}</a>
+              <a href={l("/")} onclick={() => (state.activeDropdown = null)} class="text-xs hover:text-[var(--color-primary-contrast)] transition-colors py-1">{m.auto_bridal_checklist__t()}</a>
             </div>
           {:else if state.activeDropdown === "discounts"}
             <span class="text-[10px] font-bold tracking-wider text-[var(--color-muted)] uppercase mb-3 block">

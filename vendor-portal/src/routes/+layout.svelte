@@ -4,6 +4,7 @@
     import { setI18nContext } from "$lib/i18n/i18n.svelte";
     import { uiStore } from "$lib/stores/ui.svelte";
     import Loading from "$lib/components/Loading.svelte";
+    import NavigationProgressBar from "$lib/components/NavigationProgressBar.svelte";
     import "../app.css";
 
     let { data, children } = $props();
@@ -22,6 +23,7 @@
     let isDashboard = $derived($page.url.pathname.startsWith("/dashboard"));
 </script>
 
+<NavigationProgressBar />
 <Loading show={!!$navigating || uiStore.globalLoading} />
 
 <div

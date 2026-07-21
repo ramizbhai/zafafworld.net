@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
+  import { fade } from 'svelte/transition';
   // ZafafWorld - Loading Screen Component (Glassmorphism)
   // Usage: <Loading show={isLoading} />
-  let { show = true } = $props();
+  let { show = true }: { show?: boolean } = $props();
 </script>
 
 {#if show}
-<div class="zw-loader">
+<div class="zw-loader" transition:fade={{ duration: 250 }}>
   <div class="glass-panel">
     <div class="logo-wrap">
       <div class="ring"></div>

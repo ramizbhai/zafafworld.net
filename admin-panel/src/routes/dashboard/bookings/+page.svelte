@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, lang } from '$lib/i18n/index.js';
-  import { CalendarCheck, Search, Filter, Eye, ChevronRight, Clock, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-svelte';
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
+  import { enhance } from '$app/forms';
 
   interface Props {
     data: {
@@ -191,12 +191,43 @@
               <td style="text-align:end; font-weight:600; font-size:13px; color:var(--success)">
                 {fmt(b.depositPaid)} SAR
               </td>
-              <td><span class={statusClass(b.status)}>{statusLabel(b.status)}</span></td>
               <td>
-                <button class="btn-icon" aria-label="View booking" title="View details" disabled>
-                  <Eye size={14} />
-                </button>
+                <div style="display:flex; gap:6px;">
+                  {#if b.status === 'pending'}
+                    <form method="POST" action="?/updateStatus" use:enhance={() => {
+                      return async ({ update }) => {
+                        await invalidateAll();
+                        update();
+                      };
+                    }}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <input type="hidden" name="to_status" value="confirmed" />
+                      <button type="submit" class="btn btn-sm btn-success" style="padding: 4px 8px; font-size:11px;">
+                        <CheckCircle2 size={12} /> {$lang === 'ar' ? 'تأكيد' : 'Confirm'}
+                      </button>
+                    </form>
+                  {/if}
+                  {#if b.status !== 'cancelled' && b.status !== 'completed'}
+                    <form method="POST" action="?/updateStatus" use:enhance={() => {
+                      return async ({ update }) => {
+                        await invalidateAll();
+                        update();
+                      };
+                    }}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <input type="hidden" name="to_status" value="cancelled" />
+                      <button type="submit" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size:11px; color:var(--danger); border-color:var(--danger-border);" onclick={(e) => {
+                        if (!confirm($lang === 'ar' ? 'هل أنت تأكد من إلغاء هذا الحجز؟' : 'Are you sure you want to cancel this booking?')) {
+                          e.preventDefault();
+                        }
+                      }}>
+                        <XCircle size={12} /> {$lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                    </form>
+                  {/if}
+                </div>
               </td>
+
             </tr>
           {/each}
           {#if data.bookings.length === 0}

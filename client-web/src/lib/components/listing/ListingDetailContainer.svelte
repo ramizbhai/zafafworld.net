@@ -6,6 +6,7 @@
     import DynamicListingAttributes from "./DynamicListingAttributes.svelte";
     import CoordinatorContactCard from "./CoordinatorContactCard.svelte";
     import ListingFeaturesGrid from "./ListingFeaturesGrid.svelte";
+    import ListingDetailSkeleton from "./ListingDetailSkeleton.svelte";
     import { MapPin, Users, Building, ShieldCheck } from "lucide-svelte";
     import { getLocale } from "$lib/paraglide/runtime.js";
     import * as m from "$lib/paraglide/messages.js";
@@ -13,6 +14,7 @@
     let { data = {} } = $props<{ data: any }>();
 
     const listing = $derived(data?.listing);
+    const isLoading = $derived(data?.loading || (!data?.listing && data?.initialLoading !== false));
     const isAr = $derived(getLocale() === 'ar');
 
     // Extractors
@@ -89,12 +91,14 @@
     });
 </script>
 
-{#if !listing}
+{#if isLoading}
+    <ListingDetailSkeleton />
+{:else if !listing}
     <div class="min-h-screen flex items-center justify-center bg-slate-50">
         <div class="text-center p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <h2 class="text-2xl font-bold text-slate-800">{isAr ? 'الإعلان غير موجود' : 'Listing not found'}</h2>
             <a
-                href="/listings"
+                href="/"
                 class="text-amber-600 hover:text-amber-700 font-semibold underline mt-4 inline-block"
             >
                 {isAr ? 'العودة للبحث' : 'Return to search'}

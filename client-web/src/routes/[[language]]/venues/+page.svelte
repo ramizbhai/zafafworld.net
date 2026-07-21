@@ -63,7 +63,7 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
   const limit = 9;
 
   // ── Local loading state (never touches the global overlay) ───────────────
-  let isLoading = $state(false);
+  let isLoading = $state(true);
 
   // AbortController for the current in-flight fetch. Replaced on every new
   // call so stale responses are silently dropped.

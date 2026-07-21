@@ -13,7 +13,7 @@ use sqlx::Row;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/cms/articles", get(list_cms_articles).post(create_cms_article))
-        .route("/cms/articles/:id", put(update_cms_article))
+        .route("/cms/articles/:id", put(update_cms_article).delete(delete_cms_article))
 }
 
 #[derive(serde::Deserialize)]
@@ -318,3 +318,29 @@ async fn update_cms_article(
         }
     })))
 }
+
+async fn delete_cms_article(
+    _auth: RequireAdmin,
+    mut rls_tx: RlsTx,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    tracing::info!("Admin deleting CMS article: {}", id);
+
+    let rows_affected = sqlx::query("DELETE FROM seo_articles WHERE id = $1")
+        .bind(id)
+        .execute(&mut *rls_tx.tx)
+        .await?
+        .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(AppError::NotFound("Article not found".to_string()));
+    }
+
+    rls_tx.tx.commit().await?;
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Article deleted successfully"
+    })))
+}
+

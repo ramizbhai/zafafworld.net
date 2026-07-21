@@ -76,6 +76,10 @@ pub fn router() -> Router<AppState> {
             "/diagnostics/notifications",
             get(get_notification_diagnostics),
         )
+        .route("/support", get(list_support_messages))
+        .route("/support/:id/status", patch(update_support_message_status))
+        .route("/support/:id/assign", patch(assign_support_message_admin))
+        .route("/support/:id", delete(delete_support_message))
 }
 
 async fn get_notification_diagnostics(
@@ -1000,8 +1004,8 @@ async fn list_admin_notifications(
             se.is_read,
             se.created_at,
             se.target_vendor_id,
-            v.brand_name_en AS target_vendor_name_en,
-            v.brand_name_ar AS target_vendor_name_ar,
+            v.name_en AS target_vendor_name_en,
+            v.name_ar AS target_vendor_name_ar,
             gu.email AS operator_email
          FROM system_events se
          LEFT JOIN global_users gu ON se.user_id = gu.id
@@ -1691,5 +1695,208 @@ pub async fn flag_user(
     Ok(Json(json!({
         "status": "success",
         "message": "User flagged successfully"
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct SupportMessagesQuery {
+    pub status: Option<String>,
+    pub search: Option<String>,
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+}
+
+pub async fn list_support_messages(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    axum::extract::Query(query): axum::extract::Query<SupportMessagesQuery>,
+) -> Result<Json<Value>, AppError> {
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(20);
+    let offset = (page - 1) * limit;
+
+    let mut sql = "
+        SELECT 
+            m.id, m.name, m.email, m.phone, m.subject, m.message, m.status, 
+            m.assigned_admin_id, m.created_at, m.updated_at,
+            u.display_name AS assigned_admin_name
+        FROM public.support_messages m
+        LEFT JOIN public.global_users u ON m.assigned_admin_id = u.id
+        WHERE 1=1
+    ".to_string();
+
+    let mut count_sql = "SELECT COUNT(*) FROM public.support_messages m WHERE 1=1".to_string();
+
+    let search_val = query.search.clone().unwrap_or_default().trim().to_string();
+    let has_search = !search_val.is_empty();
+
+    let status_val = query.status.clone().unwrap_or_default().trim().to_string();
+    let has_status = !status_val.is_empty();
+
+    let mut param_index = 1;
+    let mut cond_str = String::new();
+
+    if has_status {
+        cond_str.push_str(&format!(" AND m.status = ${}", param_index));
+        param_index += 1;
+    }
+    if has_search {
+        cond_str.push_str(&format!(
+            " AND (LOWER(m.name) LIKE LOWER(${}) OR LOWER(m.email) LIKE LOWER(${}) OR LOWER(m.subject) LIKE LOWER(${}))",
+            param_index, param_index, param_index
+        ));
+        param_index += 1;
+    }
+
+    sql.push_str(&cond_str);
+    count_sql.push_str(&cond_str);
+
+    sql.push_str(&format!(" ORDER BY m.created_at DESC LIMIT ${} OFFSET ${}", param_index, param_index + 1));
+
+    let mut db_query = sqlx::query(&sql);
+    let mut count_query = sqlx::query(&count_sql);
+
+    let like_pattern = format!("%{}%", search_val);
+
+    if has_status {
+        db_query = db_query.bind(&status_val);
+        count_query = count_query.bind(&status_val);
+    }
+    if has_search {
+        db_query = db_query.bind(&like_pattern);
+        count_query = count_query.bind(&like_pattern);
+    }
+
+    db_query = db_query.bind(limit).bind(offset);
+
+    let rows = db_query.fetch_all(&state.db).await?;
+    let total_row = count_query.fetch_one(&state.db).await?;
+    let total_count: i64 = total_row.get(0);
+
+    let mut items = Vec::new();
+    for row in rows {
+        let id: Uuid = row.get("id");
+        let assigned_admin_id: Option<Uuid> = row.get("assigned_admin_id");
+        let created_at: chrono::DateTime<chrono::Utc> = row.get("created_at");
+        let updated_at: chrono::DateTime<chrono::Utc> = row.get("updated_at");
+
+        items.push(json!({
+            "id": id.to_string(),
+            "name": row.get::<String, _>("name"),
+            "email": row.get::<String, _>("email"),
+            "phone": row.get::<Option<String>, _>("phone"),
+            "subject": row.get::<String, _>("subject"),
+            "message": row.get::<String, _>("message"),
+            "status": row.get::<String, _>("status"),
+            "assigned_admin_id": assigned_admin_id.map(|uid| uid.to_string()),
+            "assigned_admin_name": row.get::<Option<String>, _>("assigned_admin_name"),
+            "created_at": created_at.to_rfc3339(),
+            "updated_at": updated_at.to_rfc3339(),
+        }));
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "data": {
+            "items": items,
+            "pagination": {
+                "total": total_count,
+                "page": page,
+                "limit": limit,
+                "pages": (total_count as f64 / limit as f64).ceil() as i64
+            }
+        }
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct UpdateSupportMessageStatusRequest {
+    pub status: String,
+}
+
+pub async fn update_support_message_status(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<UpdateSupportMessageStatusRequest>,
+) -> Result<Json<Value>, AppError> {
+    if !matches!(payload.status.as_str(), "new" | "in_progress" | "resolved" | "closed") {
+        return Err(AppError::BadRequest("Status must be 'new', 'in_progress', 'resolved', or 'closed'".to_string()));
+    }
+
+    let rows_affected = sqlx::query(
+        "UPDATE public.support_messages
+         SET status = $1, updated_at = now()
+         WHERE id = $2"
+    )
+    .bind(&payload.status)
+    .bind(id)
+    .execute(&state.db)
+    .await?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(AppError::NotFound("Support message not found".to_string()));
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Support message status updated successfully"
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct AssignSupportMessageAdminRequest {
+    pub admin_id: Option<Uuid>,
+}
+
+pub async fn assign_support_message_admin(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<AssignSupportMessageAdminRequest>,
+) -> Result<Json<Value>, AppError> {
+    let rows_affected = sqlx::query(
+        "UPDATE public.support_messages
+         SET assigned_admin_id = $1, updated_at = now()
+         WHERE id = $2"
+    )
+    .bind(payload.admin_id)
+    .bind(id)
+    .execute(&state.db)
+    .await?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(AppError::NotFound("Support message not found".to_string()));
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Support message admin assignment updated successfully"
+    })))
+}
+
+pub async fn delete_support_message(
+    State(state): State<AppState>,
+    _auth: RequireAdmin,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, AppError> {
+    let rows_affected = sqlx::query(
+        "DELETE FROM public.support_messages
+         WHERE id = $1"
+    )
+    .bind(id)
+    .execute(&state.db)
+    .await?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(AppError::NotFound("Support message not found".to_string()));
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Support message deleted successfully"
     })))
 }
