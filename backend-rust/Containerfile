@@ -44,7 +44,7 @@ COPY . .
 # must be kept up-to-date via `cargo sqlx prepare` whenever queries change.
 ENV SQLX_OFFLINE=true
 
-RUN cargo build --release --bin backend-rust
+RUN touch src/main.rs && find src -type f -exec touch {} + && cargo build --release --bin backend-rust
 
 # Strip debug symbols to minimise final binary size
 RUN strip target/release/backend-rust

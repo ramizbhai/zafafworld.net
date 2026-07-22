@@ -34,6 +34,7 @@ pub fn router(state: AppState) -> Router<AppState> {
 
         .route("/platform/stats", get(get_platform_stats))
         .route("/support", post(create_support_message))
+        .route("/sitemap-data", get(get_sitemap_data))
 }
 
 
@@ -2265,6 +2266,93 @@ pub async fn create_support_message(
             "id": message_id.to_string(),
             "status": status,
             "created_at": created_at.to_rfc3339()
+        }
+    })))
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SitemapListingItem {
+    pub slug: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SitemapBlogItem {
+    pub slug: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SitemapComboItem {
+    pub city: String,
+    pub category: String,
+    pub updated_at: Option<String>,
+}
+
+pub async fn get_sitemap_data(
+    State(state): State<AppState>,
+) -> Result<Json<Value>, AppError> {
+    // 1. Fetch active listings
+    let listing_rows = sqlx::query(
+        "SELECT vp.slug, TO_CHAR(COALESCE(vp.updated_at, vp.created_at), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at
+         FROM vendor_products vp
+         JOIN vendors v ON vp.vendor_id = v.id
+         WHERE vp.status = 'active' AND vp.is_available = TRUE AND v.status = 'active'
+         ORDER BY vp.created_at DESC"
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    let listings: Vec<SitemapListingItem> = listing_rows.into_iter().map(|r| {
+        SitemapListingItem {
+            slug: r.get("slug"),
+            updated_at: r.get("updated_at"),
+        }
+    }).collect();
+
+    // 2. Fetch published blogs
+    let blog_rows = sqlx::query(
+        "SELECT slug, TO_CHAR(COALESCE(updated_at, published_at, created_at), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at
+         FROM blogs
+         WHERE is_published = true AND (published_at IS NULL OR published_at <= NOW())
+         ORDER BY created_at DESC"
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    let blogs: Vec<SitemapBlogItem> = blog_rows.into_iter().map(|r| {
+        SitemapBlogItem {
+            slug: r.get("slug"),
+            updated_at: r.get("updated_at"),
+        }
+    }).collect();
+
+    // 3. Fetch city x category combinations with at least 1 active listing
+    let combo_rows = sqlx::query(
+        "SELECT c.slug as city, vp.product_category as category, TO_CHAR(MAX(COALESCE(vp.updated_at, vp.created_at)), 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at
+         FROM vendor_products vp
+         JOIN vendors v ON vp.vendor_id = v.id
+         JOIN cities c ON vp.city_id = c.id
+         WHERE vp.status = 'active' AND vp.is_available = TRUE AND v.status = 'active'
+         GROUP BY c.slug, vp.product_category"
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    let combos: Vec<SitemapComboItem> = combo_rows.into_iter().map(|r| {
+        SitemapComboItem {
+            city: r.get("city"),
+            category: r.get("category"),
+            updated_at: r.get("updated_at"),
+        }
+    }).collect();
+
+    Ok(Json(json!({
+        "status": "success",
+        "data": {
+            "listings": listings,
+            "blogs": blogs,
+            "combos": combos
         }
     })))
 }

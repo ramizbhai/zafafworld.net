@@ -16,7 +16,14 @@ const runtimeWrapper = {
 // @ts-ignore
 export const i18n: any = createI18n(runtimeWrapper, {
     defaultLanguageTag: "ar",
-    exclude: [/^\/api/, /^\/bff/, /^\/healthz/],
+    exclude: [
+        /^\/api/,
+        /^\/bff/,
+        /^\/healthz/,
+        /^\/sitemap/,
+        /^\/ar\/sitemap/,
+        /^\/en\/sitemap/
+    ],
     prefixDefaultLanguage: "always"
 });
 
@@ -43,4 +50,3 @@ if (r.overwriteGetLocale) {
         return originalGetLocale();
     });
 }
-

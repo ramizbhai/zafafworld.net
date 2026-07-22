@@ -38,6 +38,8 @@ RUN chmod -R +x /app/node_modules/.bin/
 #   src/lib/paraglide/ (regenerated below).
 # .containerignore INCLUDES: project.inlang/ (required for paraglide-js).
 COPY --chown=root:root . .
+RUN echo "FORCE_REBUILD_TIMESTAMP_2026_07_22_091630"
+RUN touch src/lib/i18n.ts src/hooks.server.ts
 
 # Layer 5: compile i18n message catalog
 # Reads: project.inlang/settings.json (included via COPY above)
