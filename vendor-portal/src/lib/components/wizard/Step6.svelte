@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext, onMount, onDestroy } from "svelte";
+    import { getContext, onMount } from "svelte";
     import { getI18n } from "$lib/i18n/i18n.svelte";
     import { listingStore } from "$lib/stores/listingStore";
     import { Phone } from "lucide-svelte";
@@ -18,57 +18,25 @@
         setSubmitting: (val: boolean) => void;
     }>('wizard');
 
-    let coordinatorNameEn = $state($listingStore.formData.coordinatorNameEn);
-    let coordinatorNameAr = $state($listingStore.formData.coordinatorNameAr);
-    let coordinatorPhone = $state($listingStore.formData.coordinatorPhone);
-    let coordinatorWhatsapp = $state($listingStore.formData.coordinatorWhatsapp);
-    let coordinatorEmail = $state($listingStore.formData.coordinatorEmail);
-    let coordinatorMobile = $state($listingStore.formData.coordinatorMobile);
-
     let isValid = $derived(
-        coordinatorNameEn.trim().length > 0 &&
-        coordinatorNameAr.trim().length > 0 &&
-        coordinatorPhone.trim().length > 0 &&
-        coordinatorWhatsapp.trim().length > 0 &&
-        (coordinatorEmail.trim().length > 0 && /.+@.+\..+/.test(coordinatorEmail))
+        $listingStore.formData.coordinatorNameEn.trim().length > 0 &&
+        $listingStore.formData.coordinatorNameAr.trim().length > 0 &&
+        $listingStore.formData.coordinatorPhone.trim().length > 0 &&
+        $listingStore.formData.coordinatorWhatsapp.trim().length > 0 &&
+        ($listingStore.formData.coordinatorEmail.trim().length > 0 && /.+@.+\..+/.test($listingStore.formData.coordinatorEmail))
     );
 
     $effect(() => {
         wizard.setCanContinue(isValid);
     });
 
-    // Sync state on unmount (synchronous safety net)
-    onDestroy(() => {
-        listingStore.updateFormData({
-            coordinatorNameEn,
-            coordinatorNameAr,
-            coordinatorPhone,
-            coordinatorWhatsapp,
-            coordinatorEmail,
-            coordinatorMobile,
-        });
-    });
-
-    // 300ms debounced background sync
-    $effect(() => {
-        const _watch = coordinatorNameEn + coordinatorNameAr + coordinatorPhone +
-                       coordinatorWhatsapp + coordinatorEmail + coordinatorMobile;
-        const timer = setTimeout(() => {
-            listingStore.updateFormData({
-                coordinatorNameEn, coordinatorNameAr, coordinatorPhone,
-                coordinatorWhatsapp, coordinatorEmail, coordinatorMobile,
-            });
-        }, 300);
-        return () => clearTimeout(timer);
-    });
-
     onMount(() => {
         const unregister = wizard.registerSubmitHandler(async () => {
-            const hasNameEn = coordinatorNameEn.trim().length > 0;
-            const hasNameAr = coordinatorNameAr.trim().length > 0;
-            const hasPhone = coordinatorPhone.trim().length > 0;
-            const hasWhatsapp = coordinatorWhatsapp.trim().length > 0;
-            const hasEmail = coordinatorEmail.trim().length > 0 && /.+@.+\..+/.test(coordinatorEmail);
+            const hasNameEn = $listingStore.formData.coordinatorNameEn.trim().length > 0;
+            const hasNameAr = $listingStore.formData.coordinatorNameAr.trim().length > 0;
+            const hasPhone = $listingStore.formData.coordinatorPhone.trim().length > 0;
+            const hasWhatsapp = $listingStore.formData.coordinatorWhatsapp.trim().length > 0;
+            const hasEmail = $listingStore.formData.coordinatorEmail.trim().length > 0 && /.+@.+\..+/.test($listingStore.formData.coordinatorEmail);
 
             if (!hasNameEn || !hasNameAr || !hasPhone || !hasWhatsapp || !hasEmail) {
                 listingStore.setError(
@@ -79,21 +47,11 @@
                 return;
             }
 
-            // Sync state immediately before API call
-            listingStore.updateFormData({
-                coordinatorNameEn,
-                coordinatorNameAr,
-                coordinatorPhone,
-                coordinatorWhatsapp,
-                coordinatorEmail,
-                coordinatorMobile,
-            });
-
             // Dirty check bypass
             const isDirty = listingStore.isStepDirty(6, $listingStore);
             if (!isDirty) {
                 listingStore.setHighestStep(6);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-7`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-7`);
                 return;
             }
 
@@ -104,12 +62,12 @@
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
                 const payload = {
                     version: $listingStore.version,
-                    coordinatorNameAr: coordinatorNameAr.trim(),
-                    coordinatorNameEn: coordinatorNameEn.trim(),
-                    coordinatorPhone: coordinatorPhone.trim(),
-                    coordinatorWhatsapp: coordinatorWhatsapp.trim(),
-                    coordinatorEmail: coordinatorEmail.trim(),
-                    coordinatorMobile: coordinatorMobile.trim() || null,
+                    coordinatorNameAr: $listingStore.formData.coordinatorNameAr.trim(),
+                    coordinatorNameEn: $listingStore.formData.coordinatorNameEn.trim(),
+                    coordinatorPhone: $listingStore.formData.coordinatorPhone.trim(),
+                    coordinatorWhatsapp: $listingStore.formData.coordinatorWhatsapp.trim(),
+                    coordinatorEmail: $listingStore.formData.coordinatorEmail.trim(),
+                    coordinatorMobile: $listingStore.formData.coordinatorMobile.trim() || null,
                 };
 
                 const res = await wizardFetch(url, {
@@ -134,7 +92,7 @@
 
                 listingStore.commitStepSave(6);
                 listingStore.setHighestStep(6);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-7`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-7`);
             } catch (err: any) {
                 listingStore.setError(
                     err.message || "Failed to save coordinator details.",
@@ -179,7 +137,7 @@
                 <input
                     id="coord-name-en"
                     type="text"
-                    bind:value={coordinatorNameEn}
+                    bind:value={$listingStore.formData.coordinatorNameEn}
                     placeholder="e.g. Khalid Al-Shammari"
                     maxlength={100}
                 />
@@ -192,7 +150,7 @@
                 <input
                     id="coord-name-ar"
                     type="text"
-                    bind:value={coordinatorNameAr}
+                    bind:value={$listingStore.formData.coordinatorNameAr}
                     placeholder="مثال: خالد الشمري"
                     maxlength={100}
                     dir="rtl"
@@ -209,7 +167,7 @@
                 <input
                     id="coord-phone"
                     type="tel"
-                    bind:value={coordinatorPhone}
+                    bind:value={$listingStore.formData.coordinatorPhone}
                     placeholder="+966 5X XXX XXXX"
                     maxlength={20}
                 />
@@ -222,7 +180,7 @@
                 <input
                     id="coord-whatsapp"
                     type="tel"
-                    bind:value={coordinatorWhatsapp}
+                    bind:value={$listingStore.formData.coordinatorWhatsapp}
                     placeholder="+966 5X XXX XXXX"
                     maxlength={20}
                 />
@@ -237,7 +195,8 @@
                 <input
                     id="coord-email"
                     type="email"
-                    bind:value={coordinatorEmail}
+                    bind:value={$listingStore.formData.coordinatorEmail}
+                    oninput={() => $listingStore.formData.coordinatorEmail = $listingStore.formData.coordinatorEmail.toLowerCase()}
                     placeholder="e.g. name@example.com"
                     maxlength={255}
                 />
@@ -250,7 +209,7 @@
                 <input
                     id="coord-mobile"
                     type="tel"
-                    bind:value={coordinatorMobile}
+                    bind:value={$listingStore.formData.coordinatorMobile}
                     placeholder="+966 5X XXX XXXX"
                     maxlength={20}
                 />

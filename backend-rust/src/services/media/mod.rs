@@ -20,6 +20,7 @@ pub mod migration;
 pub mod minio_client;
 pub mod video_processing;
 pub mod verification;
+pub mod deletion;
 
 
 use crate::errors::AppError;
@@ -229,6 +230,7 @@ pub async fn process_and_save_upload(
             &hierarchical_dir,
             &final_filename,
             &mime_type,
+            None,
             None,
         ).await {
             let _ = tokio::fs::remove_file(&temp_path).await;

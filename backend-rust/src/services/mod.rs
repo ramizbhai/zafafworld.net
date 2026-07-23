@@ -6,3 +6,5 @@ pub mod outbox_worker;
 pub mod translation;
 pub mod whatsapp;
 pub mod wp_cache_sync;
+pub mod location_resolver;
+pub mod storage_cleanup_worker;

@@ -93,6 +93,7 @@ pub async fn process_image(
         &original_filename,
         "image/webp",
         None,
+        None,
     ).await {
         let _ = tokio::fs::remove_file(&temp_path).await;
         return Err(AppError::Internal(e));
@@ -220,7 +221,8 @@ pub async fn process_image(
             };
             let disk_path = format!("{}{}", target_dir_str, variant_filename);
 
-            minio.upload(&disk_path, target_dir_str.as_str(), &variant_filename, "image/webp")
+            let parent_id = if *variant == "original" { None } else { Some(temp_id) };
+            minio.upload(&disk_path, target_dir_str.as_str(), &variant_filename, "image/webp", parent_id)
                 .await
                 .map_err(|e| {
                     AppError::Internal(format!("MinIO variant {} upload failed: {}", variant, e))

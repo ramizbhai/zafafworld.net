@@ -75,6 +75,13 @@
     return map[s] ?? s;
   }
 
+  function getActiveStatusBtnClass(s: string) {
+    if (s === 'new') return 'bg-rose-500 text-white shadow-xs';
+    if (s === 'in_progress') return 'bg-amber-500 text-white shadow-xs';
+    if (s === 'resolved') return 'bg-emerald-500 text-white shadow-xs';
+    return 'bg-zinc-500 text-white shadow-xs';
+  }
+
   function formatDate(d: string): string {
     if (!d) return '-';
     return new Date(d).toLocaleDateString($lang === 'ar' ? 'ar-SA' : 'en-US', {
@@ -86,6 +93,8 @@
     });
   }
 </script>
+
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && selectedMessage) selectedMessage = null; }} />
 
 <div class="fade-in">
   <div class="page-header">
@@ -253,65 +262,139 @@
 
 <!-- View Message Detail Modal -->
 {#if selectedMessage}
-  <div class="modal-backdrop" onclick={() => selectedMessage = null} role="presentation">
-    <div class="modal-card max-w-xl p-6 bg-white rounded-2xl shadow-xl" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-      <div class="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
-        <h2 class="text-lg font-bold text-main flex items-center gap-2">
-          <Tag size={18} class="text-gold" />
-          {selectedMessage.subject}
-        </h2>
-        <button type="button" class="btn btn-ghost btn-sm" onclick={() => selectedMessage = null}>✕</button>
+  <div class="modal-backdrop select-none" onclick={() => selectedMessage = null} role="presentation">
+    <div 
+      class="modal-card max-w-2xl w-full bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200 select-text" 
+      onclick={(e) => e.stopPropagation()} 
+      role="dialog" 
+      aria-modal="true"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-zinc-50/50 to-white dark:from-zinc-950/20 dark:to-zinc-900 border-b border-zinc-100 dark:border-zinc-800">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <span class="p-2 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl">
+              <Tag size={18} />
+            </span>
+            <h2 class="text-lg font-bold text-zinc-900 dark:text-white">
+              {$lang === 'ar' ? 'تفاصيل طلب الدعم' : 'Support Request Details'}
+            </h2>
+          </div>
+          <span class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
+            ID: {selectedMessage.id}
+          </span>
+        </div>
+        <button 
+          type="button" 
+          class="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-350 rounded-full transition-colors duration-150 cursor-pointer" 
+          onclick={() => selectedMessage = null}
+          aria-label={$lang === 'ar' ? 'إغلاق' : 'Close'}
+        >
+          ✕
+        </button>
       </div>
 
-      <div class="flex flex-col gap-4 text-sm mb-6">
-        <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
-          <div>
-            <span class="text-xs font-semibold text-muted block mb-1">{$lang === 'ar' ? 'اسم المرسل' : 'Sender Name'}</span>
-            <span class="font-bold text-main">{selectedMessage.name}</span>
-          </div>
-          <div>
-            <span class="text-xs font-semibold text-muted block mb-1">{$lang === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}</span>
-            <a href="mailto:{selectedMessage.email}" class="text-gold font-mono hover:underline">{selectedMessage.email}</a>
-          </div>
-          {#if selectedMessage.phone}
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+        <!-- Subject -->
+        <div>
+          <span class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-1">
+            {$lang === 'ar' ? 'موضوع الرسالة' : 'Message Subject'}
+          </span>
+          <h3 class="text-base font-bold text-zinc-900 dark:text-white leading-snug">
+            {selectedMessage.subject}
+          </h3>
+        </div>
+
+        <!-- Sender Meta Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80">
+          <div class="flex items-center gap-3">
+            <span class="p-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl shadow-xs border border-zinc-100 dark:border-zinc-700/50">
+              <User size={16} />
+            </span>
             <div>
-              <span class="text-xs font-semibold text-muted block mb-1">{$lang === 'ar' ? 'رقم الهاتف' : 'Phone Number'}</span>
-              <a href="tel:{selectedMessage.phone}" class="font-mono text-main hover:underline">{selectedMessage.phone}</a>
+              <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block">{$lang === 'ar' ? 'اسم المرسل' : 'Sender Name'}</span>
+              <span class="font-bold text-zinc-800 dark:text-zinc-200">{selectedMessage.name}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="p-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl shadow-xs border border-zinc-100 dark:border-zinc-700/50">
+              <Mail size={16} />
+            </span>
+            <div class="min-w-0 flex-1">
+              <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block">{$lang === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}</span>
+              <a href="mailto:{selectedMessage.email}" class="font-mono text-amber-600 dark:text-amber-400 hover:underline block truncate" title={selectedMessage.email}>
+                {selectedMessage.email}
+              </a>
+            </div>
+          </div>
+
+          {#if selectedMessage.phone}
+            <div class="flex items-center gap-3">
+              <span class="p-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl shadow-xs border border-zinc-100 dark:border-zinc-700/50">
+                <Phone size={16} />
+              </span>
+              <div>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block">{$lang === 'ar' ? 'رقم الهاتف' : 'Phone Number'}</span>
+                <a href="tel:{selectedMessage.phone}" class="font-mono text-zinc-800 dark:text-zinc-200 hover:underline block">
+                  {selectedMessage.phone}
+                </a>
+              </div>
             </div>
           {/if}
-          <div>
-            <span class="text-xs font-semibold text-muted block mb-1">{$lang === 'ar' ? 'وقت الإرسال' : 'Submitted At'}</span>
-            <span class="text-main">{formatDate(selectedMessage.created_at)}</span>
+
+          <div class="flex items-center gap-3">
+            <span class="p-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl shadow-xs border border-zinc-100 dark:border-zinc-700/50">
+              <Clock size={16} />
+            </span>
+            <div>
+              <span class="text-[10px] text-zinc-400 dark:text-zinc-500 block">{$lang === 'ar' ? 'تاريخ الإرسال' : 'Submitted At'}</span>
+              <span class="text-zinc-800 dark:text-zinc-200">{formatDate(selectedMessage.created_at)}</span>
+            </div>
           </div>
         </div>
 
-        <div>
-          <span class="text-xs font-semibold text-muted block mb-2">{$lang === 'ar' ? 'مضمون الرسالة' : 'Full Message Body'}</span>
-          <div class="p-4 rounded-xl bg-surface-alt border border-gray-200 text-main leading-relaxed whitespace-pre-wrap">
+        <!-- Message Box -->
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            {$lang === 'ar' ? 'نص الرسالة الدعم' : 'Full Support Message'}
+          </span>
+          <div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800/80 text-zinc-800 dark:text-zinc-200 leading-relaxed text-sm whitespace-pre-wrap break-words max-h-64 overflow-y-auto border-l-4 border-amber-500 dark:border-amber-600">
             {selectedMessage.message}
           </div>
         </div>
       </div>
 
-      <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-        <!-- Change Status Form inside Modal -->
-        <form method="POST" action="?/updateStatus" use:enhance class="flex items-center gap-3">
-          <input type="hidden" name="id" value={selectedMessage.id} />
-          <span class="text-xs font-semibold text-muted">{$t('common.status')}:</span>
-          <select 
-            name="status" 
-            class="form-select text-xs py-1.5 px-3"
-            value={selectedMessage.status}
-            onchange={(e) => e.currentTarget.form?.requestSubmit()}
-          >
-            <option value="new">{$lang === 'ar' ? 'جديد' : 'New'}</option>
-            <option value="in_progress">{$lang === 'ar' ? 'قيد المعالجة' : 'In Progress'}</option>
-            <option value="resolved">{$lang === 'ar' ? 'تم الحل' : 'Resolved'}</option>
-            <option value="closed">{$lang === 'ar' ? 'مغلق' : 'Closed'}</option>
-          </select>
-        </form>
+      <!-- Modal Footer & Actions -->
+      <div class="px-6 py-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-850 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- Status Changer Form -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider whitespace-nowrap">
+            {$lang === 'ar' ? 'حالة الطلب الحالية:' : 'Current Status:'}
+          </span>
+          <form method="POST" action="?/updateStatus" use:enhance class="inline-flex">
+            <input type="hidden" name="id" value={selectedMessage.id} />
+            <div class="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
+              {#each ['new', 'in_progress', 'resolved', 'closed'] as st}
+                <button 
+                  type="submit" 
+                  name="status" 
+                  value={st}
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-lg cursor-pointer transition-all duration-150 {selectedMessage.status === st ? getActiveStatusBtnClass(st) : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}"
+                >
+                  {statusLabel(st)}
+                </button>
+              {/each}
+            </div>
+          </form>
+        </div>
 
-        <button type="button" class="btn btn-outline btn-sm" onclick={() => selectedMessage = null}>
+        <button 
+          type="button" 
+          class="px-5 py-2.5 rounded-xl border border-zinc-250 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-semibold text-zinc-700 dark:text-zinc-300 transition-colors duration-150 cursor-pointer self-end md:self-auto" 
+          onclick={() => selectedMessage = null}
+        >
           {$lang === 'ar' ? 'إغلاق' : 'Close'}
         </button>
       </div>
@@ -330,7 +413,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(4px);
     z-index: 999;
     display: flex;
     align-items: center;
@@ -338,6 +421,6 @@
     padding: 16px;
   }
   .modal-card {
-    width: 100%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 </style>

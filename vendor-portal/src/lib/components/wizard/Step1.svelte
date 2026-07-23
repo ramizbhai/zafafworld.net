@@ -41,7 +41,7 @@
             const isDirty = listingStore.isStepDirty(1, $listingStore);
             if ($listingStore.productId && !isDirty) {
                 listingStore.setHighestStep(1);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-2`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-2`);
                 return;
             }
 
@@ -92,9 +92,12 @@
                 const responseData = await res.json();
 
                 const newProductId = !$listingStore.productId && responseData.id;
-                // If it's a POST, save the generated product ID
+                // If it's a POST, save the generated product ID and mark active /new session flag
                 if (newProductId) {
                     listingStore.setProductId(responseData.id);
+                    if (typeof window !== 'undefined') {
+                        sessionStorage.setItem('zafaf_wiz_new_active', 'true');
+                    }
                 }
                 
                 if (responseData.product?.version) {
@@ -104,12 +107,21 @@
                 listingStore.commitStepSave(1);
                 listingStore.setHighestStep(1);
 
+                // If we were editing an existing product AND the category actually changed,
+                // wipe any attributes/features/cultural data from the old category.
+                // The backend also clears these on its side when category_changed is true,
+                // but we must also clear the client store so that Steps 4/5 don't re-send
+                // stale old-category data in a subsequent PUT.
+                if ($listingStore.productId && isDirty) {
+                    listingStore.clearCategoryDependentData();
+                }
+
                 const targetId = responseData.id || $listingStore.productId;
                 if ($page.url.pathname.includes('/new') && targetId) {
                     // Route Promotion: transition from new flow to edit flow
-                    goto(`/dashboard/products/${targetId}/edit/step-2`);
+                    await goto(`/dashboard/products/${targetId}/edit/step-2`);
                 } else {
-                    goto(`${$page.url.pathname.split("/step-")[0]}/step-2`);
+                    await goto(`${$page.url.pathname.split("/step-")[0]}/step-2`);
                 }
             } catch (err: any) {
                 listingStore.setError(

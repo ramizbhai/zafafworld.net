@@ -56,6 +56,7 @@ export const actions: Actions = {
         const benefit_description_ar = formData.get('benefit_description_ar')?.toString() || null;
         const use_listing_cover_image = formData.get('use_listing_cover_image')?.toString() === 'true';
         let banner_image_url = formData.get('banner_image_url')?.toString() || '';
+        let banner_file_id: string | null = null;
         const banner_file = formData.get('banner_file') as File | null;
 
         const title_en = formData.get('title_en')?.toString() || '';
@@ -153,6 +154,7 @@ export const actions: Actions = {
                     const uploadData = await uploadRes.json();
                     if (uploadData.status === 'success' && uploadData.url) {
                         banner_image_url = uploadData.url;
+                        banner_file_id = uploadData.id || null;
                     }
                 } else {
                     const err = await uploadRes.json().catch(() => ({}));
@@ -203,6 +205,7 @@ export const actions: Actions = {
                     benefit_description_ar: benefit_description_ar?.trim() || null,
                     use_listing_cover_image,
                     custom_banner_image_url: banner_image_url.trim() || null,
+                    file_id: banner_file_id,
                     title_en: title_en.trim(),
                     title_ar: title_ar.trim(),
                     description_en: description_en.trim() || null,

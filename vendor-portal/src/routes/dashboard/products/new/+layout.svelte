@@ -9,11 +9,15 @@
     let { children } = $props();
 
     if (browser) {
+        // Synchronous check on mount: If entering the /new wizard with a stale productId
+        // that does NOT represent an active /new creation draft, reset to a clean slate.
+        const store = get(listingStore);
+        if (store.productId && !sessionStorage.getItem('zafaf_wiz_new_active')) {
+            listingStore.reset();
+        }
+
         afterNavigate((navigation) => {
-            // Reset the store ONLY when starting a genuinely fresh listing session.
-            // We call listingStore.reset() only when entering the 'new' wizard from
-            // any outside page path (i.e. not starting with '/dashboard/products/new').
-            // We ignore initial page load/refreshes (where navigation.from is null) to preserve progress.
+            // Reset the store when navigating into the 'new' wizard from outside
             if (navigation.from) {
                 const fromPath = navigation.from.url.pathname;
                 const isFromOutside = !fromPath.startsWith('/dashboard/products/new');

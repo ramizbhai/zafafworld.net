@@ -18,6 +18,74 @@
         }
         return null;
     });
+
+    const CULTURAL_LABELS: Record<string, { en: string, ar: string }> = {
+        prayer_room: { en: "Prayer Room / Musala", ar: "مصلى" },
+        valet_parking: { en: "Valet Parking", ar: "صف السيارات" },
+        bridal_suite: { en: "Bridal Suite", ar: "جناح العروس" },
+        outdoor_garden: { en: "Outdoor Garden", ar: "حديقة خارجية" },
+        external_catering_allowed: { en: "External Catering Allowed", ar: "ضيافة خارجية مسموحة" },
+        halal_certified: { en: "Halal Certified", ar: "شهادة حلال" }
+    };
+    function getCulturalAttributeLabel(key: string): string {
+        return i18n.locale === 'ar' ? (CULTURAL_LABELS[key]?.ar || key) : (CULTURAL_LABELS[key]?.en || key);
+    }
+
+    const FIELD_LABELS: Record<string, { en: string, ar: string }> = {
+        men_capacity: { en: "Men Capacity", ar: "سعة قسم الرجال" },
+        women_capacity: { en: "Women Capacity", ar: "سعة قسم النساء" },
+        has_separate_entrances: { en: "Separate Entrances for Men & Women", ar: "مداخل منفصلة للرجال والنساء" },
+        has_audio_link: { en: "Audio Link between Sections", ar: "ربط صوتي بين الأقسام" },
+        max_events_per_day: { en: "Max Events per Day", ar: "الحد الأقصى للمناسبات في اليوم" },
+        weekend_surcharge_sar: { en: "Weekend Surcharge (SAR)", ar: "رسوم إضافية لنهاية الأسبوع (ريال)" },
+        private_pool: { en: "Private Pool Available", ar: "مسبح خاص متوفر" },
+        in_house_catering: { en: "In-house Catering Available", ar: "بوفيه داخلي متوفر" },
+        private_hall_available: { en: "Private Hall Available", ar: "قاعة خاصة متوفرة" },
+        family_section: { en: "Family Section Available", ar: "قسم عائلي متوفر" },
+        team_size: { en: "Number of staff", ar: "عدد الموظفين" },
+        delivery_weeks: { en: "Delivery Time (Weeks)", ar: "مدة التسليم (بالأسابيع)" },
+        women_section_coverage: { en: "Women Section Coverage Only", ar: "تغطية قسم النساء فقط" },
+        drone_available: { en: "Drone Photography Available", ar: "تصوير طائرة (درون) متوفر" },
+        highlight_reel: { en: "Highlight Reel Included", ar: "فيديو ملخص متضمن" },
+        min_guests: { en: "Minimum Guests", ar: "الحد الأدنى للضيوف" },
+        buffet_or_plated: { en: "Buffet or Plated Service", ar: "نوع الخدمة (بوفيه / تقديم أطباق)" },
+        halal_certified_menu: { en: "Halal Certified Menu", ar: "قائمة طعام معتمدة حلال" },
+        taste_testing: { en: "Taste Testing Session Available", ar: "جلسة تذوق متوفرة" },
+        setup_cleanup: { en: "Setup & Cleanup Included", ar: "التجهيز والتنظيف متضمن" },
+        rehearsal_count: { en: "Rehearsal Sessions", ar: "عدد جلسات البروفة" },
+        tailoring_time_days: { en: "Tailoring Time (Days)", ar: "مدة الخياطة (بالأيام)" },
+        bride_companions_count: { en: "Bride Companions Count", ar: "عدد مرافقات العروس" },
+        address: { en: "Business Address", ar: "عنوان مقر العمل" },
+        events_hosted_description: { en: "Events Hosted Description", ar: "وصف المناسبات المقدمة" },
+        preparation_time_hours: { en: "Preparation Time (Hours)", ar: "مدة التحضير (بالساعات)" },
+        vehicle_count: { en: "Number of Vehicles", ar: "عدد السيارات المتوفرة" }
+    };
+    function getCategoryAttributeLabel(key: string): string {
+        return i18n.locale === 'ar' ? (FIELD_LABELS[key]?.ar || key) : (FIELD_LABELS[key]?.en || key);
+    }
+
+    const selectedFeaturesList = $derived.by(() => {
+        const schema = $listingStore.schema;
+        if (!schema || !schema.featureGroups) return [];
+        const list: string[] = [];
+        for (const [featId, checked] of Object.entries(fd.featuresSelection)) {
+            if (checked === true || checked === 'true') {
+                let foundLabel = "";
+                for (const group of schema.featureGroups) {
+                    const opt = group.options.find((o: any) => o.optionId === featId);
+                    if (opt) {
+                        foundLabel = i18n.locale === 'ar' 
+                            ? (opt.titleAr || opt.labelAr || opt.optionId)
+                            : (opt.titleEn || opt.labelEn || opt.optionId);
+                        break;
+                    }
+                }
+                list.push(foundLabel || featId);
+            }
+        }
+        return list;
+    });
+    const hasSelectedFeatures = $derived(selectedFeaturesList.length > 0);
 </script>
 
 <div class="preview-grid-layout">
@@ -79,6 +147,59 @@
                 </div>
             {/if}
 
+            <!-- GCC & Category Details Section -->
+            {#if (fd.categoryAttributes && Object.keys(fd.categoryAttributes).length > 0) || (fd.culturalAttributes && Object.keys(fd.culturalAttributes).length > 0)}
+                <div class="preview-desc-box">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">
+                        {i18n.locale === "ar" ? "تفاصيل ومواصفات الخدمة" : "Service Specifications"}
+                    </h4>
+                    <div class="specs-grid">
+                        <!-- Render GCC attributes -->
+                        {#each Object.entries(fd.culturalAttributes) as [key, val]}
+                            {#if val === true || val === 'true'}
+                                <div class="spec-tag">
+                                    ✓ {getCulturalAttributeLabel(key)}
+                                </div>
+                            {/if}
+                        {/each}
+
+                        <!-- Render Category attributes -->
+                        {#each Object.entries(fd.categoryAttributes) as [key, val]}
+                            {#if val !== null && val !== undefined && val !== '' && val !== false}
+                                <div class="spec-item">
+                                    <span class="spec-label">{getCategoryAttributeLabel(key)}:</span>
+                                    <span class="spec-val">
+                                        {#if val === true || val === 'true'}
+                                            {i18n.locale === 'ar' ? 'نعم' : 'Yes'}
+                                        {:else if val === false || val === 'false'}
+                                            {i18n.locale === 'ar' ? 'لا' : 'No'}
+                                        {:else}
+                                            {val}
+                                        {/if}
+                                    </span>
+                                </div>
+                            {/if}
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+
+            <!-- Selected Features Section -->
+            {#if hasSelectedFeatures}
+                <div class="preview-desc-box">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">
+                        {i18n.locale === "ar" ? "الميزات الإضافية المختارة" : "Selected Additional Features"}
+                    </h4>
+                    <div class="features-preview-tags">
+                        {#each selectedFeaturesList as feature}
+                            <div class="feature-tag">
+                                ✦ {feature}
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
+
             <!-- Gallery Photos Preview -->
             {#if fd.galleryItems && fd.galleryItems.length > 0}
                 <div class="gallery-preview-section border-t border-gray-100 pt-6">
@@ -97,7 +218,7 @@
                                             : getApiUrl(item.url)}
                                         alt="Gallery Thumb"
                                     />
-                                {/if}
+                                  {/if}
                             </div>
                         {/each}
                     </div>
@@ -307,6 +428,53 @@
     .check-missing {
         color: #ef4444;
         font-weight: bold;
+    }
+
+    /* Specs & features preview layout styling */
+    .specs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+    .spec-item {
+        font-size: 0.9rem;
+        color: #4b5563;
+    }
+    .spec-label {
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .spec-val {
+        margin-left: 4px;
+    }
+    .spec-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        background: #f0fdf4;
+        color: #16a34a;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 6px;
+        border: 1px solid #dcfce7;
+    }
+    .features-preview-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .feature-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 8px;
+        border: 1px solid #dbeafe;
     }
 
     @media (max-width: 900px) {

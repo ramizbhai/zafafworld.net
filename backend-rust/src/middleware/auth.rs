@@ -494,7 +494,13 @@ impl RlsTx {
                 .map_err(|err| AppError::Database(err.to_string()))?;
 
         match vendor_id {
-            Some(id) => Ok(id),
+            Some(id) => {
+                let _ = sqlx::query("SELECT set_config('app.current_tenant_id', $1, true)")
+                    .bind(id.to_string())
+                    .execute(&mut *self.tx)
+                    .await;
+                Ok(id)
+            }
             None => Err(AppError::NotFound("Vendor profile not found".to_string())),
         }
     }

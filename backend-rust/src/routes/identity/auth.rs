@@ -146,7 +146,7 @@ async fn register(
 ) -> Result<Json<AuthResponse>, AppError> {
     payload.validate()?;
 
-    let clean_email = sanitize_str(&payload.email, limits::EMAIL);
+    let clean_email = sanitize_str(&payload.email, limits::EMAIL).to_lowercase();
 
     tracing::info!("Registering user: {}", clean_email);
 
@@ -195,6 +195,10 @@ async fn register(
 
     // 2. Insert user and profile inside an atomic database Transaction
     let mut tx = state.db.begin().await?;
+
+    let _ = sqlx::query("SELECT set_config('app.current_user_role', 'admin', true)")
+        .execute(&mut *tx)
+        .await;
 
     let user_id: Uuid = sqlx::query_scalar(
         "INSERT INTO global_users (email, password_hash, domain_type, scopes) VALUES ($1, $2, $3, $4) RETURNING id"
@@ -339,7 +343,7 @@ async fn login(
 ) -> Result<Json<AuthResponse>, AppError> {
     payload.validate()?;
 
-    let clean_email = sanitize_str(&payload.email, limits::EMAIL);
+    let clean_email = sanitize_str(&payload.email, limits::EMAIL).to_lowercase();
 
     tracing::info!("Login attempt: {}", clean_email);
 
@@ -347,10 +351,20 @@ async fn login(
         .domain_type
         .unwrap_or(crate::models::user::DomainType::Client);
 
+    let mut tx = state
+        .db
+        .begin()
+        .await
+        .map_err(|err| AppError::Database(err.to_string()))?;
+
+    let _ = sqlx::query("SELECT set_config('app.current_user_role', 'admin', true)")
+        .execute(&mut *tx)
+        .await;
+
     // ── 1. Read lockout threshold from admin_settings ─────────────────────────
     let max_attempts: i32 =
         sqlx::query("SELECT value FROM admin_settings WHERE key = 'max_login_attempts'")
-            .fetch_optional(&state.db)
+            .fetch_optional(&mut *tx)
             .await?
             .and_then(|row| {
                 let v: Option<String> = row.get("value");
@@ -367,14 +381,15 @@ async fn login(
          FROM global_users \
          WHERE email = $1 AND domain_type = $2",
     )
-    .bind(&payload.email)
+    .bind(&clean_email)
     .bind(target_domain)
-    .fetch_optional(&state.db)
+    .fetch_optional(&mut *tx)
     .await?;
 
     let user_row = match user_row {
         Some(row) => row,
         None => {
+            let _ = tx.rollback().await;
             const DUMMY_HASH: &str = "$2b$12$Mxpu0vFmXrcx0K1mg9D7FeWG4oNGJEFt2/k0.EXB10M0my0nECMD2";
             let _ = verify_password(payload.password.clone(), DUMMY_HASH.to_string()).await;
             return Err(AppError::Unauthorized("Invalid ID or Password".to_string()));
@@ -402,10 +417,9 @@ async fn login(
     }
 
     // ── 3. Lockout gate — checked BEFORE bcrypt ───────────────────────────────
-    // Dummy bcrypt run preserves timing parity between "locked" and "wrong password"
-    // responses — prevents enumeration of locked vs non-locked accounts.
     if let Some(locked_ts) = locked_until {
         if locked_ts > Utc::now() {
+            let _ = tx.rollback().await;
             const DUMMY_HASH: &str = "$2b$12$Mxpu0vFmXrcx0K1mg9D7FeWG4oNGJEFt2/k0.EXB10M0my0nECMD2";
             let _ = verify_password(payload.password.clone(), DUMMY_HASH.to_string()).await;
             tracing::warn!(
@@ -423,7 +437,7 @@ async fn login(
              WHERE id = $1",
         )
         .bind(user_id)
-        .execute(&state.db)
+        .execute(&mut *tx)
         .await;
     }
 
@@ -443,7 +457,7 @@ async fn login(
             .bind(new_attempts)
             .bind(locked_until_ts)
             .bind(user_id)
-            .execute(&state.db)
+            .execute(&mut *tx)
             .await?;
 
             tracing::warn!(
@@ -457,7 +471,7 @@ async fn login(
             sqlx::query("UPDATE global_users SET failed_login_attempts = $1 WHERE id = $2")
                 .bind(new_attempts)
                 .bind(user_id)
-                .execute(&state.db)
+                .execute(&mut *tx)
                 .await?;
 
             tracing::warn!(
@@ -468,6 +482,7 @@ async fn login(
                 "Failed login attempt recorded"
             );
         }
+        let _ = tx.commit().await;
 
         // Identical error for wrong-password and locked — no enumeration
         return Err(AppError::Unauthorized("Invalid ID or Password".to_string()));
@@ -480,7 +495,7 @@ async fn login(
          WHERE id = $1",
     )
     .bind(user_id)
-    .execute(&state.db)
+    .execute(&mut *tx)
     .await?;
 
     // ── 6. Fetch profile details ──────────────────────────────────────────────
@@ -490,7 +505,7 @@ async fn login(
                 "SELECT first_name, last_name FROM client_profiles WHERE client_id = $1",
             )
             .bind(user_id)
-            .fetch_optional(&state.db)
+            .fetch_optional(&mut *tx)
             .await?;
 
             match profile_row {
@@ -506,7 +521,7 @@ async fn login(
             let profile_row =
                 sqlx::query("SELECT name_en, name_ar FROM vendors WHERE user_id = $1")
                     .bind(user_id)
-                    .fetch_optional(&state.db)
+                    .fetch_optional(&mut *tx)
                     .await?;
 
             match profile_row {
@@ -519,6 +534,8 @@ async fn login(
             }
         }
     };
+
+    tx.commit().await?;
 
     // ── 7. Issue signed JWT ───────────────────────────────────────────────────
     let token = generate_jwt(

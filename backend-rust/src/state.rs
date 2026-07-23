@@ -111,6 +111,13 @@ pub struct AppState {
     /// MinIO client singleton — constructed once at startup from `config` and
     /// stored here so every handler can upload/delete without re-reading env.
     pub minio_client: Arc<crate::services::media::minio_client::MinioClient>,
+    pub location_cache: std::sync::Arc<dashmap::DashMap<String, crate::services::location_resolver::CachedLocation>>,
+    pub active_location_requests: std::sync::Arc<
+        dashmap::DashMap<
+            String,
+            tokio::sync::broadcast::Sender<Result<crate::services::location_resolver::CachedLocation, String>>,
+        >,
+    >,
     /// Application configuration. Wrapped in `Arc` so the per-request
     /// `AppState::clone()` is a cheap atomic increment rather than a deep copy
     /// of all config strings.

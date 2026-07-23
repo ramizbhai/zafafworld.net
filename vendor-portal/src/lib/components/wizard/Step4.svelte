@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext, onMount, onDestroy } from "svelte";
+    import { getContext, onMount } from "svelte";
     import { getI18n } from "$lib/i18n/i18n.svelte";
     import { listingStore } from "$lib/stores/listingStore";
     import { GENDER_SECTIONS } from "$lib/constants/wizard";
@@ -19,7 +19,6 @@
         setSubmitting: (val: boolean) => void;
     }>('wizard');
 
-    let genderSection = $state($listingStore.formData.genderSection);
     const schema = $derived($listingStore.schema);
 
     // Static definition of GCC cultural amenities group for DynamicFeatureGrid
@@ -37,37 +36,22 @@
         ]
     };
 
-    // Sync state on unmount
-    onDestroy(() => {
-        listingStore.updateFormData({ genderSection });
-    });
-
-    // Debounced background sync
-    $effect(() => {
-        const timer = setTimeout(() => {
-            listingStore.updateFormData({ genderSection });
-        }, 300);
-        return () => clearTimeout(timer);
-    });
-
-    let isValid = $derived(!!genderSection);
+    let isValid = $derived(!!$listingStore.formData.genderSection);
     $effect(() => {
         wizard.setCanContinue(isValid);
     });
 
     onMount(() => {
         const unregister = wizard.registerSubmitHandler(async () => {
-            if (!genderSection) {
+            if (!$listingStore.formData.genderSection) {
                 listingStore.setError("Please select a gender section setup.");
                 return;
             }
 
-            listingStore.updateFormData({ genderSection });
-
             const isDirty = listingStore.isStepDirty(4, $listingStore);
             if (!isDirty) {
                 listingStore.setHighestStep(4);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-5`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-5`);
                 return;
             }
 
@@ -78,7 +62,7 @@
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
                 const payload = {
                     version: $listingStore.version,
-                    genderSection: genderSection || null,
+                    genderSection: $listingStore.formData.genderSection || null,
                     culturalAttributes: $listingStore.formData.culturalAttributes,
                 };
 
@@ -104,7 +88,7 @@
 
                 listingStore.commitStepSave(4);
                 listingStore.setHighestStep(4);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-5`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-5`);
             } catch (err: any) {
                 listingStore.setError(
                     err.message || "Failed to save cultural settings.",
@@ -130,7 +114,7 @@
                 <p>
                     {i18n.locale === "ar"
                         ? "هذه الإعدادات مهمة جداً للسوق المحلي. يبحث العرسان عن تهيئة قسم الجنسين أولاً قبل أي شيء آخر."
-                        : "These settings are critical for the Saudi and GCC market. Couples filter by gender setup first before anything else."}
+                        : "Keep your details updated. Couples filter by gender setup first before anything else."}
                 </p>
             </div>
         </div>
@@ -155,8 +139,8 @@
                         <button
                             type="button"
                             class="gender-tile"
-                            class:selected={genderSection === gs.value}
-                            onclick={() => (genderSection = gs.value)}
+                            class:selected={$listingStore.formData.genderSection === gs.value}
+                            onclick={() => ($listingStore.formData.genderSection = gs.value)}
                         >
                             <span class="gender-icon">{gs.icon}</span>
                             <div class="gender-labels">
@@ -181,7 +165,7 @@
                                         : gs.description}
                                 </span>
                             </div>
-                            {#if genderSection === gs.value}
+                            {#if $listingStore.formData.genderSection === gs.value}
                                 <div class="tile-check">
                                     <Check size={14} />
                                 </div>

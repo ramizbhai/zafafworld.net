@@ -69,7 +69,15 @@
         address: { en: "Business Address", ar: "عنوان مقر العمل" },
         events_hosted_description: { en: "Events Hosted Description", ar: "وصف المناسبات المقدمة" },
         preparation_time_hours: { en: "Preparation Time (Hours)", ar: "مدة التحضير (بالساعات)" },
-        vehicle_count: { en: "Number of Vehicles", ar: "عدد السيارات المتوفرة" }
+        vehicle_count: { en: "Number of Vehicles", ar: "عدد السيارات المتوفرة" },
+        capacity: { en: "Total Capacity", ar: "إجمالي الطاقة الاستيعابية" },
+        elevator_access: { en: "Elevator Access", ar: "مصعد متوفر" },
+        wind_protection: { en: "Wind Protection / Shields", ar: "حواجز مضادة للرياح" },
+        city_view: { en: "City View", ar: "إطلالة على المدينة" },
+        noise_curfew_time: { en: "Noise Curfew Time", ar: "وقت حظر الموسيقى/الضوضاء" },
+        private_or_semi: { en: "Privacy Type", ar: "نوع الخصوصية (خاص / شبه خاص)" },
+        floating_stage: { en: "Floating Stage Available", ar: "منصة عائمة متوفرة" },
+        shade_structures: { en: "Shade / Canopy Structures", ar: "مظلات وهياكل ظل" }
     };
 
     const label = $derived(
@@ -91,7 +99,12 @@
         'highlight_reel',
         'halal_certified',
         'taste_testing',
-        'setup_cleanup'
+        'setup_cleanup',
+        'elevator_access',
+        'wind_protection',
+        'city_view',
+        'floating_stage',
+        'shade_structures'
     ].includes(fieldId));
 
     const isSelect = $derived(fieldId === 'buffet_or_plated');
@@ -108,7 +121,8 @@
         'tailoring_time_days',
         'bride_companions_count',
         'preparation_time_hours',
-        'vehicle_count'
+        'vehicle_count',
+        'capacity'
     ].includes(fieldId));
 
     // Handle bindings

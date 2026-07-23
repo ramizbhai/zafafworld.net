@@ -2419,6 +2419,8 @@ mod tests {
             idempotency_store: Arc::new(dashmap::DashMap::new()),
             trusted_proxies: config.trusted_proxies.clone(),
             minio_client: Arc::new(crate::services::media::minio_client::MinioClient::from_config(&config, pool.clone())),
+            location_cache: Arc::new(dashmap::DashMap::new()),
+            active_location_requests: Arc::new(dashmap::DashMap::new()),
             config: Arc::new(config.clone()),
         };
 
@@ -2571,6 +2573,8 @@ mod tests {
             idempotency_store: Arc::new(dashmap::DashMap::new()),
             trusted_proxies: config.trusted_proxies.clone(),
             minio_client: Arc::new(crate::services::media::minio_client::MinioClient::from_config(&config, pool.clone())),
+            location_cache: Arc::new(dashmap::DashMap::new()),
+            active_location_requests: Arc::new(dashmap::DashMap::new()),
             config: Arc::new(config.clone()),
         };
 

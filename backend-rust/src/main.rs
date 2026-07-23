@@ -196,11 +196,25 @@ async fn main() {
 
         let email_clean = email.trim().to_lowercase();
 
+        let mut tx = db_pool.begin().await.unwrap_or_else(|err| {
+            tracing::error!("Failed to begin transaction: {:?}", err);
+            std::process::exit(1);
+        });
+
+        let admin_id = uuid::Uuid::new_v4();
+        let _ = sqlx::query("SELECT set_config('app.current_user_id', $1, true)")
+            .bind(admin_id.to_string())
+            .execute(&mut *tx)
+            .await;
+        let _ = sqlx::query("SELECT set_config('app.current_user_role', 'admin', true)")
+            .execute(&mut *tx)
+            .await;
+
         let exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM global_users WHERE email = $1 AND domain_type = 'Admin')",
         )
         .bind(&email_clean)
-        .fetch_one(&db_pool)
+        .fetch_one(&mut *tx)
         .await
         .unwrap_or(false);
 
@@ -222,14 +236,15 @@ async fn main() {
         let res = sqlx::query(
             "INSERT INTO global_users (id, email, password_hash, domain_type, scopes) VALUES ($1, $2, $3, 'Admin', ARRAY['super_admin'])"
         )
-        .bind(uuid::Uuid::new_v4())
+        .bind(admin_id)
         .bind(&email_clean)
         .bind(&hashed)
-        .execute(&db_pool)
+        .execute(&mut *tx)
         .await;
 
         match res {
             Ok(_) => {
+                let _ = tx.commit().await;
                 tracing::info!(
                     "Successfully bootstrapped administrative account '{}'. Exiting.",
                     email_clean
@@ -249,17 +264,31 @@ async fn main() {
         let password = &args[3];
         let email_clean = email.trim().to_lowercase();
 
+        let mut tx = db_pool.begin().await.unwrap_or_else(|err| {
+            tracing::error!("Failed to begin transaction: {:?}", err);
+            std::process::exit(1);
+        });
+
+        let admin_id = uuid::Uuid::new_v4();
+        let _ = sqlx::query("SELECT set_config('app.current_user_id', $1, true)")
+            .bind(admin_id.to_string())
+            .execute(&mut *tx)
+            .await;
+        let _ = sqlx::query("SELECT set_config('app.current_user_role', 'admin', true)")
+            .execute(&mut *tx)
+            .await;
+
         let exists = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS(SELECT 1 FROM global_users WHERE email = $1 AND domain_type = 'Admin')",
+            "SELECT EXISTS(SELECT 1 FROM global_users WHERE email = $1)",
         )
         .bind(&email_clean)
-        .fetch_one(&db_pool)
+        .fetch_one(&mut *tx)
         .await
         .unwrap_or(false);
 
         if !exists {
             tracing::error!(
-                "Administrative account with email '{}' does not exist. Aborting.",
+                "Account with email '{}' does not exist. Aborting.",
                 email_clean
             );
             std::process::exit(1);
@@ -273,15 +302,16 @@ async fn main() {
             });
 
         let res = sqlx::query(
-            "UPDATE global_users SET password_hash = $1 WHERE email = $2 AND domain_type = 'Admin'",
+            "UPDATE global_users SET password_hash = $1 WHERE email = $2",
         )
         .bind(&hashed)
         .bind(&email_clean)
-        .execute(&db_pool)
+        .execute(&mut *tx)
         .await;
 
         match res {
             Ok(_) => {
+                let _ = tx.commit().await;
                 tracing::info!(
                     "Successfully reset password for administrative account '{}'. Exiting.",
                     email_clean
@@ -559,6 +589,8 @@ async fn main() {
         idempotency_store: std::sync::Arc::new(dashmap::DashMap::new()),
         trusted_proxies: app_config.trusted_proxies.clone(),
         minio_client,
+        location_cache: std::sync::Arc::new(dashmap::DashMap::new()),
+        active_location_requests: std::sync::Arc::new(dashmap::DashMap::new()),
         config: app_config_arc,
     };
 
@@ -571,6 +603,9 @@ async fn main() {
 
     // Start background Transactional Outbox Worker
     services::outbox_worker::start_outbox_worker(app_state.clone(), shutdown_token.clone());
+
+    // Start background Storage Deletion Worker
+    services::storage_cleanup_worker::start_storage_cleanup_worker(app_state.clone(), shutdown_token.clone());
 
     // Start background WordPress Cache Sync task
     services::wp_cache_sync::start_wp_cache_sync(app_state.clone(), shutdown_token);

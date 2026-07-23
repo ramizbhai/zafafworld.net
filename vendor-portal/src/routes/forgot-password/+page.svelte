@@ -111,6 +111,7 @@
                                 id="email" 
                                 name="email" 
                                 value={form?.values?.email ?? ''} 
+                                oninput={(e) => { e.currentTarget.value = e.currentTarget.value.toLowerCase(); }}
                                 placeholder="merchant@company.com" 
                                 required 
                                 autocomplete="email"

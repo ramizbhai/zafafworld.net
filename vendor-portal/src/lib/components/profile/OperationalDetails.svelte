@@ -45,7 +45,7 @@
         </div>
         <div class="form-field">
             <label for="email">{i18n.t.pagesConfig.businessEmail}</label>
-            <input type="email" id="email" name="email" value={data.vendor?.email ?? ''} placeholder={i18n.t.pagesConfig.businessEmailPl} />
+            <input type="email" id="email" name="email" value={data.vendor?.email ?? ''} oninput={(e) => { e.currentTarget.value = e.currentTarget.value.toLowerCase(); }} placeholder={i18n.t.pagesConfig.businessEmailPl} />
         </div>
         <div class="form-field">
             <label for="latitude">{i18n.t.pagesConfig.latitude}</label>

@@ -76,11 +76,8 @@ pub fn get_schema_for_category(
     db_features: &[RawDbFeature],
 ) -> Result<CategorySchema, AppError> {
     let (category_group, uses_cultural_settings) = match category_id {
-        "wedding-palace" | "hotel-venue" | "villa-resort" | "restaurant-event" | "outdoor-garden" | "chalet" => {
+        "wedding-palace" | "hotel-venue" | "villa-resort" | "restaurant-event" | "outdoor-garden" | "rooftop-venue" | "private-beach" | "chalet" => {
             ("venues", true)
-        }
-        "rooftop-venue" | "private-beach" => {
-            ("venues", false)
         }
         "wedding-gown" | "haute-couture" | "abaya-jalabiya" | "groom-attire" => {
             ("fashion", false)
@@ -130,6 +127,35 @@ pub fn get_schema_for_category(
                 FieldRef { field_id: "has_separate_entrances".to_string(), required: false, visible_when: None },
                 FieldRef { field_id: "has_audio_link".to_string(), required: false, visible_when: None },
                 FieldRef { field_id: "max_events_per_day".to_string(), required: false, visible_when: None },
+            ],
+        });
+    }
+
+    if category_id == "rooftop-venue" {
+        detail_sections.push(DetailSection {
+            section_id: "rooftop_specifications".to_string(),
+            title_en: "Rooftop Specifications".to_string(),
+            title_ar: "مواصفات السطح".to_string(),
+            fields: vec![
+                FieldRef { field_id: "capacity".to_string(), required: true, visible_when: None },
+                FieldRef { field_id: "elevator_access".to_string(), required: false, visible_when: None },
+                FieldRef { field_id: "wind_protection".to_string(), required: false, visible_when: None },
+                FieldRef { field_id: "city_view".to_string(), required: false, visible_when: None },
+                FieldRef { field_id: "noise_curfew_time".to_string(), required: false, visible_when: None },
+            ],
+        });
+    }
+
+    if category_id == "private-beach" {
+        detail_sections.push(DetailSection {
+            section_id: "beach_specifications".to_string(),
+            title_en: "Beach Specifications".to_string(),
+            title_ar: "مواصفات الشاطئ".to_string(),
+            fields: vec![
+                FieldRef { field_id: "capacity".to_string(), required: true, visible_when: None },
+                FieldRef { field_id: "private_or_semi".to_string(), required: false, visible_when: None },
+                FieldRef { field_id: "floating_stage".to_string(), required: false, visible_when: None },
+                FieldRef { field_id: "shade_structures".to_string(), required: false, visible_when: None },
             ],
         });
     }
@@ -260,32 +286,54 @@ pub fn get_schema_for_category(
     // 2. Build feature groups dynamically or statically
     let mut feature_groups = Vec::new();
 
-    if ["wedding-palace", "hotel-venue", "villa-resort", "restaurant-event", "outdoor-garden", "chalet"].contains(&category_id) {
-        let mut feature_groups_map: HashMap<String, Vec<FeatureOption>> = HashMap::new();
-        for f in db_features {
-            feature_groups_map
-                .entry(f.category.clone())
-                .or_default()
-                .push(FeatureOption {
+    if ["wedding-palace", "hotel-venue", "villa-resort", "restaurant-event", "outdoor-garden", "rooftop-venue", "private-beach", "chalet"].contains(&category_id) {
+        let mut amenities_options = Vec::new();
+        
+        let ordered_names = [
+            "Abayas official",
+            "Coffee server for men",
+            "DJ / Audio Equipment",
+            "Free suite for newlyweds",
+            "Hot and cold drinks",
+            "Lighting",
+            "Mobile phone inspector",
+            "Outdoor space for events",
+            "Possibility of holding several parties at the same time",
+            "Separate dining hall",
+            "Staircase for the wedding procession",
+            "The stage and hall decoration",
+            "Wedding cake",
+            "Car parking",
+            "Cooking carcasses",
+            "Female workers",
+            "Hall supervisor",
+            "Laser",
+            "Meeting room",
+            "Open buffet",
+            "Photography and video",
+            "Preparation room for the bride",
+            "Separate entrance for the bride",
+            "Steam",
+            "Valves and fittings",
+        ];
+
+        for name in &ordered_names {
+            if let Some(f) = db_features.iter().find(|x| x.name_en == *name) {
+                amenities_options.push(FeatureOption {
                     option_id: f.id.to_string(),
                     title_en: f.name_en.clone(),
                     title_ar: f.name_ar.clone(),
                     input_type: f.input_type.clone(),
                 });
+            }
         }
-        for (category_name, options) in feature_groups_map {
-            let (title_en, title_ar) = match category_name.as_str() {
-                "General Info" => ("General Info".to_string(), "معلومات عامة".to_string()),
-                "Amenities" => ("Amenities".to_string(), "المرافق والخدمات".to_string()),
-                _ => (category_name.clone(), category_name.clone()),
-            };
-            feature_groups.push(FeatureGroup {
-                group_id: category_name.to_lowercase().replace(' ', "_"),
-                title_en,
-                title_ar,
-                options,
-            });
-        }
+
+        feature_groups.push(FeatureGroup {
+            group_id: "additional_features".to_string(),
+            title_en: "Additional Features (Optional)".to_string(),
+            title_ar: "الميزات الإضافية (اختياري)".to_string(),
+            options: amenities_options,
+        });
     } else if ["wedding-gown", "haute-couture", "abaya-jalabiya", "groom-attire"].contains(&category_id) {
         feature_groups.push(FeatureGroup {
             group_id: "dress_type".to_string(),
@@ -411,4 +459,95 @@ pub fn get_schema_for_category(
         feature_groups,
         step_overrides,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dummy_features() -> Vec<RawDbFeature> {
+        let names = vec![
+            "Abayas official",
+            "Coffee server for men",
+            "DJ / Audio Equipment",
+            "Free suite for newlyweds",
+            "Hot and cold drinks",
+            "Lighting",
+            "Mobile phone inspector",
+            "Outdoor space for events",
+            "Possibility of holding several parties at the same time",
+            "Separate dining hall",
+            "Staircase for the wedding procession",
+            "The stage and hall decoration",
+            "Wedding cake",
+            "Car parking",
+            "Cooking carcasses",
+            "Female workers",
+            "Hall supervisor",
+            "Laser",
+            "Meeting room",
+            "Open buffet",
+            "Photography and video",
+            "Preparation room for the bride",
+            "Separate entrance for the bride",
+            "Steam",
+            "Valves and fittings",
+        ];
+
+        names.into_iter().map(|name| {
+            RawDbFeature {
+                id: uuid::Uuid::new_v4(),
+                name_en: name.to_string(),
+                name_ar: format!("Ar - {}", name),
+                category: "Amenities".to_string(),
+                input_type: "boolean".to_string(),
+            }
+        }).collect()
+    }
+
+    #[test]
+    fn test_venue_categories_have_25_amenities() {
+        let db_feats = dummy_features();
+        let venue_categories = vec![
+            "wedding-palace",
+            "hotel-venue",
+            "villa-resort",
+            "restaurant-event",
+            "outdoor-garden",
+            "rooftop-venue",
+            "private-beach",
+            "chalet",
+        ];
+
+        for cat in venue_categories {
+            let schema = get_schema_for_category(cat, &db_feats).unwrap();
+            assert_eq!(schema.category_group, "venues");
+            
+            // Check additional features group
+            let additional = schema.feature_groups.iter().find(|g| g.group_id == "additional_features");
+            assert!(additional.is_some(), "Category {} missing additional_features group", cat);
+            let additional = additional.unwrap();
+            assert_eq!(additional.options.len(), 25, "Category {} must have exactly 25 amenities", cat);
+        }
+    }
+
+    #[test]
+    fn test_non_venue_categories_do_not_have_venue_amenities() {
+        let db_feats = dummy_features();
+        let non_venues = vec![
+            "wedding-gown",
+            "hair-makeup",
+            "catering",
+        ];
+
+        for cat in non_venues {
+            let schema = get_schema_for_category(cat, &db_feats).unwrap();
+            assert_ne!(schema.category_group, "venues");
+
+            // Check that the additional features group (if present) does not contain 25 venue amenities
+            if let Some(additional) = schema.feature_groups.iter().find(|g| g.group_id == "additional_features") {
+                assert_ne!(additional.options.len(), 25);
+            }
+        }
+    }
 }

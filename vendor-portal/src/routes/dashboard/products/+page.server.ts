@@ -4,10 +4,12 @@ import { safeFetch } from '$lib/utils/api';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ fetch, cookies, depends }) => {
+    console.log("ENTER products +page.server.ts");
     depends('app:vendor-products');
     const sessionToken = cookies.get('zafaf_vendor_session');
 
     if (!sessionToken) {
+        console.log("products +page.server.ts REDIRECT: No session token found. Redirecting to /login");
         throw redirect(303, '/login');
     }
 
@@ -17,25 +19,39 @@ export const load: PageServerLoad = async ({ fetch, cookies, depends }) => {
     };
 
     try {
+        const productsUrl = `${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/vendor/products`;
+        const promosUrl = `${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/vendor/promotions?limit=100`;
+        console.log(`products +page.server.ts: Fetching products from: ${productsUrl} and promos from: ${promosUrl}`);
+
         // Fetch products and promotions in parallel
         const [productsResponse, promosResponse] = await Promise.all([
-            fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/vendor/products`, { headers }),
-            fetch(`${env.PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/vendor/promotions?limit=100`, { headers }).catch(() => null)
+            fetch(productsUrl, { headers }),
+            fetch(promosUrl, { headers }).catch(err => {
+                console.error("products +page.server.ts promos fetch CRASHED:", err);
+                return null;
+            })
         ]);
 
+        console.log(`products +page.server.ts: products response status=${productsResponse.status}, promos response status=${promosResponse ? promosResponse.status : 'FAILED'}`);
+
         if (!productsResponse.ok) {
+            console.error(`products +page.server.ts error: Products fetch failed with status=${productsResponse.status}`);
             if (productsResponse.status === 401 || productsResponse.status === 403) {
+                console.log("products +page.server.ts REDIRECT: Unauthorized/Forbidden. Redirecting to /login");
                 throw redirect(303, '/login');
             }
-            return {
+            const resObj = {
                 products: [],
                 total: 0,
                 promoMap: {},
                 error: 'Encountered a server error or backend is offline.'
             };
+            console.log("EXIT products +page.server.ts (fetch failed, returned fallback)");
+            return resObj;
         }
 
         const productsData = await productsResponse.json();
+        console.log(`products +page.server.ts: Products data parsed successfully. Found ${productsData?.products?.length ?? 0} products.`);
 
         // Build a map of listing_id → promo info for cross-linking
         let promoMap: Record<string, { status: string; discount: number; promoId: string }> = {};
@@ -60,14 +76,19 @@ export const load: PageServerLoad = async ({ fetch, cookies, depends }) => {
             }
         }
 
-        return {
+        const resObj = {
             products: productsData.products ?? [],
             total: productsData.total ?? 0,
             promoMap
         };
-    } catch (err) {
-        if (err && typeof err === 'object' && 'status' in err && 'location' in err) throw err;
-        console.error('Products page loader error:', err);
+        console.log("EXIT products +page.server.ts (success)");
+        return resObj;
+    } catch (err: any) {
+        if (err && typeof err === 'object' && 'status' in err && 'location' in err) {
+            console.log(`products +page.server.ts REDIRECT caught: to location=${err.location} with status=${err.status}`);
+            throw err;
+        }
+        console.error('ERROR products +page.server.ts products page loader error:', err?.stack || err);
         return {
             products: [],
             total: 0,

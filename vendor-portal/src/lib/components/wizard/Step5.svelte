@@ -56,6 +56,7 @@
     );
 
     function retryFetchSchema() {
+        listingStore.setSchemaError(null);
         listingStore.setSchema(null);
     }
 
@@ -64,7 +65,7 @@
             const isDirty = listingStore.isStepDirty(5, $listingStore);
             if (!isDirty) {
                 listingStore.setHighestStep(5);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-6`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-6`);
                 return;
             }
 
@@ -101,7 +102,7 @@
 
                 listingStore.commitStepSave(5);
                 listingStore.setHighestStep(5);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-6`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-6`);
             } catch (err: any) {
                 listingStore.setError(err.message || "Failed to save details.");
             } finally {

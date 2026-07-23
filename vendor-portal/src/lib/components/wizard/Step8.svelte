@@ -19,15 +19,14 @@
     const coverItem = $derived($listingStore.formData.coverItem);
 
     const checklist = $derived([
-        { label: i18n.locale === "ar" ? "العنوان بالعربية" : "Arabic Title", ok: !!fd.titleAr.trim() },
-        { label: i18n.locale === "ar" ? "العنوان بالإنجليزية" : "English Title", ok: !!fd.titleEn.trim() },
-        { label: i18n.locale === "ar" ? "الوصف بالعربية" : "Arabic Description", ok: fd.descriptionAr.length >= 2 },
-        { label: i18n.locale === "ar" ? "الوصف بالإنجليزية" : "English Description", ok: fd.descriptionEn.length >= 2 },
-        { label: i18n.locale === "ar" ? "تحديد السعر" : "Price set", ok: fd.priceOnInquiry || (!!fd.basePriceSar && parseFloat(fd.basePriceSar) > 0) },
+        { label: i18n.locale === "ar" ? "العنوان بالعربية" : "Arabic Title", ok: !!(fd.titleAr || '').trim() },
+        { label: i18n.locale === "ar" ? "العنوان بالإنجليزية" : "English Title", ok: !!(fd.titleEn || '').trim() },
+        { label: i18n.locale === "ar" ? "الوصف (50 حرفاً على الأقل بالعربية أو الإنجليزية)" : "Description (at least 50 chars in English or Arabic)", ok: (fd.descriptionAr || '').trim().length >= 50 || (fd.descriptionEn || '').trim().length >= 50 },
+        { label: i18n.locale === "ar" ? "تحديد السعر" : "Price set", ok: fd.priceOnInquiry || (!!fd.basePriceSar && parseFloat(String(fd.basePriceSar)) > 0) },
         { label: i18n.locale === "ar" ? "تصنيف الجنسين" : "Gender Section", ok: !!fd.genderSection },
         { label: i18n.locale === "ar" ? "اختيار المدينة" : "City selected", ok: !!fd.selectedCityId },
         { label: i18n.locale === "ar" ? "صورة الغلاف" : "Cover Photo", ok: !!coverItem && coverItem.status === "completed" },
-        { label: i18n.locale === "ar" ? "منسق الخدمة" : "Service Coordinator", ok: !!(fd.coordinatorNameAr && fd.coordinatorNameEn && fd.coordinatorPhone && fd.coordinatorWhatsapp && fd.coordinatorEmail) }
+        { label: i18n.locale === "ar" ? "منسق الخدمة" : "Service Coordinator", ok: !!((fd.coordinatorNameAr || '').trim() && (fd.coordinatorNameEn || '').trim() && (fd.coordinatorPhone || '').trim() && (fd.coordinatorWhatsapp || '').trim() && (fd.coordinatorEmail || '').trim()) }
     ]);
 
     const canSubmit = $derived(checklist.every((c) => c.ok));
@@ -43,7 +42,7 @@
                 return;
             }
             listingStore.setHighestStep(8);
-            goto(`${$page.url.pathname.split("/step-")[0]}/step-9`);
+            await goto(`${$page.url.pathname.split("/step-")[0]}/step-9`);
         });
         return unregister;
     });

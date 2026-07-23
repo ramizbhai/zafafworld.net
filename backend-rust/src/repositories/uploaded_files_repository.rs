@@ -54,17 +54,19 @@ pub async fn insert_upload(
     file_size: i64,
     mime_type: &str,
     uploaded_by: Option<Uuid>,
+    parent_id: Option<Uuid>,
 ) -> Result<Uuid, sqlx::Error> {
     let id = sqlx::query_scalar::<_, Uuid>(
         r#"
         INSERT INTO public.uploaded_files
-            (bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status)
-        VALUES ($1, $2, $3, $4, $5, $6, 'ready')
+            (bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status, parent_id)
+        VALUES ($1, $2, $3, $4, $5, $6, 'ready', $7)
         ON CONFLICT (object_key) DO UPDATE
             SET file_size   = EXCLUDED.file_size,
                 mime_type   = EXCLUDED.mime_type,
                 file_name   = EXCLUDED.file_name,
-                status      = 'ready'
+                status      = 'ready',
+                parent_id   = COALESCE(EXCLUDED.parent_id, public.uploaded_files.parent_id)
         RETURNING id
         "#,
     )
@@ -74,6 +76,7 @@ pub async fn insert_upload(
     .bind(file_size)
     .bind(mime_type)
     .bind(uploaded_by)
+    .bind(parent_id)
     .fetch_one(pool)
     .await?;
 
@@ -91,17 +94,19 @@ pub async fn insert_upload_with_status(
     mime_type: &str,
     uploaded_by: Option<Uuid>,
     status: &str,
+    parent_id: Option<Uuid>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
         INSERT INTO public.uploaded_files
-            (id, bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (id, bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status, parent_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (object_key) DO UPDATE
             SET file_size   = EXCLUDED.file_size,
                 mime_type   = EXCLUDED.mime_type,
                 file_name   = EXCLUDED.file_name,
-                status      = EXCLUDED.status
+                status      = EXCLUDED.status,
+                parent_id   = COALESCE(EXCLUDED.parent_id, public.uploaded_files.parent_id)
         "#,
     )
     .bind(id)
@@ -112,6 +117,7 @@ pub async fn insert_upload_with_status(
     .bind(mime_type)
     .bind(uploaded_by)
     .bind(status)
+    .bind(parent_id)
     .execute(pool)
     .await?;
 

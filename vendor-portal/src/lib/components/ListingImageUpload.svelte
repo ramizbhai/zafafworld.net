@@ -89,7 +89,7 @@
                 throw new Error(uploadRes.error.message || 'Upload failed.');
             }
 
-            const { url, file_path } = uploadRes.data || {};
+            const { url, file_path, id: fileId } = uploadRes.data || {};
             if (!url) {
                 throw new Error('Upload returned no URL.');
             }
@@ -100,7 +100,8 @@
                 image_url: url,
                 file_path: file_path,
                 is_cover: isCover,
-                sort_order: images.length
+                sort_order: images.length,
+                file_id: fileId
             });
 
             if (linkRes.error) {

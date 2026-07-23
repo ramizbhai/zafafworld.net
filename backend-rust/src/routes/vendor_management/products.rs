@@ -4,7 +4,7 @@ use validator::Validate;
 use crate::state::AppState;
 use crate::utils::sanitize::{limits, sanitize_opt, sanitize_str};
 use axum::{
-    routing::{delete, get, patch},
+    routing::{delete, get, patch, post},
     Json, Router,
 };
 use serde::Deserialize;
@@ -15,6 +15,7 @@ use uuid::Uuid;
 pub fn router(_state: AppState) -> Router<AppState> {
     Router::new()
         .route("/products", get(list_products).post(create_product))
+        .route("/products/resolve-location", post(resolve_location))
         .route(
             "/products/:id",
             get(get_product).put(update_product).delete(delete_product),
@@ -62,12 +63,16 @@ pub struct GalleryItemInput {
     thumbnail_url: Option<String>,
     file_size: Option<i64>,
     duration_seconds: Option<i32>,
+    file_id: Option<uuid::Uuid>,
 }
 
 #[derive(Deserialize, validator::Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateProductRequest {
-    // Bilingual title (required: at least one of these)
+    // Bilingual title: BOTH title_ar and title_en are required when basic info is
+    // being saved. `title` (legacy single-lang) is accepted only as a fallback for
+    // older API consumers that have not migrated. validate_product_payload() enforces
+    // both AR and EN are non-empty when either bilingual field is present.
     title: Option<String>, // legacy single-lang field (fallback)
     #[validate(length(min = 1, max = 255))]
     title_ar: Option<String>,
@@ -120,7 +125,10 @@ pub struct CreateProductRequest {
 #[derive(Deserialize, validator::Validate)]
 #[serde(rename_all = "camelCase")]
 struct UpdateProductRequest {
-    // Bilingual title (required: at least title_en or title)
+    // Bilingual title: BOTH title_ar and title_en are required when basic info is
+    // being saved. `title` (legacy single-lang) is accepted only as a fallback for
+    // older API consumers. validate_product_payload() enforces both AR and EN are
+    // non-empty when either bilingual field is present in the request.
     title: Option<String>, // legacy single-lang field (fallback)
     #[validate(length(min = 1, max = 255))]
     title_ar: Option<String>,
@@ -526,6 +534,7 @@ fn row_to_product_json(row: &sqlx::postgres::PgRow) -> Result<Value, AppError> {
         "latitude": latitude,
         "longitude": longitude,
         // featuresSelection at canonical top-level position (no duplicate)
+        "featuresSelection": features_selection,
         "pricing": {
             "basePriceSar": match base_price_sar {
                 Some(d) => Some(d.to_string().parse::<f64>().map_err(|_| AppError::Internal("Invalid price format in database".to_string()))?),
@@ -837,7 +846,10 @@ async fn create_product(
         }
     }
     if payload.base_price_sar.is_none() && payload.price_on_inquiry != Some(true) {
-        // Allow missing price — it just shows as TBD on the listing card
+        // Price is truly optional only during the initial POST (Step 1 creates a bare draft
+        // with only productCategory). Subsequent step-by-step PUTs that include basic info
+        // fields will have already been blocked by validate_product_payload() above if
+        // price is missing. This branch is therefore only reached for category-only POSTs.
     }
     let deposit_pct = payload.deposit_percentage.unwrap_or(25);
     if !(10..=100).contains(&deposit_pct) {
@@ -879,9 +891,7 @@ async fn create_product(
             .or_else(|| payload.description.clone()),
         limits::DESCRIPTION,
     );
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_title_legacy: Option<String> = Some(clean_title_en.clone());
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_desc_legacy: Option<String> = None;
 
     let clean_coord_name_en = sanitize_opt(
@@ -891,7 +901,6 @@ async fn create_product(
         limits::NAME_SHORT,
     );
     let clean_coord_name_ar = sanitize_opt(&payload.coordinator_name_ar, limits::NAME_SHORT);
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_coord_name_legacy: Option<String> = None;
 
     let clean_coord_phone = sanitize_opt(&payload.coordinator_phone, limits::PHONE);
@@ -1251,11 +1260,8 @@ async fn update_product(
     );
     let clean_coord_name_ar = sanitize_opt(&payload.coordinator_name_ar, limits::NAME_SHORT);
     
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_title_legacy: Option<String> = clean_title_en.clone();
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_desc_legacy: Option<String> = None;
-    // legacy column, stopped writing as of this change, column kept for backward read compatibility until confirmed unused elsewhere in the codebase.
     let clean_coord_name_legacy: Option<String> = None;
 
     let clean_coord_phone = sanitize_opt(&payload.coordinator_phone, limits::PHONE);
@@ -1301,15 +1307,15 @@ async fn update_product(
         }
     }
 
-    let existing_row: Option<(i32, serde_json::Value, serde_json::Value, serde_json::Value)> = sqlx::query_as(
-        "SELECT version, attributes, cultural_attributes, features_selection FROM vendor_products WHERE id = $1 AND vendor_id = $2"
+    let existing_row: Option<(i32, String, serde_json::Value, serde_json::Value, serde_json::Value)> = sqlx::query_as(
+        "SELECT version, product_category, attributes, cultural_attributes, features_selection FROM vendor_products WHERE id = $1 AND vendor_id = $2"
     )
     .bind(product_id)
     .bind(vendor_id)
     .fetch_optional(&mut *rls_tx.tx)
     .await?;
 
-    let (db_version, db_attributes, db_cultural, db_features) = match existing_row {
+    let (db_version, db_category, db_attributes, db_cultural, db_features) = match existing_row {
         Some(row) => row,
         None => return Err(AppError::NotFound("Product not found or access denied".to_string())),
     };
@@ -1324,9 +1330,51 @@ async fn update_product(
         ));
     }
 
-    let eff_attributes = payload.attributes.clone().unwrap_or(db_attributes);
-    let eff_cultural = payload.cultural_attributes.clone().unwrap_or(db_cultural);
-    let eff_features = payload.features_selection.clone().unwrap_or(db_features);
+    // Detect if the vendor is changing the product category in THIS request.
+    // IMPORTANT: This check only fires when `product_category` is explicitly included
+    // in the current PUT payload. Step-by-step saves from Step 2..7 do NOT send
+    // `productCategory` (only Step 1 does). If a category was changed on Step 1 and the
+    // vendor then saves Step 5 without going back to Step 1 again, `category_changed`
+    // will be false and old-category attributes are NOT cleared here. The correct
+    // guard for this is to wipe attributes/features_selection on the Step 1 backend
+    // response so the client never carries stale data into subsequent steps.
+    let category_changed = payload.product_category.is_some() && 
+        payload.product_category.as_ref() != Some(&db_category);
+
+    if category_changed {
+        sqlx::query(
+            "UPDATE vendor_products SET 
+                attributes = '{}'::jsonb, 
+                features_selection = '{}'::jsonb, 
+                cultural_attributes = '{}'::jsonb,
+                gender_section = NULL,
+                total_capacity = NULL,
+                searchable_amenities = ARRAY[]::text[]
+             WHERE id = $1 AND vendor_id = $2"
+        )
+        .bind(product_id)
+        .bind(vendor_id)
+        .execute(&mut *rls_tx.tx)
+        .await?;
+    }
+
+    let eff_attributes = if category_changed {
+        serde_json::json!({})
+    } else {
+        payload.attributes.clone().unwrap_or(db_attributes)
+    };
+
+    let eff_cultural = if category_changed {
+        serde_json::json!({})
+    } else {
+        payload.cultural_attributes.clone().unwrap_or(db_cultural)
+    };
+
+    let eff_features = if category_changed {
+        serde_json::json!({})
+    } else {
+        payload.features_selection.clone().unwrap_or(db_features)
+    };
 
     let computed_total_capacity = compute_total_capacity(&eff_attributes);
     let computed_searchable_amenities = compute_searchable_amenities(&eff_attributes, &eff_cultural, &eff_features);
@@ -1446,8 +1494,8 @@ async fn update_product(
             sqlx::query(
                 "INSERT INTO vendor_gallery (
                     id, vendor_id, product_id, image_url, file_path, is_cover, sort_order, caption,
-                    media_type, file_url, thumbnail_url, file_size, duration_seconds
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+                    media_type, file_url, thumbnail_url, file_size, duration_seconds, file_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
             )
             .bind(item_id)
             .bind(vendor_id)
@@ -1462,6 +1510,7 @@ async fn update_product(
             .bind(&item.thumbnail_url)
             .bind(item.file_size)
             .bind(item.duration_seconds)
+            .bind(item.file_id)
             .execute(&mut *rls_tx.tx)
             .await?;
         }
@@ -1495,37 +1544,66 @@ async fn update_product(
 }
 
 // ─── DELETE: DELETE /vendor/products/:id ─────────────────────────────────────
-// Soft-delete: archive the product. Gallery CASCADE is handled by DB ON DELETE CASCADE,
+// Permanent-delete: removes the product from the DB. Gallery CASCADE is handled by DB ON DELETE CASCADE,
 // but we collect file paths first so we can delete physical files from disk.
 
 async fn delete_product(
+    axum::extract::State(state): axum::extract::State<crate::state::AppState>,
     _auth: crate::middleware::auth::RequireVendor,
     mut rls_tx: RlsTx,
     axum::extract::Path(product_id): axum::extract::Path<Uuid>,
 ) -> Result<Json<Value>, AppError> {
     let vendor_id = rls_tx.get_vendor_id().await?;
 
-    // Always Soft-delete: archive to preserve product/booking history
-    let result = sqlx::query(
-        "UPDATE vendor_products
-         SET status = 'archived', is_available = FALSE, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $1 AND vendor_id = $2 AND status != 'archived'",
+    // 1. Gather files and queue them for deletion inside the transaction
+    crate::services::media::deletion::StorageDeletionService::queue_deletion(
+        &mut rls_tx.tx,
+        product_id,
+        vendor_id,
+    )
+    .await?;
+
+    // 2. Delete polymorphic status history records
+    sqlx::query(
+        "DELETE FROM public.status_history WHERE entity_id = $1 AND entity_type = 'product'"
+    )
+    .bind(product_id)
+    .execute(&mut *rls_tx.tx)
+    .await?;
+
+    // 3. Perform database deletion on vendor_products (which cascades to vendor_gallery and promotions)
+    let delete_result = sqlx::query(
+        "DELETE FROM vendor_products WHERE id = $1 AND vendor_id = $2"
     )
     .bind(product_id)
     .bind(vendor_id)
     .execute(&mut *rls_tx.tx)
-    .await?;
+    .await;
 
-    if result.rows_affected() == 0 {
-        return Err(AppError::NotFound(
-            "Product not found, access denied, or already archived".to_string(),
-        ));
+    match delete_result {
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                return Err(AppError::NotFound(
+                    "Product not found or access denied".to_string(),
+                ));
+            }
+        }
+        Err(err) => {
+            if let Some(db_err) = err.as_database_error() {
+                if db_err.code() == Some(std::borrow::Cow::Borrowed("23503")) {
+                    return Err(AppError::BadRequest(
+                        "Cannot permanently delete this listing because it has active bookings or history. You may archive it instead.".to_string()
+                    ));
+                }
+            }
+            return Err(AppError::Database(err.to_string()));
+        }
     }
 
     rls_tx.tx.commit().await?;
 
     Ok(Json(
-        json!({ "status": "success", "message": "Listing archived successfully" }),
+        json!({ "status": "success", "message": "Listing and all associated files deleted successfully" }),
     ))
 }
 
@@ -1989,3 +2067,23 @@ async fn reorder_product_images(
         json!({ "status": "success", "message": "Gallery order updated" }),
     ))
 }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ResolveLocationRequest {
+    url: String,
+}
+
+async fn resolve_location(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    Json(payload): Json<ResolveLocationRequest>,
+) -> Result<Json<crate::services::location_resolver::CachedLocation>, AppError> {
+    let resolved = crate::services::location_resolver::resolve_location_with_cache(
+        &payload.url,
+        &state,
+    )
+    .await?;
+    
+    Ok(Json(resolved))
+}
+

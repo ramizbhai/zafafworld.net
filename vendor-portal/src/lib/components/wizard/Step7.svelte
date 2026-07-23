@@ -50,6 +50,13 @@
                 return;
             }
 
+            const isDirty = listingStore.isStepDirty(7, $listingStore);
+            if (!isDirty) {
+                listingStore.setHighestStep(7);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-8`);
+                return;
+            }
+
             wizard.setSubmitting(true);
             listingStore.setError("");
 
@@ -66,6 +73,7 @@
                         thumbnailUrl: state.coverItem.thumbnailUrl || null,
                         durationSeconds: state.coverItem.durationSeconds || null,
                         caption: state.coverItem.caption || null,
+                        fileId: state.coverItem.fileId || null,
                     });
                 }
                 
@@ -82,6 +90,7 @@
                             thumbnailUrl: item.thumbnailUrl || null,
                             durationSeconds: item.durationSeconds || null,
                             caption: item.caption || null,
+                            fileId: item.fileId || null,
                         });
                         sortIdx++;
                     }
@@ -108,8 +117,9 @@
                     listingStore.setVersion(responseData.product.version);
                 }
 
+                listingStore.commitStepSave(7);
                 listingStore.setHighestStep(7);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-8`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-8`);
             } catch (err: any) {
                 listingStore.setError(err.message || "Failed to save gallery items.");
             } finally {

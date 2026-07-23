@@ -83,11 +83,33 @@ export class WizardFinalState {
             }
             
             // Wait for navigation to complete FIRST, so the wizard layout unmounts
-            await goto('/dashboard/products');
+            console.log("Before goto('/dashboard/products')");
+            console.log("goto started");
+            try {
+                const navResult = await goto('/dashboard/products');
+                console.log(`navigation finished. goto returned: ${navResult}`);
+            } catch (gotoErr: any) {
+                console.error("navigation crashed / goto threw error:", gotoErr?.stack || gotoErr);
+                throw gotoErr;
+            }
             
             // Now safe to clear store without triggering layout's $effect guard
             listingStore.reset();
         } catch (err: any) {
+            console.error("DEBUG_ERROR_START");
+            console.error("Constructor name:", err?.constructor?.name);
+            console.error("Message:", err?.message);
+            console.error("Stack:", err?.stack);
+            console.error("Cause:", err?.cause);
+            try {
+                console.error("Properties:", JSON.stringify(Object.getOwnPropertyNames(err).reduce((acc: any, prop) => {
+                    acc[prop] = err[prop];
+                    return acc;
+                }, {})));
+            } catch (e) {
+                console.error("Properties extraction failed");
+            }
+            console.error("DEBUG_ERROR_END");
             listingStore.setError(err.message || "Failed to submit listing.");
         } finally {
             this.isSubmitting = false;

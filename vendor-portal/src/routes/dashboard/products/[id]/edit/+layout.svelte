@@ -24,7 +24,7 @@
         const initialProduct = untrack(() => data.product);
         const initialImages = untrack(() => data.listingImages);
         if (initialProduct) {
-            // Always initialize on layout mount/refresh to clear any dirty or stale store state from other sessions.
+            // Always initialize on layout mount/refresh to clear any dirty or stale store state from other sessions or products.
             listingStore.initializeFromProduct(initialProduct, initialImages);
         }
     }

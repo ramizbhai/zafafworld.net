@@ -177,6 +177,7 @@ export class WizardUploadState {
                                 thumbnailUrl: res.thumbnail_url,
                                 fileSize: res.file_size || file.size,
                                 durationSeconds: res.duration_seconds,
+                                fileId: res.id,
                             });
                             resolve();
                         } else {

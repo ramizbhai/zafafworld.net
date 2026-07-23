@@ -720,6 +720,8 @@ struct AddGalleryImageRequest {
     #[serde(default)]
     #[allow(dead_code)]
     file_path: Option<String>,
+    #[serde(default)]
+    file_id: Option<Uuid>,
 }
 
 async fn list_gallery(
@@ -782,6 +784,7 @@ async fn add_gallery_image(
         payload.is_cover,
         &payload.caption,
         payload.product_id,
+        payload.file_id,
     ).await?;
 
     rls_tx.tx.commit().await?;

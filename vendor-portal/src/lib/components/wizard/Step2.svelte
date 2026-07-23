@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getContext, onMount, onDestroy } from "svelte";
+    import { getContext, onMount } from "svelte";
     import { getI18n } from "$lib/i18n/i18n.svelte";
     import { listingStore } from "$lib/stores/listingStore";
     import { Building2 } from "lucide-svelte";
@@ -9,7 +9,7 @@
     import { wizardFetch } from "$lib/utils/wizardFetch";
 
     const i18n = getI18n();
-    let { data } = $props<{ data: { sessionToken: string } }>();
+    let { data } = $props<{ data: { sessionToken: string, cities: any[] } }>();
 
     const wizard = getContext<{
         registerSubmitHandler: (handler: () => Promise<void>) => () => void;
@@ -17,31 +17,24 @@
         setSubmitting: (val: boolean) => void;
     }>('wizard');
 
-    let titleEn = $state($listingStore.formData.titleEn);
-    let titleAr = $state($listingStore.formData.titleAr);
-    let basePriceSar = $state($listingStore.formData.basePriceSar);
-    let priceOnInquiry = $state($listingStore.formData.priceOnInquiry);
-    let depositPercentage = $state($listingStore.formData.depositPercentage);
-    let selectedCityId = $state($listingStore.formData.selectedCityId);
-    let googleMapsUrl = $state($listingStore.formData.googleMapsUrl);
-    let latitude = $state($listingStore.formData.latitude);
-    let longitude = $state($listingStore.formData.longitude);
-
     const isMapsUrlValid = $derived(
-        googleMapsUrl.trim().startsWith("http://") ||
-            googleMapsUrl.trim().startsWith("https://")
-            ? googleMapsUrl.includes("google.com/maps") ||
-                  googleMapsUrl.includes("maps.google.com") ||
-                  googleMapsUrl.includes("maps.app.goo.gl") ||
-                  googleMapsUrl.includes("goo.gl/maps")
+        $listingStore.formData.googleMapsUrl.trim().startsWith("http://") ||
+            $listingStore.formData.googleMapsUrl.trim().startsWith("https://")
+            ? $listingStore.formData.googleMapsUrl.includes("google.com/maps") ||
+                  $listingStore.formData.googleMapsUrl.includes("maps.google.com") ||
+                  $listingStore.formData.googleMapsUrl.includes("maps.app.goo.gl") ||
+                  $listingStore.formData.googleMapsUrl.includes("goo.gl/maps")
             : false,
     );
 
     const mapEmbedUrl = $derived(
         isMapsUrlValid
-            ? `https://maps.google.com/maps?q=${encodeURIComponent(googleMapsUrl)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
+            ? $listingStore.formData.latitude.trim() && $listingStore.formData.longitude.trim()
+                ? `https://maps.google.com/maps?q=${$listingStore.formData.latitude.trim()},${$listingStore.formData.longitude.trim()}&t=&z=15&ie=UTF8&iwloc=&output=embed`
+                : `https://maps.google.com/maps?q=${encodeURIComponent($listingStore.formData.googleMapsUrl)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
             : "",
     );
+
 
     const cities = $derived(
         (data.cities || []).map((c: any) => ({
@@ -51,45 +44,15 @@
         })),
     );
 
-    // Sync state on unmount (synchronous safety net)
-    onDestroy(() => {
-        listingStore.updateFormData({
-            titleEn,
-            titleAr,
-            basePriceSar,
-            priceOnInquiry,
-            depositPercentage,
-            selectedCityId,
-            googleMapsUrl,
-            latitude,
-            longitude,
-        });
-    });
-
-    // 300ms debounced background sync — keeps store in sync as user types
-    // so navigation away mid-step doesn't lose data
-    $effect(() => {
-        // Reactive reads — changes to any of these trigger the effect
-        const _watch = titleEn + titleAr + basePriceSar + String(priceOnInquiry) +
-                       String(depositPercentage) + selectedCityId + googleMapsUrl + latitude + longitude;
-        const timer = setTimeout(() => {
-            listingStore.updateFormData({
-                titleEn, titleAr, basePriceSar, priceOnInquiry,
-                depositPercentage, selectedCityId, googleMapsUrl, latitude, longitude,
-            });
-        }, 300);
-        return () => clearTimeout(timer);
-    });
-
     onMount(() => {
         const unregister = wizard.registerSubmitHandler(async () => {
             const hasTitle =
-                titleAr.trim().length > 0 || titleEn.trim().length > 0;
+                $listingStore.formData.titleAr.trim().length > 0 || $listingStore.formData.titleEn.trim().length > 0;
             const hasPrice =
-                priceOnInquiry ||
-                (basePriceSar !== "" && parseFloat(basePriceSar) > 0);
-            const hasCity = !!selectedCityId;
-            const hasMap = googleMapsUrl.trim().length > 0 && isMapsUrlValid;
+                $listingStore.formData.priceOnInquiry ||
+                ($listingStore.formData.basePriceSar !== "" && parseFloat($listingStore.formData.basePriceSar) > 0);
+            const hasCity = !!$listingStore.formData.selectedCityId;
+            const hasMap = $listingStore.formData.googleMapsUrl.trim().length > 0 && isMapsUrlValid;
 
             if (!hasTitle || !hasPrice || !hasCity || !hasMap) {
                 listingStore.setError(
@@ -98,24 +61,11 @@
                 return;
             }
 
-            // Sync state immediately before API call
-            listingStore.updateFormData({
-                titleEn,
-                titleAr,
-                basePriceSar,
-                priceOnInquiry,
-                depositPercentage,
-                selectedCityId,
-                googleMapsUrl,
-                latitude,
-                longitude,
-            });
-
             // Dirty check bypass
             const isDirty = listingStore.isStepDirty(2, $listingStore);
             if (!isDirty) {
                 listingStore.setHighestStep(2);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-3`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-3`);
                 return;
             }
 
@@ -126,17 +76,17 @@
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
                 const payload = {
                     version: $listingStore.version, // Use dynamic version for Optimistic Concurrency Control
-                    titleAr: titleAr || null,
-                    titleEn: titleEn || null,
-                    basePriceSar: priceOnInquiry
+                    titleAr: $listingStore.formData.titleAr || null,
+                    titleEn: $listingStore.formData.titleEn || null,
+                    basePriceSar: $listingStore.formData.priceOnInquiry
                         ? null
-                        : parseFloat(basePriceSar),
-                    priceOnInquiry: priceOnInquiry,
-                    depositPercentage: depositPercentage,
-                    cityId: selectedCityId || null,
-                    googleMapsUrl: googleMapsUrl.trim() || null,
-                    latitude: latitude.trim() ? parseFloat(latitude) : null,
-                    longitude: longitude.trim() ? parseFloat(longitude) : null,
+                        : parseFloat($listingStore.formData.basePriceSar),
+                    priceOnInquiry: $listingStore.formData.priceOnInquiry,
+                    depositPercentage: $listingStore.formData.depositPercentage,
+                    cityId: $listingStore.formData.selectedCityId || null,
+                    googleMapsUrl: $listingStore.formData.googleMapsUrl.trim() || null,
+                    latitude: $listingStore.formData.latitude.trim() ? parseFloat($listingStore.formData.latitude) : null,
+                    longitude: $listingStore.formData.longitude.trim() ? parseFloat($listingStore.formData.longitude) : null,
                 };
 
                 const res = await wizardFetch(url, {
@@ -161,7 +111,7 @@
 
                 listingStore.commitStepSave(2);
                 listingStore.setHighestStep(2);
-                goto(`${$page.url.pathname.split("/step-")[0]}/step-3`);
+                await goto(`${$page.url.pathname.split("/step-")[0]}/step-3`);
             } catch (err: any) {
                 listingStore.setError(
                     err.message || "Failed to save basic info.",
@@ -170,15 +120,70 @@
                 wizard.setSubmitting(false);
             }
         });
-        return unregister;
+
+        // Store subscription for dynamic Google Maps URL coordinate resolution
+        let lastResolvedUrl = "";
+        const unsubscribeStore = listingStore.subscribe((state) => {
+            const rawUrl = state.formData.googleMapsUrl.trim();
+            const isValid = rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+                ? rawUrl.includes("google.com/maps") ||
+                  rawUrl.includes("maps.google.com") ||
+                  rawUrl.includes("maps.app.goo.gl") ||
+                  rawUrl.includes("goo.gl/maps")
+                : false;
+
+            if (rawUrl && isValid && rawUrl !== lastResolvedUrl) {
+                lastResolvedUrl = rawUrl;
+                console.log("[RESOLVER] Store subscribe triggered resolution for:", rawUrl);
+                
+                wizardFetch(getApiUrl("/api/v1/vendor/products/resolve-location"), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${data.sessionToken}`,
+                    },
+                    body: JSON.stringify({ url: rawUrl }),
+                })
+                .then((res) => {
+                    if (res.ok) return res.json();
+                    throw new Error("Resolution failed");
+                })
+                .then((resData) => {
+                    // Prevent race conditions from keypress overlap: read current store URL
+                    let currentUrl = "";
+                    const unsub = listingStore.subscribe((s) => { currentUrl = s.formData.googleMapsUrl.trim(); });
+                    unsub();
+
+                    if (resData && resData.success && resData.originalUrl === currentUrl) {
+                        if (resData.latitude !== null && resData.latitude !== undefined &&
+                            resData.longitude !== null && resData.longitude !== undefined) {
+                            
+                            console.log("[RESOLVER] Resolution success. Lat:", resData.latitude, "Lng:", resData.longitude);
+                            listingStore.updateFormData({
+                                latitude: String(resData.latitude),
+                                longitude: String(resData.longitude)
+                            });
+                        }
+                    }
+                })
+                .catch((err) => {
+                    console.error("[RESOLVER] Frontend resolution error:", err);
+                });
+            }
+        });
+
+        return () => {
+            unregister();
+            unsubscribeStore();
+        };
     });
 
     let isValid = $derived(
-        titleEn.trim().length > 0 &&
-        titleAr.trim().length > 0 &&
-        (priceOnInquiry || String(basePriceSar).trim().length > 0) &&
-        selectedCityId.trim().length > 0 &&
-        googleMapsUrl.trim().length > 0
+        $listingStore.formData.titleEn.trim().length > 0 &&
+        $listingStore.formData.titleAr.trim().length > 0 &&
+        ($listingStore.formData.priceOnInquiry || String($listingStore.formData.basePriceSar).trim().length > 0) &&
+        $listingStore.formData.selectedCityId.trim().length > 0 &&
+        $listingStore.formData.googleMapsUrl.trim().length > 0
     );
 
     $effect(() => {
@@ -222,7 +227,7 @@
                 <input
                     id="title-en"
                     type="text"
-                    bind:value={titleEn}
+                    bind:value={$listingStore.formData.titleEn}
                     placeholder="e.g. Al Nour Wedding Palace — Riyadh"
                     maxlength={200}
                 />
@@ -236,7 +241,7 @@
                 <input
                     id="title-ar"
                     type="text"
-                    bind:value={titleAr}
+                    bind:value={$listingStore.formData.titleAr}
                     placeholder="مثال: قصر النور للأفراح — الرياض"
                     maxlength={200}
                     dir="rtl"
@@ -255,17 +260,17 @@
                         <input
                             id="price"
                             type="number"
-                            bind:value={basePriceSar}
+                            bind:value={$listingStore.formData.basePriceSar}
                             placeholder={i18n.t(
                                 "listingsWizard.basePricePlaceholder",
                             ) || "Enter amount"}
                             min="0"
-                            disabled={priceOnInquiry}
-                            class:disabled={priceOnInquiry}
+                            disabled={$listingStore.formData.priceOnInquiry}
+                            class:disabled={$listingStore.formData.priceOnInquiry}
                         />
                     </div>
                     <label class="toggle-label">
-                        <input type="checkbox" bind:checked={priceOnInquiry} />
+                        <input type="checkbox" bind:checked={$listingStore.formData.priceOnInquiry} />
                         {i18n.t("listingsWizard.priceOnInquiry") ||
                             "Price on Inquiry"}
                     </label>
@@ -277,7 +282,7 @@
                         <span class="required">*</span>
                     </label>
                     <div class="select-wrapper">
-                        <select id="city" bind:value={selectedCityId}>
+                        <select id="city" bind:value={$listingStore.formData.selectedCityId}>
                             <option value="">
                                 — {i18n.t("listingsWizard.selectCity") || "Select City"} —
                             </option>
@@ -294,12 +299,12 @@
             <div class="form-group">
                 <label for="deposit">
                     {i18n.t("listingsWizard.depositPercentage") || "Deposit"}
-                    <span class="hint">({depositPercentage}%)</span>
+                    <span class="hint">({$listingStore.formData.depositPercentage}%)</span>
                 </label>
                 <input
                     id="deposit"
                     type="range"
-                    bind:value={depositPercentage}
+                    bind:value={$listingStore.formData.depositPercentage}
                     min="10"
                     max="100"
                     step="5"
@@ -336,11 +341,11 @@
                 <input
                     id="google_maps_url"
                     type="url"
-                    bind:value={googleMapsUrl}
+                    bind:value={$listingStore.formData.googleMapsUrl}
                     placeholder={i18n.t("listingsWizard.googleMapsPlaceholder") || "https://google.com/maps/..."}
-                    class:invalid={googleMapsUrl.trim() && !isMapsUrlValid}
+                    class:invalid={$listingStore.formData.googleMapsUrl.trim() && !isMapsUrlValid}
                 />
-                {#if googleMapsUrl.trim() && !isMapsUrlValid}
+                {#if $listingStore.formData.googleMapsUrl.trim() && !isMapsUrlValid}
                     <div class="validation-error">
                         {i18n.locale === "ar"
                             ? "يجب أن يكون رابط خرائط جوجل صالحاً (مثال: https://goo.gl/maps/...)"
@@ -360,7 +365,7 @@
                     <input
                         id="latitude"
                         type="text"
-                        bind:value={latitude}
+                        bind:value={$listingStore.formData.latitude}
                         placeholder="e.g. 24.7136"
                     />
                 </div>
@@ -374,7 +379,7 @@
                     <input
                         id="longitude"
                         type="text"
-                        bind:value={longitude}
+                        bind:value={$listingStore.formData.longitude}
                         placeholder="e.g. 46.6753"
                     />
                 </div>
@@ -398,6 +403,7 @@
             {/if}
         </div>
     </div>
+</div>
 
 <style>
     .split-layout {
@@ -437,4 +443,3 @@
         }
     }
 </style>
-    </div>

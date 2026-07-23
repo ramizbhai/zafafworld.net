@@ -111,6 +111,7 @@ impl MinioClient {
         target_dir: &str,
         filename: &str,
         mime_type: &str,
+        parent_id: Option<Uuid>,
     ) -> Result<(), String> {
         let bucket = self.bucket()?;
 
@@ -152,6 +153,7 @@ impl MinioClient {
             file_size,
             mime_type,
             None,  // uploaded_by: None (caller can pass user_id in a future iteration)
+            parent_id,
         ).await {
             tracing::warn!("MinIO: upload succeeded but failed to register in uploaded_files: key={} err={}", key, e);
         }
@@ -167,6 +169,7 @@ impl MinioClient {
         filename: &str,
         mime_type: &str,
         uploaded_by: Option<Uuid>,
+        parent_id: Option<Uuid>,
     ) -> Result<(), String> {
         let clean_dir = self.normalize_dir(target_dir);
         let key = format!("{}{}", clean_dir, filename);
@@ -181,6 +184,7 @@ impl MinioClient {
             mime_type,
             uploaded_by,
             "processing",
+            parent_id,
         )
         .await
         .map_err(|e| format!("Failed to insert processing record: {}", e))?;

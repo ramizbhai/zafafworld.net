@@ -20,6 +20,7 @@ export interface GalleryItem {
     error?: string;
     xhr?: XMLHttpRequest;
     previewUrl?: string;
+    fileId?: string;
 }
 
 export interface ListingFormData {
@@ -106,6 +107,7 @@ function ssClearAll(): void {
     ssRemove(SS_KEY_PRODUCT_ID);
     ssRemove(SS_KEY_VERSION);
     ssRemove(SS_KEY_HIGHEST_STEP);
+    ssRemove('zafaf_wiz_new_active');
     clearTraceId();
 }
 
@@ -165,6 +167,8 @@ function createListingStore() {
 
     return {
         subscribe,
+        set,
+        update,
 
         /** Returns the wizard-scoped trace ID (created lazily on first call). */
         getTraceId: (): string => getOrCreateTraceId(),
@@ -214,6 +218,26 @@ function createListingStore() {
             return s;
         }),
 
+        /**
+         * Clears all per-category data from both formData and savedFormData.
+         *
+         * Call this after a successful Step 1 save when the category was changed
+         * in edit mode. Attributes, cultural data, features, and gender section are
+         * all category-specific: leaving stale values from the previous category
+         * would cause later steps to submit invalid data to the backend.
+         */
+        clearCategoryDependentData: () => update(s => {
+            const cleared = {
+                categoryAttributes:  {} as Record<string, any>,
+                featuresSelection:   {} as Record<string, boolean>,
+                culturalAttributes:  {} as Record<string, any>,
+                genderSection:       '',
+            };
+            s.formData      = { ...s.formData,      ...cleared };
+            s.savedFormData = { ...s.savedFormData,  ...JSON.parse(JSON.stringify(cleared)) };
+            return s;
+        }),
+
         // Commit current formData fields to savedFormData to mark them as clean/saved
         commitStepSave: (stepId: number) => update(s => {
             if (stepId === 1) {
@@ -252,10 +276,15 @@ function createListingStore() {
                 s.savedFormData.coverItem = s.formData.coverItem ? JSON.parse(JSON.stringify(s.formData.coverItem)) : null;
                 s.savedFormData.galleryItems = JSON.parse(JSON.stringify(s.formData.galleryItems));
             }
+            // Steps 8 (Preview) and 9 (Submit) are read-only review/action steps.
+            // They own no form data, so commitStepSave is intentionally a no-op for them.
             return s;
         }),
 
-        // Check if the current formData of a step has differences against savedFormData
+        // Check if the current formData of a step has differences against savedFormData.
+        // Steps 8 (Preview) and 9 (Submit) are read-only review/action steps that own no
+        // form data — they always report as not dirty so no spurious PUT requests are made.
+        // All other steps fall through to `return true` (dirty) as a safe default.
         isStepDirty: (stepId: number, s: ListingState) => {
             if (stepId === 1) {
                 return s.formData.selectedCategory !== s.savedFormData.selectedCategory;
@@ -310,6 +339,11 @@ function createListingStore() {
                 }
                 return false;
             }
+            // Steps 8 and 9 own no form data — always report clean (not dirty).
+            if (stepId === 8 || stepId === 9) {
+                return false;
+            }
+            // Unknown step: safe default is dirty to avoid silently skipping saves.
             return true;
         },
 

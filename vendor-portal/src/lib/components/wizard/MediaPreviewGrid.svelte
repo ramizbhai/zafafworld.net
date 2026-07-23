@@ -126,8 +126,8 @@
     .gallery-side {
         display: flex;
         flex-direction: column;
-        border-left: 1px solid var(--border-color, #e5e7eb);
-        padding-left: 2rem;
+        border-inline-start: 1px solid var(--border-color, #e5e7eb);
+        padding-inline-start: 2rem;
         height: 100%;
     }
 
@@ -187,8 +187,8 @@
 
     @media (max-width: 768px) {
         .gallery-side {
-            border-left: none;
-            padding-left: 0;
+            border-inline-start: none;
+            padding-inline-start: 0;
             border-top: 1px solid var(--border-color, #e5e7eb);
             padding-top: 1.5rem;
         }

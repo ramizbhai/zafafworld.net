@@ -3,11 +3,15 @@ import { z } from "zod";
 export const vendorListingSchema = z.object({
     titleAr: z.string().min(1, "Arabic title is required"),
     titleEn: z.string().min(1, "English title is required"),
-    descriptionAr: z.string().min(2, "Arabic description must be at least 2 characters"),
-    descriptionEn: z.string().min(2, "English description must be at least 2 characters"),
+    descriptionAr: z.string().default(""),
+    descriptionEn: z.string().default(""),
     priceOnInquiry: z.boolean().default(false),
     basePriceSar: z.string().optional(),
-    genderSection: z.string().min(1, "Gender section is required"),
+    // genderSection is OPTIONAL here: categories with usesCulturalSettings = false
+    // skip Step 4 entirely, leaving this field as "". The DB column is nullable,
+    // the backend validates only when the value is present, and Step 4's own
+    // submit handler enforces non-empty when the step IS visible.
+    genderSection: z.string().default(""),
     selectedCityId: z.string().min(1, "City is required"),
     coverItem: z.object({
         status: z.literal("completed")
@@ -26,6 +30,15 @@ export const vendorListingSchema = z.object({
                 path: ["basePriceSar"]
             });
         }
+    }
+    const lenAr = data.descriptionAr.trim().length;
+    const lenEn = data.descriptionEn.trim().length;
+    if (lenAr < 50 && lenEn < 50) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "At least one description (English or Arabic) must be 50 characters or longer",
+            path: ["descriptionEn"]
+        });
     }
 });
 

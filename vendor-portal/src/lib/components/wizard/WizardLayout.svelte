@@ -7,9 +7,12 @@
     import { uiStore } from '$lib/stores/ui.svelte';
     import { ArrowLeft, ArrowRight, Check } from 'lucide-svelte';
     import { getSchemaForCategory } from "$lib/constants/wizardSchemas";
+    import { getApiUrl } from '$lib/utils/api';
+    import { wizardFetch } from '$lib/utils/wizardFetch';
 
-    import { get } from 'svelte/store';
-    import { setContext } from 'svelte';
+    import { get, derived } from 'svelte/store';
+    import { setContext, untrack } from 'svelte';
+
 
     const i18n = getI18n();
     let { basePath, children, isEditMode = false } = $props<{ basePath: string, children: any, isEditMode?: boolean }>();
@@ -20,19 +23,19 @@
         i18n.t("listingsWizard.stepLabels.category") || "Category",
         i18n.t("listingsWizard.stepLabels.basicInfo") || "Basic Info",
         i18n.t("listingsWizard.stepLabels.description") || "Description",
-        i18n.t("listingsWizard.stepLabels.culturalSetup") || "Cultural Setup",
+        i18n.t("listingsWizard.stepLabels.cultural") || "Cultural Specs",
         i18n.t("listingsWizard.stepLabels.details") || "Details",
         i18n.t("listingsWizard.stepLabels.coordinator") || "Coordinator",
         i18n.t("listingsWizard.stepLabels.gallery") || "Gallery",
         i18n.t("listingsWizard.stepLabels.preview") || "Preview",
-        i18n.t("listingsWizard.stepLabels.submit") || "Submit",
+        i18n.t("listingsWizard.stepLabels.submission") || "Submit"
     ]);
 
     let currentStep = $derived(parseInt($page.params.stepId || '1') || 1);
 
     // Layout local context states
     let submitHandler = $state<(() => Promise<void>) | null>(null);
-    let canContinue = $state(false);
+    let canContinue = $state(true);
     let isSubmitting = $state(false);
 
     setContext('wizard', {
@@ -69,28 +72,75 @@
 
     let activeFetchCategory = $state<string | null>(null);
 
-    // Local schema resolution effect
-    $effect(() => {
-        const category = $listingStore.formData.selectedCategory;
-        const schema = $listingStore.schema;
+    // Derived trigger store to isolate effect dependencies
+    const schemaLoaderTrigger = derived(listingStore, $store => {
+        const category = $store.formData.selectedCategory || '';
+        const hasSchema = $store.schema ? 'yes' : 'no';
+        const hasError = $store.schemaError ? 'yes' : 'no';
+        return `${category}:${hasSchema}:${hasError}`;
+    });
 
-        if (category && (!schema || schema.categoryId !== category)) {
+    // Backend schema resolution effect
+    $effect(() => {
+        const trigger = $schemaLoaderTrigger;
+        const [category, hasSchema, hasError] = trigger.split(':');
+        if (!category) return;
+
+        untrack(() => {
+            const schema = get(listingStore).schema;
+            if (schema && schema.categoryId === category) {
+                return;
+            }
+
+            // Return early if error is already set (prevents retry loop on failures)
+            if (get(listingStore).schemaError) {
+                return;
+            }
+
             listingStore.setSchemaLoading(true);
             listingStore.setSchemaError(null);
             
-            try {
-                const schemaData = getSchemaForCategory(category);
-                if (!schemaData) {
-                    throw new Error("No schema defined for this category");
-                }
-                listingStore.setSchema(schemaData);
-                listingStore.setSchemaLoading(false);
-            } catch (err: any) {
-                console.error("Failed to load local wizard schema:", err);
-                listingStore.setSchemaError(err.message || "Failed to load schema");
-                listingStore.setSchemaLoading(false);
+            const sessionToken = $page.data.sessionToken;
+            const url = getApiUrl(`/api/v1/vendor/wizard-schema/${category}`);
+            
+            const headers: Record<string, string> = {
+                "X-Trace-ID": listingStore.getTraceId(),
+            };
+            if (sessionToken) {
+                headers["Authorization"] = `Bearer ${sessionToken}`;
             }
-        }
+
+            wizardFetch(url, { headers })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.message || err.error || `Server error ${res.status}`);
+                }
+                const schemaData = await res.json();
+                
+                // Discard the response if user switched categories mid-flight
+                if (get(listingStore).formData.selectedCategory === category) {
+                    listingStore.setSchema(schemaData);
+                    listingStore.setSchemaLoading(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load backend wizard schema, falling back to local schema:", err);
+                try {
+                    const schemaData = getSchemaForCategory(category);
+                    if (schemaData && get(listingStore).formData.selectedCategory === category) {
+                        listingStore.setSchema(schemaData);
+                        listingStore.setSchemaLoading(false);
+                        return;
+                    }
+                } catch (_) {}
+                
+                if (get(listingStore).formData.selectedCategory === category) {
+                    listingStore.setSchemaError(err.message || "Failed to load schema");
+                    listingStore.setSchemaLoading(false);
+                }
+            });
+        });
     });
 
     // Automatically skip not_applicable steps on direct loads/refreshes

@@ -105,6 +105,7 @@ pub struct CreatePromotionPayload {
     pub badge_text_ar: Option<String>,
     pub start_at: DateTime<Utc>,
     pub end_at: DateTime<Utc>,
+    pub file_id: Option<Uuid>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -350,35 +351,36 @@ impl PromotionRepository {
         let sanitized_desc_en = payload.description_en.as_ref().map(|s| sanitize_html(s));
         let sanitized_desc_ar = payload.description_ar.as_ref().map(|s| sanitize_html(s));
 
-        let promotion_id = sqlx::query_scalar!(
+        let promotion_id: Uuid = sqlx::query_scalar(
             "INSERT INTO listing_promotions (
                 vendor_id, listing_id, promo_type, discount_type, 
                 discount_percentage, discount_fixed_amount,
                 benefit_description_en, benefit_description_ar,
                 use_listing_cover_image, custom_banner_image_url,
                 title_en, title_ar, description_en, description_ar, 
-                badge_text_en, badge_text_ar, start_at, end_at, status
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'pending')
-             RETURNING id",
-            vendor_id,
-            payload.listing_id,
-            payload.promo_type,
-            payload.discount_type,
-            payload.discount_percentage,
-            payload.discount_fixed_amount,
-            payload.benefit_description_en,
-            payload.benefit_description_ar,
-            payload.use_listing_cover_image,
-            payload.custom_banner_image_url,
-            payload.title_en,
-            payload.title_ar,
-            sanitized_desc_en,
-            sanitized_desc_ar,
-            payload.badge_text_en,
-            payload.badge_text_ar,
-            payload.start_at,
-            payload.end_at
+                badge_text_en, badge_text_ar, start_at, end_at, status, file_id
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'pending', $19)
+             RETURNING id"
         )
+        .bind(vendor_id)
+        .bind(payload.listing_id)
+        .bind(&payload.promo_type)
+        .bind(&payload.discount_type)
+        .bind(payload.discount_percentage)
+        .bind(payload.discount_fixed_amount)
+        .bind(&payload.benefit_description_en)
+        .bind(&payload.benefit_description_ar)
+        .bind(payload.use_listing_cover_image)
+        .bind(&payload.custom_banner_image_url)
+        .bind(&payload.title_en)
+        .bind(&payload.title_ar)
+        .bind(&sanitized_desc_en)
+        .bind(&sanitized_desc_ar)
+        .bind(&payload.badge_text_en)
+        .bind(&payload.badge_text_ar)
+        .bind(payload.start_at)
+        .bind(payload.end_at)
+        .bind(payload.file_id)
         .fetch_one(conn)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -391,11 +393,12 @@ impl PromotionRepository {
         promo_id: Uuid,
         payload: &CreatePromotionPayload,
         new_status: &str,
+        file_id: Option<Uuid>,
     ) -> Result<(), AppError> {
         let sanitized_desc_en = payload.description_en.as_ref().map(|s| sanitize_html(s));
         let sanitized_desc_ar = payload.description_ar.as_ref().map(|s| sanitize_html(s));
 
-        sqlx::query!(
+        sqlx::query(
             "UPDATE listing_promotions
              SET listing_id = $1, promo_type = $2, discount_type = $3, 
                  discount_percentage = $4, discount_fixed_amount = $5,
@@ -403,28 +406,29 @@ impl PromotionRepository {
                  use_listing_cover_image = $8, custom_banner_image_url = $9,
                  title_en = $10, title_ar = $11, description_en = $12, description_ar = $13,
                  badge_text_en = $14, badge_text_ar = $15, start_at = $16, end_at = $17, 
-                 status = $18, updated_at = NOW()
-             WHERE id = $19",
-            payload.listing_id,
-            payload.promo_type,
-            payload.discount_type,
-            payload.discount_percentage,
-            payload.discount_fixed_amount,
-            payload.benefit_description_en,
-            payload.benefit_description_ar,
-            payload.use_listing_cover_image,
-            payload.custom_banner_image_url,
-            payload.title_en,
-            payload.title_ar,
-            sanitized_desc_en,
-            sanitized_desc_ar,
-            payload.badge_text_en,
-            payload.badge_text_ar,
-            payload.start_at,
-            payload.end_at,
-            new_status,
-            promo_id
+                 status = $18, file_id = $19, updated_at = NOW()
+             WHERE id = $20"
         )
+        .bind(payload.listing_id)
+        .bind(&payload.promo_type)
+        .bind(&payload.discount_type)
+        .bind(payload.discount_percentage)
+        .bind(payload.discount_fixed_amount)
+        .bind(&payload.benefit_description_en)
+        .bind(&payload.benefit_description_ar)
+        .bind(payload.use_listing_cover_image)
+        .bind(&payload.custom_banner_image_url)
+        .bind(&payload.title_en)
+        .bind(&payload.title_ar)
+        .bind(&sanitized_desc_en)
+        .bind(&sanitized_desc_ar)
+        .bind(&payload.badge_text_en)
+        .bind(&payload.badge_text_ar)
+        .bind(payload.start_at)
+        .bind(payload.end_at)
+        .bind(new_status)
+        .bind(file_id)
+        .bind(promo_id)
         .execute(conn)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -578,62 +582,75 @@ impl PromotionService {
             return Err(AppError::BadRequest("Vendor subscription is not active".into()));
         }
 
+        use sqlx::Row;
         // Validate promotion details
-        let existing = sqlx::query!(
+        let row_opt = sqlx::query(
             "SELECT id, vendor_id, start_at, end_at, status, title_en, title_ar,
                     description_en, description_ar, badge_text_en, badge_text_ar,
-                    use_listing_cover_image, custom_banner_image_url
-             FROM listing_promotions WHERE id = $1",
-            promo_id
+                    use_listing_cover_image, custom_banner_image_url, file_id
+             FROM listing_promotions WHERE id = $1"
         )
+        .bind(promo_id)
         .fetch_optional(&mut *conn)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        let existing = match existing {
-            Some(p) => {
-                if p.vendor_id != vendor_id {
+        let existing = match row_opt {
+            Some(r) => {
+                let r_vendor_id: Uuid = r.get("vendor_id");
+                if r_vendor_id != vendor_id {
                     return Err(AppError::Forbidden("Access Denied".into()));
                 }
-                p
+                r
             }
             None => return Err(AppError::NotFound("Promotion not found".into())),
         };
 
         // Enforce restriction: active approved promotions cannot be edited
-        if existing.status == "approved" {
+        if existing.get::<String, _>("status") == "approved" {
             let now = chrono::Utc::now();
-            if existing.start_at <= now && now <= existing.end_at {
+            let start_at: chrono::DateTime<chrono::Utc> = existing.get("start_at");
+            let end_at: chrono::DateTime<chrono::Utc> = existing.get("end_at");
+            if start_at <= now && now <= end_at {
                 return Err(AppError::BadRequest("Cannot edit an active approved promotion".into()));
             }
         }
 
         // Determine the new status
-        let new_status = match existing.status.as_str() {
+        let existing_status: String = existing.get("status");
+        let new_status = match existing_status.as_str() {
             "rejected" | "draft" => "pending",
             other => other,
+        };
+
+        let effective_file_id = if payload.file_id.is_some() {
+            payload.file_id
+        } else if payload.custom_banner_image_url.is_none() {
+            None
+        } else {
+            existing.get::<Option<Uuid>, _>("file_id")
         };
 
         // 1. Verify listing ownership
         PromotionRepository::check_listing_ownership(conn, payload.listing_id, vendor_id).await?;
 
         // 2. Perform updates
-        PromotionRepository::update_promotion(conn, promo_id, &payload, new_status).await?;
+        PromotionRepository::update_promotion(conn, promo_id, &payload, new_status, effective_file_id).await?;
 
         // 3. Log audit log
         let audit_payload = json!({
             "old_values": {
-                "title_en": existing.title_en,
-                "title_ar": existing.title_ar,
-                "description_en": existing.description_en,
-                "description_ar": existing.description_ar,
-                "badge_text_en": existing.badge_text_en,
-                "badge_text_ar": existing.badge_text_ar,
-                "use_listing_cover_image": existing.use_listing_cover_image,
-                "custom_banner_image_url": existing.custom_banner_image_url,
-                "start_at": existing.start_at,
-                "end_at": existing.end_at,
-                "status": existing.status,
+                "title_en": existing.get::<String, _>("title_en"),
+                "title_ar": existing.get::<String, _>("title_ar"),
+                "description_en": existing.get::<Option<String>, _>("description_en"),
+                "description_ar": existing.get::<Option<String>, _>("description_ar"),
+                "badge_text_en": existing.get::<Option<String>, _>("badge_text_en"),
+                "badge_text_ar": existing.get::<Option<String>, _>("badge_text_ar"),
+                "use_listing_cover_image": existing.get::<bool, _>("use_listing_cover_image"),
+                "custom_banner_image_url": existing.get::<Option<String>, _>("custom_banner_image_url"),
+                "start_at": existing.get::<chrono::DateTime<chrono::Utc>, _>("start_at"),
+                "end_at": existing.get::<chrono::DateTime<chrono::Utc>, _>("end_at"),
+                "status": existing.get::<String, _>("status"),
             },
             "new_values": {
                 "listing_id": payload.listing_id,
@@ -658,7 +675,7 @@ impl PromotionService {
             promo_id,
             user_uuid,
             "update",
-            Some(&existing.status),
+            Some(&existing_status),
             Some("pending"),
             Some(audit_payload),
         )
@@ -1078,6 +1095,7 @@ pub async fn duplicate_promotion_handler(
         badge_text_ar: promo.badge_text_ar,
         start_at: promo.start_at,
         end_at: promo.end_at,
+        file_id: None,
     };
 
     let new_id = PromotionRepository::create_promotion(&mut *rls_tx.tx, vendor_id, &payload).await?;
@@ -1838,6 +1856,7 @@ pub async fn upload_promotion_banner_handler(
 
             return Ok(Json(json!({
                 "status": "success",
+                "id": processed.id,
                 "url": processed.file_url,
                 "file_path": processed.disk_path,
                 "file_size": processed.file_size,
@@ -1988,6 +2007,7 @@ mod tests {
             badge_text_ar: None,
             start_at: now,
             end_at: now + chrono::Duration::hours(5),
+            file_id: None,
         };
         assert!(PromotionValidator::validate_create(&payload).is_err());
 
@@ -2079,6 +2099,7 @@ mod tests {
             badge_text_ar: None,
             start_at: Utc::now(),
             end_at: Utc::now() + chrono::Duration::hours(5),
+            file_id: None,
         };
 
         let promo1_id = PromotionService::create_promotion(&mut *tx, user1_id, payload1)
@@ -2105,6 +2126,7 @@ mod tests {
             badge_text_ar: None,
             start_at: Utc::now(),
             end_at: Utc::now() + chrono::Duration::hours(5),
+            file_id: None,
         };
 
         let bad_promo_res = PromotionService::create_promotion(&mut *tx, user1_id, bad_payload).await;
@@ -2137,6 +2159,7 @@ mod tests {
             badge_text_ar: None,
             start_at: Utc::now() + chrono::Duration::hours(1), // Overlaps
             end_at: Utc::now() + chrono::Duration::hours(4),   // Overlaps
+            file_id: None,
         };
 
         // Create promo 2 (targets listing 1 overlapping range)
@@ -2197,6 +2220,7 @@ mod tests {
             badge_text_ar: None,
             start_at: Utc::now() - chrono::Duration::hours(1), // Currently active
             end_at: Utc::now() + chrono::Duration::hours(5),   // Currently active
+            file_id: None,
         };
 
         let promo_id = PromotionService::create_promotion(&mut *tx, user_id, payload.clone())
@@ -2270,6 +2294,7 @@ mod tests {
             badge_text_ar: None,
             start_at: Utc::now(),
             end_at: Utc::now() + chrono::Duration::hours(5),
+            file_id: None,
         };
 
         // Try to create promotion under suspended vendor account (must fail)

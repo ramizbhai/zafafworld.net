@@ -268,7 +268,7 @@ pub async fn process_video(
 
             if let Ok(Ok(())) = process_thumb {
                 thumbnail_url = Some(final_thumb_url);
-                if let Err(e) = minio.upload(&final_thumb_disk_path, target_dir, &final_thumb_filename, "image/webp").await {
+                if let Err(e) = minio.upload(&final_thumb_disk_path, target_dir, &final_thumb_filename, "image/webp", Some(temp_id)).await {
                     tracing::error!("MinIO: failed to upload video thumbnail: {}", e);
                 }
             }
@@ -294,7 +294,7 @@ pub async fn process_video(
         status: "ready".to_string(),
     };
 
-    if let Err(e) = minio.upload(&processed.disk_path, target_dir, &final_filename, &processed.mime_type).await {
+    if let Err(e) = minio.upload(&processed.disk_path, target_dir, &final_filename, &processed.mime_type, None).await {
         tracing::error!("MinIO: failed to upload video: {}", e);
         return Err(AppError::Internal(format!("MinIO: failed to upload video: {}", e)));
     }

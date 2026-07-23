@@ -97,6 +97,7 @@
                             id="email" 
                             name="email" 
                             value={form?.values?.email ?? ''} 
+                            oninput={(e) => { e.currentTarget.value = e.currentTarget.value.toLowerCase(); }}
                             placeholder={i18n.t.auth.emailPlaceholder} 
                             required 
                             autocomplete="email"

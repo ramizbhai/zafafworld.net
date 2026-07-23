@@ -629,6 +629,7 @@ impl PgVendorRepository {
         is_cover: bool,
         caption: &Option<String>,
         product_id: Option<Uuid>,
+        file_id: Option<Uuid>,
     ) -> Result<(), AppError> {
         if is_cover {
             if let Some(pid) = product_id {
@@ -655,8 +656,8 @@ impl PgVendorRepository {
         }
 
         sqlx::query(
-            "INSERT INTO vendor_gallery (id, vendor_id, image_url, file_url, file_path, is_cover, caption, product_id, media_type) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+            "INSERT INTO vendor_gallery (id, vendor_id, image_url, file_url, file_path, is_cover, caption, product_id, media_type, file_id) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
         )
         .bind(new_id)
         .bind(vendor_id)
@@ -667,6 +668,7 @@ impl PgVendorRepository {
         .bind(caption.as_deref().unwrap_or(""))
         .bind(product_id)
         .bind("image") // media_type
+        .bind(file_id)
         .execute(&mut **tx)
         .await?;
 

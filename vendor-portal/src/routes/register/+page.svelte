@@ -163,6 +163,7 @@
                                 type="email" 
                                 placeholder={i18n.t.auth.corporateEmailPlaceholder || 'vendor@yourdomain.com'} 
                                 bind:value={email}
+                                oninput={() => { email = email.toLowerCase(); }}
                                 required 
                                 autocomplete="email"
                             />
