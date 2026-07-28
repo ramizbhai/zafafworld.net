@@ -14,6 +14,7 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/public';
 import type { RequestEvent } from '@sveltejs/kit';
 import { apiClient } from '$lib/services/api/client.js';
+import DOMPurify from 'isomorphic-dompurify';
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 // 
@@ -158,7 +159,9 @@ function validateInquiryPayload(body: any): { errors: ValidationErrors; sanitize
   }
 
   // Build sanitized payload — strip HTML from all string fields
-  const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').trim();
+  const stripHtml = (s: string) => {
+    return DOMPurify.sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+  };
 
   let eventDateVal = body.event_date || body.eventDate || '';
   if (!eventDateVal) {

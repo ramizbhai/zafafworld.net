@@ -824,15 +824,24 @@ async fn delete_gallery_image(
     let vendor_id = rls_tx.get_vendor_id().await?;
 
     let repo = crate::repositories::vendor_repository::PgVendorRepository::new(state.db.clone());
-    let file_path = repo.get_gallery_image_path(&mut rls_tx.tx, vendor_id, image_id).await?;
+    let gallery_info = repo.get_gallery_image_path(&mut rls_tx.tx, vendor_id, image_id).await?;
     repo.delete_gallery_image(&mut rls_tx.tx, vendor_id, image_id).await?;
 
     rls_tx.tx.commit().await?;
 
-    // Delete physical file from disk (non-blocking, best-effort)
-    if let Some(path) = file_path {
-        if let Err(e) = tokio::fs::remove_file(&path).await {
-            tracing::warn!("Could not delete gallery file '{}': {}", path, e);
+    // Delete file from MinIO and physical disk (non-blocking, best-effort)
+    if let Some((file_path, media_type)) = gallery_info {
+        if let Some(path) = file_path {
+            let minio_client = state.minio_client.clone();
+            let mt = media_type.unwrap_or_else(|| "image".to_string());
+            let path_clone = path.clone();
+            tokio::spawn(async move {
+                minio_client.delete_gallery_item(&path_clone, &mt).await;
+            });
+
+            if let Err(e) = tokio::fs::remove_file(&path).await {
+                tracing::debug!("Could not delete local gallery file '{}': {}", path, e);
+            }
         }
     }
 

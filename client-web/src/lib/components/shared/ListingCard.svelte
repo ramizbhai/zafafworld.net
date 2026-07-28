@@ -47,85 +47,95 @@
         getLocale() === "ar" ? (listing.cityAr ?? "") : (listing.cityEn ?? ""),
     );
 
-    const badgeText = $derived(() => {
-        if (!promotion) return null;
-        return getLocale() === "ar"
-            ? (promotion.badge_text_ar || promotion.badge_text_en || null)
-            : (promotion.badge_text_en || promotion.badge_text_ar || null);
-    });
+    const badgeText = $derived(
+        (() => {
+            if (!promotion) return null;
+            return getLocale() === "ar"
+                ? (promotion.badge_text_ar || promotion.badge_text_en || null)
+                : (promotion.badge_text_en || promotion.badge_text_ar || null);
+        })()
+    );
 
-    const price = $derived(() => {
-        const raw =
-            listing.startingPrice ??
-            (listing.basePriceSar ? parseFloat(listing.basePriceSar) : null);
-        if (!raw) return null;
-        if (promotion && promotion.promo_type === 'discount') {
-            if (promotion.discount_type === 'percentage' && promotion.discount_percentage) {
-                const discounted = raw * (1 - promotion.discount_percentage / 100);
-                return formatCurrency(discounted);
-            } else if (promotion.discount_type === 'fixed_amount' && promotion.discount_fixed_amount) {
-                const discounted = Math.max(0, raw - parseFloat(promotion.discount_fixed_amount));
-                return formatCurrency(discounted);
+    const price = $derived(
+        (() => {
+            const raw =
+                listing.startingPrice ??
+                (listing.basePriceSar ? parseFloat(listing.basePriceSar) : null);
+            if (!raw) return null;
+            if (promotion && promotion.promo_type === 'discount') {
+                if (promotion.discount_type === 'percentage' && promotion.discount_percentage) {
+                    const discounted = raw * (1 - promotion.discount_percentage / 100);
+                    return formatCurrency(discounted);
+                } else if (promotion.discount_type === 'fixed_amount' && promotion.discount_fixed_amount) {
+                    const discounted = Math.max(0, raw - parseFloat(promotion.discount_fixed_amount));
+                    return formatCurrency(discounted);
+                }
             }
-        }
-        return formatCurrency(raw);
-    });
+            return formatCurrency(raw);
+        })()
+    );
 
-    const slashedPrice = $derived(() => {
-        if (promotion && promotion.promo_type === 'discount') {
-            if ((promotion.discount_type === 'percentage' && promotion.discount_percentage) || 
-                (promotion.discount_type === 'fixed_amount' && promotion.discount_fixed_amount)) {
-                const raw =
-                    listing.startingPrice ??
-                    (listing.basePriceSar ? parseFloat(listing.basePriceSar) : null);
-                if (raw) return formatCurrency(raw);
+    const slashedPrice = $derived(
+        (() => {
+            if (promotion && promotion.promo_type === 'discount') {
+                if ((promotion.discount_type === 'percentage' && promotion.discount_percentage) || 
+                    (promotion.discount_type === 'fixed_amount' && promotion.discount_fixed_amount)) {
+                    const raw =
+                        listing.startingPrice ??
+                        (listing.basePriceSar ? parseFloat(listing.basePriceSar) : null);
+                    if (raw) return formatCurrency(raw);
+                }
             }
-        }
-        return null;
-    });
+            return null;
+        })()
+    );
 
     /** Gender section label */
-    const genderLabel = $derived(() => {
-        const genderSec =
-            listing.genderSection ??
-            listing.attributes?.genderSection ??
-            listing.attributes?.gender_section;
-        if (!genderSec) return null;
-        const map: Record<string, { ar: string; en: string }> = {
-            women_only: { ar: "نساء فقط", en: "Ladies Only" },
-            men_only: { ar: "رجال فقط", en: "Gents Only" },
-            mixed: { ar: "مختلط", en: "Mixed" },
-            dual_parallel: { ar: "قاعتان منفصلتان", en: "Dual Halls" },
-            family: { ar: "عائلي", en: "Family" },
-        };
-        const entry = map[genderSec];
-        return entry ? getLocalizedField(entry, "", getLocale()) : null;
-    });
+    const genderLabel = $derived(
+        (() => {
+            const genderSec =
+                listing.genderSection ??
+                listing.attributes?.genderSection ??
+                listing.attributes?.gender_section;
+            if (!genderSec) return null;
+            const map: Record<string, { ar: string; en: string }> = {
+                women_only: { ar: "نساء فقط", en: "Ladies Only" },
+                men_only: { ar: "رجال فقط", en: "Gents Only" },
+                mixed: { ar: "مختلط", en: "Mixed" },
+                dual_parallel: { ar: "قاعتان منفصلتان", en: "Dual Halls" },
+                family: { ar: "عائلي", en: "Family" },
+            };
+            const entry = map[genderSec];
+            return entry ? getLocalizedField(entry, "", getLocale()) : null;
+        })()
+    );
 
     /** Category icon — uses shared canonical map from $lib/constants/categoryIcons.ts */
-    const categoryIcon = $derived(() => getCategoryIcon(listing.category));
+    const categoryIcon = $derived(getCategoryIcon(listing.category));
 
-    const capacityText = $derived(() => {
-        const menCap =
-            listing.attributes?.menCapacity ?? listing.attributes?.men_capacity;
-        const womenCap =
-            listing.attributes?.womenCapacity ??
-            listing.attributes?.women_capacity;
-        const genderSec =
-            listing.genderSection ??
-            listing.attributes?.genderSection ??
-            listing.attributes?.gender_section;
+    const capacityText = $derived(
+        (() => {
+            const menCap =
+                listing.attributes?.menCapacity ?? listing.attributes?.men_capacity;
+            const womenCap =
+                listing.attributes?.womenCapacity ??
+                listing.attributes?.women_capacity;
+            const genderSec =
+                listing.genderSection ??
+                listing.attributes?.genderSection ??
+                listing.attributes?.gender_section;
 
-        if (genderSec === "dual_parallel" && menCap && womenCap) {
-            const menLabel = m.auto_gents();
-            const womenLabel = m.auto_ladies();
-            return `${menCap} ${menLabel} + ${womenCap} ${womenLabel}`;
-        }
-        const cap = menCap ?? womenCap ?? (menCap || 0) + (womenCap || 0);
-        if (!cap) return null;
-        const guestWord = m.auto_guests();
-        return `${cap.toLocaleString()} ${guestWord}`;
-    });
+            if (genderSec === "dual_parallel" && menCap && womenCap) {
+                const menLabel = m.auto_gents();
+                const womenLabel = m.auto_ladies();
+                return `${menCap} ${menLabel} + ${womenCap} ${womenLabel}`;
+            }
+            const cap = menCap ?? womenCap ?? (menCap || 0) + (womenCap || 0);
+            if (!cap) return null;
+            const guestWord = m.auto_guests();
+            return `${cap.toLocaleString()} ${guestWord}`;
+        })()
+    );
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -179,7 +189,7 @@
                 class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[var(--color-surface-alt)] to-[var(--color-border)] gap-2"
             >
                 <span class={size === "sm" ? "text-2xl" : "text-4xl"}
-                    >{categoryIcon()}</span
+                    >{categoryIcon}</span
                 >
                 <span
                     class="text-[10px] text-[var(--color-muted)] font-medium max-w-[90%] truncate"
@@ -204,7 +214,7 @@
                         ? 'text-[9px] px-1.5 py-0.5'
                         : 'text-[10px] sm:text-xs'}"
                 >
-                    🏷️ {badgeText() || (
+                    🏷️ {badgeText || (
                         promotion.promo_type === 'discount'
                             ? (promotion.discount_type === 'percentage'
                                 ? `${promotion.discount_percentage}% OFF`
@@ -236,13 +246,13 @@
                 </div>
             {/if}
 
-            {#if genderLabel()}
+            {#if genderLabel}
                 <div
                     class="gender-badge {size === 'sm'
                         ? 'text-[9px] px-1.5 py-0.5'
                         : 'text-[10px] sm:text-xs'}"
                 >
-                    <span>{genderLabel()}</span>
+                    <span>{genderLabel}</span>
                 </div>
             {/if}
 
@@ -390,7 +400,7 @@
         </div>
 
         <!-- Capacity chip (when available) -->
-        {#if capacityText() && size !== "sm"}
+        {#if capacityText && size !== "sm"}
             <div
                 class="flex items-center gap-1.5 text-xs text-[var(--color-muted)] mb-4 relative z-10"
             >
@@ -407,7 +417,7 @@
                         d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
                     />
                 </svg>
-                <span>{capacityText()}</span>
+                <span>{capacityText}</span>
             </div>
         {/if}
 
@@ -418,7 +428,7 @@
             >
                 <!-- Price -->
                 <div>
-                    {#if price()}
+                    {#if price}
                         <p class="text-[10px] text-[var(--color-muted)] mb-0.5">
                             {m.auto_starting()}
                         </p>
@@ -428,11 +438,11 @@
                                     ? 'text-sm'
                                     : 'text-lg sm:text-xl'} font-bold text-[var(--color-secondary)] leading-tight"
                             >
-                                {price()}
+                                {price}
                             </p>
-                            {#if slashedPrice()}
+                            {#if slashedPrice}
                                 <p class="text-xs text-red-500 line-through font-medium">
-                                    {slashedPrice()}
+                                    {slashedPrice}
                                 </p>
                             {/if}
                         </div>

@@ -186,8 +186,7 @@
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <!-- Google Analytics -->
-  <script async src={`https://www.googletagmanager.com/gtag/js?id=${GTAG_ID}`}></script>
+
 
   <!-- Preload Critical Above-The-Fold Dropdown WebP Assets -->
   <link rel="preload" href="/categories/wedding-palace.webp" as="image" type="image/webp" />
@@ -215,11 +214,9 @@
       <div class="h-20 lg:h-[120px] shrink-0" aria-hidden="true"></div>
     {/if}
     <main id="main-content" tabindex="-1" class="flex-grow flex flex-col bg-[var(--color-surface)] min-h-[calc(100vh-120px)] relative">
-      {#key $page.url.pathname}
         <div class="flex-grow flex flex-col page-fade-animation">
           {@render children()}
         </div>
-      {/key}
     </main>
     <Footer />
     {#if sseMessage}

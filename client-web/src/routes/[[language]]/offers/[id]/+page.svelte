@@ -98,7 +98,7 @@
 
         <!-- Banner Image -->
         <img 
-            src={(!data.promotion.use_listing_cover_image && (data.promotion.custom_banner_image_url || data.promotion.banner_image_url)) ? resolveMediaUrl(getOptimizedImage(data.promotion.custom_banner_image_url || data.promotion.banner_image_url, 'large')) : (data.promotion.cover_image ? resolveMediaUrl(getOptimizedImage(data.promotion.cover_image, 'large')) : '/images/fallbacks/default-cover.svg')} 
+            src={(!data.promotion.use_listing_cover_image && (data.promotion.custom_banner_image_url || data.promotion.banner_image_url)) ? resolveMediaUrl(getOptimizedImage(data.promotion.custom_banner_image_url || data.promotion.banner_image_url, 'large')) : (data.promotion.cover_image ? resolveMediaUrl(getOptimizedImage(data.promotion.cover_image, 'large')) : '/images/fallbacks/default-cover.webp')} 
             alt={promoTitle}
             class="absolute inset-0 w-full h-full object-cover"
         />

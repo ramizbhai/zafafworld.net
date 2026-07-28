@@ -112,7 +112,7 @@
                         {/if}
 
                         <img 
-                            src={(!promo.use_listing_cover_image && (promo.custom_banner_image_url || promo.banner_image_url)) ? resolveMediaUrl(getOptimizedImage(promo.custom_banner_image_url || promo.banner_image_url, 'card')) : (promo.cover_image ? resolveMediaUrl(getOptimizedImage(promo.cover_image, 'card')) : '/images/fallbacks/default-cover.svg')} 
+                            src={(!promo.use_listing_cover_image && (promo.custom_banner_image_url || promo.banner_image_url)) ? resolveMediaUrl(getOptimizedImage(promo.custom_banner_image_url || promo.banner_image_url, 'card')) : (promo.cover_image ? resolveMediaUrl(getOptimizedImage(promo.cover_image, 'card')) : '/images/fallbacks/default-cover.webp')} 
                             alt={getLocale() === 'ar' ? promo.title_ar : promo.title_en}
                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />

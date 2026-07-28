@@ -299,6 +299,14 @@ pub async fn process_video(
         return Err(AppError::Internal(format!("MinIO: failed to upload video: {}", e)));
     }
 
+    // Clean up local staging files (video and thumbnail) after successful upload
+    if processed.thumbnail_url.is_some() {
+        let final_thumb_filename = format!("ZWI{}_thumb.webp", temp_id);
+        let final_thumb_disk_path = format!("{}{}", target_dir, final_thumb_filename);
+        let _ = fs::remove_file(&final_thumb_disk_path).await;
+    }
+    let _ = fs::remove_file(&processed.disk_path).await;
+
     Ok(processed)
 }
 

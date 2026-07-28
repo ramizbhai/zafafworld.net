@@ -42,6 +42,10 @@ else
     echo "resolver 127.0.0.11 valid=5s;" > /etc/nginx/conf.d/00-resolver.conf
 fi
 
+# ── Step 2.9: Flush Nginx Proxy Cache ────────────────────────────────────────
+echo "[entrypoint] Flushing Nginx proxy cache..."
+rm -rf /var/cache/nginx/media/* || true
+
 # ── Step 3: Start Nginx in foreground ────────────────────────────────────────
 echo "[entrypoint] Starting Nginx..."
 exec nginx -g "daemon off;"

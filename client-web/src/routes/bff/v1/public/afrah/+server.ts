@@ -9,6 +9,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/public';
 import type { RequestEvent } from '@sveltejs/kit';
+import DOMPurify from 'isomorphic-dompurify';
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 
@@ -54,7 +55,9 @@ const PHONE_REGEX = /^\+[1-9]\d{6,14}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validateAfrahPayload(body: any): { error?: string; sanitized?: any } {
-  const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').trim();
+  const stripHtml = (s: string) => {
+    return DOMPurify.sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+  };
 
   // Name — required, 3-100 chars
   if (!body.name || typeof body.name !== 'string' || body.name.trim().length < 3) {

@@ -98,31 +98,31 @@ services:
     expose:
       - "6379"
 
-  minio:
-    image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-    restart: always
-    mem_limit: 2g
-    cpus: 2
-    networks:
-      - zafaf_network
-    environment:
-      MINIO_ROOT_USER:     "${MINIO_ROOT_USER}"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
-    volumes:
-      - /var/lib/zafafworld/minio:/data:Z
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    expose:
-      - "9000"
-      - "9001"
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+#  minio:
+#   image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+#    restart: always
+#    mem_limit: 2g
+#    cpus: 2
+#    networks:
+#      - zafaf_network
+#    environment:
+#      MINIO_ROOT_USER:     "${MINIO_ROOT_USER}"
+#      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
+#    volumes:
+#      - /var/lib/zafafworld/minio:/data:Z
+#    command: server /data --console-address ":9001"
+#    healthcheck:
+#      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 3
+#      start_period: 10s
+#    expose:
+#      - "9000"
+#      - "9001"
+#    ports:
+#      - "127.0.0.1:9000:9000"
+#      - "127.0.0.1:9001:9001"
 
   backend-migration:
     build:
@@ -196,11 +196,11 @@ services:
       CORS_ORIGINS: "${CORS_ORIGINS:-https://zafafworld.net,https://vendor.zafafworld.net,https://admin.zafafworld.net}"
       ADMIN_INITIAL_EMAIL: "${ADMIN_INITIAL_EMAIL:-}" # first-boot DB seed
       ADMIN_INITIAL_PASSWORD: "${ADMIN_INITIAL_PASSWORD:-}" # first-boot DB seed
-      MINIO_ENDPOINT: "${MINIO_ENDPOINT}"
-      MINIO_BUCKET:   "${MINIO_BUCKET}"
-      MINIO_APP_USER: "${MINIO_APP_USER}"
-      MINIO_APP_PASSWORD: "${MINIO_APP_PASSWORD}"
-      MINIO_ROOT_PREFIX: "${MINIO_ROOT_PREFIX:-assets/uploads}"
+#      MINIO_ENDPOINT: "${MINIO_ENDPOINT}"
+#      MINIO_BUCKET:   "${MINIO_BUCKET}"
+#      MINIO_APP_USER: "${MINIO_APP_USER}"
+#      MINIO_APP_PASSWORD: "${MINIO_APP_PASSWORD}"
+#      MINIO_ROOT_PREFIX: "${MINIO_ROOT_PREFIX:-assets/uploads}"
     security_opt:
       - label:disable        # Allow UDS socket bind on tmpfs without SELinux confinement
     extra_hosts:
@@ -360,7 +360,6 @@ services:
       - zafaf_uds_socket:/var/run/zafaf:z
       - ./infra/nginx/ssl:/etc/nginx/ssl:ro,Z
       - ./infra/nginx/logs:/var/log/nginx:Z
-      - /var/lib/zafafworld/uploads:/var/www/uploads:ro,z
     healthcheck:
       # Test actual HTTP connectivity (not just config syntax) to verify
       # the full proxy chain is functional after container start.

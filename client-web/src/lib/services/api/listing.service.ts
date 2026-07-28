@@ -187,7 +187,7 @@ function mapListing(l: any): Listing {
     startingPrice:     l.startingPrice     ?? l.starting_price      ?? null,
     depositPercentage: l.depositPercentage ?? l.deposit_percentage   ?? 25,
     currency: l.currency ?? 'SAR',
-    coverImage: l.coverImage ?? l.cover_image ?? '/images/fallbacks/default-cover.svg',
+    coverImage: l.coverImage ?? l.cover_image ?? '/images/fallbacks/default-cover.webp',
     imageCount: l.imageCount ?? l.image_count ?? l.listing_image_count ?? images.length ?? 0,
     images,
     vendor,

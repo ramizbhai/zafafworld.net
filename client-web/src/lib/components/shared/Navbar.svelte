@@ -18,17 +18,24 @@
 
   $effect(() => {
     if (typeof window === "undefined") return;
-    const handler = () => {
-      const heroEl = document.getElementById("home-hero-section");
-      if (heroEl) {
-        state.isScrolled = window.scrollY > heroEl.offsetHeight - 120;
-      } else {
+    const heroEl = document.getElementById("home-hero-section");
+    if (heroEl) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          state.isScrolled = !entry.isIntersecting;
+        },
+        { rootMargin: "-120px 0px 0px 0px" }
+      );
+      observer.observe(heroEl);
+      return () => observer.disconnect();
+    } else {
+      const handler = () => {
         state.isScrolled = window.scrollY > 20;
-      }
-    };
-    window.addEventListener("scroll", handler, { passive: true });
-    handler();
-    return () => window.removeEventListener("scroll", handler);
+      };
+      window.addEventListener("scroll", handler, { passive: true });
+      handler();
+      return () => window.removeEventListener("scroll", handler);
+    }
   });
 
   const isGlass = $derived(

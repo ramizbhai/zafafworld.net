@@ -21,6 +21,28 @@ import { getLocalizedField } from '$lib/utils/localize.js';
   let portalError = $derived($page.url.searchParams.get('error'));
   let redirectedRole = $derived($page.url.searchParams.get('role') ?? '');
 
+  function isSafeRedirect(urlStr: string): boolean {
+    if (!urlStr) return false;
+    try {
+      let decoded = urlStr;
+      let prev;
+      do {
+        prev = decoded;
+        decoded = decodeURIComponent(decoded);
+      } while (decoded !== prev);
+
+      // Must start with '/' and not be protocol-relative (no '//' or '/\')
+      if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.startsWith('/\\') || decoded.startsWith('\\\\')) {
+        return false;
+      }
+      
+      const parsed = new URL(decoded, 'https://zafafworld.net');
+      return parsed.origin === 'https://zafafworld.net' && (parsed.protocol === 'http:' || parsed.protocol === 'https:');
+    } catch {
+      return false;
+    }
+  }
+
   const handleLogin: SubmitFunction = () => {
     loading = true;
     return async ({ result }) => {
@@ -37,9 +59,16 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         } : null);
         toasts.push('success', 'Authentication Successful! Redirecting...');
         const redirectTo = $page.url.searchParams.get('redirect') ?? '/dashboard';
-        // Use SvelteKit's goto router to avoid blocking main thread with full page reload.
-        // invalidateAll forces root +layout.server.ts to re-run, hydrating the new session.
-        goto(decodeURIComponent(redirectTo), { invalidateAll: true });
+        let decodedRedirect = '/dashboard';
+        try {
+          const decoded = decodeURIComponent(redirectTo);
+          if (isSafeRedirect(decoded)) {
+            decodedRedirect = decoded;
+          }
+        } catch {
+          // Ignored, default to /dashboard
+        }
+        goto(decodedRedirect, { invalidateAll: true });
       } else if (result.type === 'failure') {
         toasts.push('error', result.data?.message || 'An unexpected validation exception occurred.');
       } else {

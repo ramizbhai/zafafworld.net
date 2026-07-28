@@ -60,6 +60,28 @@ import { getLocalizedField } from '$lib/utils/localize.js';
     }
   }
 
+  function isSafeRedirect(urlStr: string): boolean {
+    if (!urlStr) return false;
+    try {
+      let decoded = urlStr;
+      let prev;
+      do {
+        prev = decoded;
+        decoded = decodeURIComponent(decoded);
+      } while (decoded !== prev);
+
+      // Must start with '/' and not be protocol-relative (no '//' or '/\')
+      if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.startsWith('/\\') || decoded.startsWith('\\\\')) {
+        return false;
+      }
+      
+      const parsed = new URL(decoded, 'https://zafafworld.net');
+      return parsed.origin === 'https://zafafworld.net' && (parsed.protocol === 'http:' || parsed.protocol === 'https:');
+    } catch {
+      return false;
+    }
+  }
+
   const handleRegister: SubmitFunction = ({ cancel }) => {
     if (!validate()) {
       cancel();
@@ -80,7 +102,16 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         } : null);
         toasts.push('success', 'Registration Successful! Redirecting...');
         const redirectTo = $page.url.searchParams.get('redirect') ?? '/dashboard';
-        goto(decodeURIComponent(redirectTo), { invalidateAll: true });
+        let decodedRedirect = '/dashboard';
+        try {
+          const decoded = decodeURIComponent(redirectTo);
+          if (isSafeRedirect(decoded)) {
+            decodedRedirect = decoded;
+          }
+        } catch {
+          // Ignored, default to /dashboard
+        }
+        goto(decodedRedirect, { invalidateAll: true });
       } else if (result.type === 'failure') {
         toasts.push('error', result.data?.message || 'Registration failed. Please check your constraints.');
       } else {

@@ -179,10 +179,10 @@
 
   <div class="mb-10 rounded-[2rem] overflow-hidden aspect-video shadow-lg bg-[var(--color-surface-alt)]">
     <img
-      src={post.cover_image_url ? resolveMediaUrl(getOptimizedImage(post.cover_image_url, 'large')) : '/images/fallbacks/default-cover.svg'}
+      src={post.cover_image_url ? resolveMediaUrl(getOptimizedImage(post.cover_image_url, 'large')) : '/images/fallbacks/default-cover.webp'}
       alt={activeTitle}
       class="w-full h-full object-cover"
-      onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.svg'; }}
+      onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.webp'; }}
     />
   </div>
 
@@ -352,10 +352,10 @@
           <a href={l("/discover/" + rel.slug)} class="group block border border-[var(--color-border)] rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
             <div class="aspect-video bg-[var(--color-surface-alt)] overflow-hidden">
               <img
-                src={rel.cover_image_url ? resolveMediaUrl(getOptimizedImage(rel.cover_image_url, 'card')) : '/images/fallbacks/default-cover.svg'}
+                src={rel.cover_image_url ? resolveMediaUrl(getOptimizedImage(rel.cover_image_url, 'card')) : '/images/fallbacks/default-cover.webp'}
                 alt={rel.title}
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.svg'; }}
+                onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.webp'; }}
               />
             </div>
             <div class="p-4">

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
     const listing = await listingService.getById(params.id, fetch);
     
     if (!listing) {
-      error(404, 'Listing not found');
+      throw error(404, 'Listing not found');
     }
 
     return {
@@ -15,6 +15,6 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
     };
   } catch (err) {
     console.error(`[Booking SSR] Failed to fetch listing ${params.id}:`, err);
-    error(404, 'Failed to fetch listing');
+    throw error(404, 'Failed to fetch listing');
   }
 };

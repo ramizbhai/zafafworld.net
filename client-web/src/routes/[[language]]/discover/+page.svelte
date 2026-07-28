@@ -96,11 +96,11 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-0">
           <div class="lg:col-span-7 relative h-80 sm:h-96 lg:h-[420px] overflow-hidden bg-[var(--color-surface-alt)]">
             <img
-              src={featuredPost.cover_image_url ? resolveMediaUrl(getOptimizedImage(featuredPost.cover_image_url, 'medium')) : '/images/fallbacks/default-cover.svg'}
+              src={featuredPost.cover_image_url ? resolveMediaUrl(getOptimizedImage(featuredPost.cover_image_url, 'medium')) : '/images/fallbacks/default-cover.webp'}
               alt={featuredPost.title}
               class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
               fetchpriority="high"
-              onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.svg'; }}
+              onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.webp'; }}
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent lg:hidden"></div>
           </div>
@@ -145,11 +145,11 @@
           <article class="group flex flex-col rounded-2xl overflow-hidden border border-[var(--color-border)] bg-white/95 backdrop-blur-sm shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 card-hover">
             <div class="relative h-56 overflow-hidden bg-[var(--color-surface-alt)]">
               <img
-                src={post.cover_image_url ? resolveMediaUrl(getOptimizedImage(post.cover_image_url, 'card')) : '/images/fallbacks/default-cover.svg'}
+                src={post.cover_image_url ? resolveMediaUrl(getOptimizedImage(post.cover_image_url, 'card')) : '/images/fallbacks/default-cover.webp'}
                 alt={post.title}
                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="lazy"
-                onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.svg'; }}
+                onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/fallbacks/default-cover.webp'; }}
               />
               <div class="absolute top-4 start-4">
                 <Badge variant="muted" size="sm">Article</Badge>

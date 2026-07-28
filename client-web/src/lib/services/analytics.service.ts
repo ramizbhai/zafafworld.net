@@ -23,6 +23,22 @@ export function initAnalytics() {
     window.gtag('config', GTAG_ID, {
         send_page_view: false
     });
+
+    // Dynamically inject the google analytics script when browser is idle
+    const injectScript = () => {
+        // Prevent duplicate insertion
+        if (document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)) return;
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${GTAG_ID}`;
+        document.head.appendChild(script);
+    };
+
+    if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => injectScript(), { timeout: 3000 });
+    } else {
+        setTimeout(injectScript, 2000);
+    }
 }
 
 export function trackPageView(url: string) {

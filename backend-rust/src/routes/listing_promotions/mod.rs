@@ -1900,6 +1900,13 @@ pub async fn cleanup_promotion_banner_handler(
     // Strip the leading slash to get the relative disk path (relative to the binary CWD)
     let disk_path = &url[1..]; // e.g. "assets/uploads/promotions/banner-xyz.webp"
 
+    // Delete from MinIO (all variants)
+    let minio_client = state.minio_client.clone();
+    let url_clone = url.to_string();
+    tokio::spawn(async move {
+        minio_client.delete_gallery_item(&url_clone, "image").await;
+    });
+
     match std::fs::remove_file(disk_path) {
         Ok(_) => {
             tracing::info!("Cleaned up orphaned promotion banner: {}", disk_path);

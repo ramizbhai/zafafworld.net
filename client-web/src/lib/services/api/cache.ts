@@ -25,6 +25,8 @@ function evictOldest(): void {
 // Cleanup expired entries every 2 minutes to keep memory usage low between traffic spikes.
 setInterval(evictExpired, 2 * 60 * 1000);
 
+const pending = new Map<string, Promise<any>>();
+
 /**
  * Retrieve a cached value or execute the fetcher callback to cache and return the fresh value.
  *
@@ -46,12 +48,22 @@ export async function getCached<T>(
         return cached.value;
     }
 
-    const value = await fetcher();
+    let promise = pending.get(key);
+    if (!promise) {
+        promise = fetcher().finally(() => {
+            pending.delete(key);
+        });
+        pending.set(key, promise);
+    }
+
+    const value = await promise;
 
     // Enforce size limit before inserting
-    if (store.size >= MAX_CACHE_SIZE) {
-        evictExpired();
-        if (store.size >= MAX_CACHE_SIZE) evictOldest();
+    if (!store.has(key)) {
+        if (store.size >= MAX_CACHE_SIZE) {
+            evictExpired();
+            if (store.size >= MAX_CACHE_SIZE) evictOldest();
+        }
     }
 
     store.set(key, { value, expiry: Date.now() + ttlMs });

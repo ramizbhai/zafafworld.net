@@ -744,18 +744,22 @@ impl PgVendorRepository {
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         vendor_id: Uuid,
         image_id: Uuid,
-    ) -> Result<Option<String>, AppError> {
-        let file_path: Option<String> = sqlx::query_scalar!(
-            "SELECT file_path FROM vendor_gallery WHERE id = $1 AND vendor_id = $2",
-                image_id,
-                vendor_id
-            
+    ) -> Result<Option<(Option<String>, Option<String>)>, AppError> {
+        let row = sqlx::query(
+            "SELECT file_path, media_type FROM vendor_gallery WHERE id = $1 AND vendor_id = $2"
         )
+        .bind(image_id)
+        .bind(vendor_id)
         .fetch_optional(&mut **tx)
-        .await?
-        .flatten();
+        .await?;
 
-        Ok(file_path)
+        if let Some(r) = row {
+            let file_path: Option<String> = r.get("file_path");
+            let media_type: Option<String> = r.get("media_type");
+            Ok(Some((file_path, media_type)))
+        } else {
+            Ok(None)
+        }
     }
 
     pub async fn delete_gallery_image(

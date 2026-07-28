@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { requestContextStore } from '$lib/utils/requestContext.js';
 
 export interface CountryInfo {
   code: string;
@@ -7,7 +8,6 @@ export interface CountryInfo {
   nameEn: string;
   eyebrowAr: string;
   eyebrowEn: string;
-
 }
 
 export const COUNTRIES: Record<string, CountryInfo> = {
@@ -18,7 +18,6 @@ export const COUNTRIES: Record<string, CountryInfo> = {
     nameEn: 'Saudi Arabia',
     eyebrowAr: 'منصة حجز القاعات #1 في المملكة',
     eyebrowEn: "Saudi Arabia's No.1 Venue Booking Platform",
-
   },
   EG: {
     code: 'EG',
@@ -27,7 +26,6 @@ export const COUNTRIES: Record<string, CountryInfo> = {
     nameEn: 'Egypt',
     eyebrowAr: 'منصة حجز القاعات #1 في مصر',
     eyebrowEn: "Egypt's No.1 Venue Booking Platform",
-
   },
   AE: {
     code: 'AE',
@@ -36,7 +34,6 @@ export const COUNTRIES: Record<string, CountryInfo> = {
     nameEn: 'United Arab Emirates',
     eyebrowAr: 'منصة حجز القاعات #1 في الإمارات',
     eyebrowEn: "UAE's No.1 Venue Booking Platform",
-
   },
   TR: {
     code: 'TR',
@@ -45,7 +42,6 @@ export const COUNTRIES: Record<string, CountryInfo> = {
     nameEn: 'Turkey',
     eyebrowAr: 'منصة حجز القاعات #1 في تركيا',
     eyebrowEn: "Turkey's No.1 Venue Booking Platform",
-
   }
 };
 
@@ -79,14 +75,22 @@ function createCountryStore() {
     }
   }
 
-  let activeCode = $state<string>(initialCountry ?? DEFAULT_COUNTRY);
+  let clientActiveCode = $state<string>(initialCountry ?? DEFAULT_COUNTRY);
 
-  const active = $derived(COUNTRIES[activeCode] ?? COUNTRIES[DEFAULT_COUNTRY]);
+  function getActiveCode() {
+    if (!browser) {
+      const store = requestContextStore.getStore();
+      return store?.countryCode ?? DEFAULT_COUNTRY;
+    }
+    return clientActiveCode;
+  }
+
+  const active = $derived(COUNTRIES[getActiveCode()] ?? COUNTRIES[DEFAULT_COUNTRY]);
 
   function setCountry(code: string) {
     if (COUNTRIES[code]) {
-      activeCode = code;
       if (browser) {
+        clientActiveCode = code;
         localStorage.setItem(STORAGE_KEY, code);
         document.cookie = `${STORAGE_KEY}=${code}; path=/; max-age=31536000; SameSite=Lax`;
         // Reload to apply new country metadata and reload page data
@@ -97,9 +101,9 @@ function createCountryStore() {
 
   function setCountryFromUrl(code: string) {
     const upperCode = code.toUpperCase();
-    if (COUNTRIES[upperCode] && activeCode !== upperCode) {
-      activeCode = upperCode;
+    if (COUNTRIES[upperCode] && getActiveCode() !== upperCode) {
       if (browser) {
+        clientActiveCode = upperCode;
         localStorage.setItem(STORAGE_KEY, upperCode);
         document.cookie = `${STORAGE_KEY}=${upperCode}; path=/; max-age=31536000; SameSite=Lax`;
       }
@@ -134,7 +138,7 @@ function createCountryStore() {
 
   return {
     get active() { return active; },
-    get activeCode() { return activeCode; },
+    get activeCode() { return getActiveCode(); },
     setCountry,
     setCountryFromUrl,
     detectLocation
