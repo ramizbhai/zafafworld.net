@@ -62,11 +62,15 @@ impl StorageDeletionService {
             return Ok(());
         }
 
-        // 3. Query public.uploaded_files using parent_id/id relations to find all exact registry entries!
+        // 3. Query public.uploaded_files and public.uploaded_file_variants to find all exact registry entries!
         let registry_files: Vec<(Uuid, String)> = sqlx::query_as(
             "SELECT id, object_key 
              FROM public.uploaded_files 
-             WHERE id = ANY($1) OR parent_id = ANY($1)"
+             WHERE id = ANY($1)
+             UNION ALL
+             SELECT id, object_key 
+             FROM public.uploaded_file_variants 
+             WHERE uploaded_file_id = ANY($1)"
         )
         .bind(&original_file_ids)
         .fetch_all(&mut **tx)

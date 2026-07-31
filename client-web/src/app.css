@@ -1,5 +1,42 @@
 @import "tailwindcss";
 
+/* ── Local Self-Hosted Font Definitions ── */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/playfair-display-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/outfit-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-sans-arabic-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
+@font-face {
+  font-family: 'Noto Sans Arabic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-sans-arabic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
   /* Fonts */
   --font-display: var(--font-display), serif;
@@ -25,6 +62,73 @@
   --animate-spin-slow: spin 3s linear infinite;
   --animate-shimmer: shimmer 1.5s infinite;
   --animate-float: float 4s ease-in-out infinite alternate;
+
+  /* ── Redesign Fonts ── */
+  --font-display-en: 'Playfair Display', Georgia, serif;
+  --font-body-en: 'Outfit', system-ui, sans-serif;
+  --font-arabic: 'Noto Sans Arabic', sans-serif;
+
+  /* ── Redesign Colors ── */
+  --color-zw-primary: var(--zw-primary);
+  --color-zw-primary-contrast: var(--zw-primary-contrast);
+  --color-zw-primary-light: var(--zw-primary-light);
+  --color-zw-primary-dark: var(--zw-primary-dark);
+  --color-zw-secondary: var(--zw-secondary);
+  --color-zw-accent: var(--zw-accent);
+  --color-zw-surface: var(--zw-surface);
+  --color-zw-surface-alt: var(--zw-surface-alt);
+  --color-zw-surface-dark: var(--zw-surface-dark);
+  --color-zw-border: var(--zw-border);
+  --color-zw-border-hover: var(--zw-border-hover);
+  --color-zw-muted: var(--zw-muted);
+  --color-zw-interactive-rose: var(--zw-interactive-rose);
+  --color-zw-interactive-rose-hover: var(--zw-interactive-rose-hover);
+  --color-zw-interactive-teal: var(--zw-interactive-teal);
+  --color-zw-interactive-teal-hover: var(--zw-interactive-teal-hover);
+
+  /* ── Redesign Typography Scale ── */
+  --font-size-zw-xs: 0.75rem;
+  --font-size-zw-xs--line-height: 1.25;
+  --font-size-zw-sm: 0.875rem;
+  --font-size-zw-sm--line-height: 1.5;
+  --font-size-zw-base: 1rem;
+  --font-size-zw-base--line-height: 1.6;
+  --font-size-zw-lg: 1.125rem;
+  --font-size-zw-lg--line-height: 1.6;
+  --font-size-zw-xl: 1.25rem;
+  --font-size-zw-xl--line-height: 1.4;
+  --font-size-zw-2xl: 1.5rem;
+  --font-size-zw-2xl--line-height: 1.3;
+  --font-size-zw-3xl: 1.875rem;
+  --font-size-zw-3xl--line-height: 1.25;
+  --font-size-zw-4xl: 2.25rem;
+  --font-size-zw-4xl--line-height: 1.2;
+  --font-size-zw-5xl: 3rem;
+  --font-size-zw-5xl--line-height: 1.15;
+  --font-size-zw-6xl: 3.75rem;
+  --font-size-zw-6xl--line-height: 1.1;
+  --font-size-zw-7xl: 4.5rem;
+  --font-size-zw-7xl--line-height: 1.05;
+
+  /* ── Redesign Spacing Scale ── */
+  --spacing-zw-1: 0.25rem;
+  --spacing-zw-2: 0.5rem;
+  --spacing-zw-3: 0.75rem;
+  --spacing-zw-4: 1rem;
+  --spacing-zw-6: 1.5rem;
+  --spacing-zw-8: 2rem;
+  --spacing-zw-12: 3rem;
+  --spacing-zw-16: 4rem;
+  --spacing-zw-24: 6rem;
+
+  /* ── Redesign Border Radius ── */
+  --radius-zw-sm: 0.25rem;
+  --radius-zw-md: 0.5rem;
+  --radius-zw-lg: 0.75rem;
+  --radius-zw-xl: 1rem;
+  --radius-zw-2xl: 1.5rem;
+  --radius-zw-3xl: 2rem;
+  --radius-zw-full: 9999px;
 
   /* Keyframes */
   @keyframes shimmer {
@@ -67,6 +171,24 @@
     --color-warning:       #C9A96E;
     --color-error:         #B85450;
     --color-info:          #4A7A9B;
+
+    /* ── ZafafWorld Redesign Additive Tokens (zw- prefixed) ── */
+    --zw-primary: #C9A96E;
+    --zw-primary-contrast: #916F3E;
+    --zw-primary-light: #E8D5B0;
+    --zw-primary-dark: #9B7A42;
+    --zw-secondary: #2D2620;
+    --zw-accent: #E8C4A2;
+    --zw-surface: #FDFAF6;
+    --zw-surface-alt: #F5EFE6;
+    --zw-surface-dark: #1A1410;
+    --zw-border: #EAE0D0;
+    --zw-border-hover: #C9A96E;
+    --zw-muted: #9E8E7A;
+    --zw-interactive-rose: #EE7E97;
+    --zw-interactive-rose-hover: #E56A85;
+    --zw-interactive-teal: #5EBEB2;
+    --zw-interactive-teal-hover: #4EA89D;
 
     /* ── Spacing Scale ── */
     --space-1:  0.25rem;

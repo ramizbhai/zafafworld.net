@@ -927,6 +927,34 @@ async fn upload_file(
                 }
             };
 
+            let original_url = processed.file_url.clone();
+            let base_url = if original_url.ends_with(".webp") {
+                original_url[..original_url.len() - 5].to_string()
+            } else {
+                original_url.clone()
+            };
+
+            let variants_json = if processed.media_type == "image" {
+                json!({
+                    "avif": {
+                        "original": format!("{}.avif", base_url),
+                        "large": format!("{}_large.avif", base_url),
+                        "medium": format!("{}_medium.avif", base_url),
+                        "card": format!("{}_card.avif", base_url),
+                        "thumb": format!("{}_thumb.avif", base_url),
+                    },
+                    "webp": {
+                        "original": format!("{}.webp", base_url),
+                        "large": format!("{}_large.webp", base_url),
+                        "medium": format!("{}_medium.webp", base_url),
+                        "card": format!("{}_card.webp", base_url),
+                        "thumb": format!("{}_thumb.webp", base_url),
+                    }
+                })
+            } else {
+                json!(null)
+            };
+
             crate::services::metrics::inc_upload_success();
             return Ok(Json(json!({
                 "status": "success",
@@ -937,7 +965,8 @@ async fn upload_file(
                 "media_type": processed.media_type,
                 "thumbnail_url": processed.thumbnail_url,
                 "file_size": processed.file_size,
-                "duration_seconds": processed.duration_seconds
+                "duration_seconds": processed.duration_seconds,
+                "variants": variants_json
             })));
         }
     }

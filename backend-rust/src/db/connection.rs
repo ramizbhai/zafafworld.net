@@ -33,7 +33,8 @@ pub async fn init_pool(database_url: &str) -> PgPool {
             tracing::error!("Invalid database URL: {:?}", err);
             panic!("Invalid database URL: {:?}", err);
         })
-        .application_name("zafaf_rust");
+        .application_name("zafaf_rust")
+        .statement_cache_capacity(0);
 
     PgPoolOptions::new()
         .min_connections(min_connections)

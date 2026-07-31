@@ -17,6 +17,29 @@ use tokio::fs;
 use tokio::sync::Semaphore;
 use uuid::Uuid;
 
+// AVIF encoding (using pure-Rust ravif encoder)
+fn encode_to_avif(img: &image::DynamicImage, quality: u32) -> Result<Vec<u8>, AppError> {
+    let rgba8 = img.to_rgba8();
+    let (width, height) = rgba8.dimensions();
+    
+    let pixels: &[ravif::RGBA8] = unsafe {
+        std::slice::from_raw_parts(
+            rgba8.as_ptr() as *const ravif::RGBA8,
+            rgba8.len() / 4,
+        )
+    };
+    
+    let img_ref = ravif::Img::new(pixels, width as usize, height as usize);
+    
+    let res = ravif::Encoder::new()
+        .with_quality(quality as f32)
+        .with_speed(6)
+        .encode_rgba(img_ref)
+        .map_err(|e| AppError::Internal(format!("Failed to encode AVIF: {:?}", e)))?;
+        
+    Ok(res.avif_file)
+}
+
 // ── Semaphore ─────────────────────────────────────────────────────────────────
 
 pub static FFMPEG_SEMAPHORE: OnceLock<Semaphore> = OnceLock::new();
@@ -224,6 +247,9 @@ pub async fn process_video(
         s.trim().parse::<f64>().ok().map(|f| f.round() as i32)
     };
 
+    let final_thumb_filename = format!("ZWI{}_thumb.webp", temp_id);
+    let final_thumb_avif_filename = format!("ZWI{}_thumb.avif", temp_id);
+
     // ── Thumbnail extraction ──────────────────────────────────────────────────
     let temp_thumb_path = format!("{}{}_thumb_temp.jpg", TEMP_DIR, temp_id);
     let mut cmd_thumb = tokio::process::Command::new("ffmpeg");
@@ -237,12 +263,13 @@ pub async fn process_video(
 
     if let Ok(out) = ffmpeg_output {
         if out.status.success() {
-            let final_thumb_filename = format!("ZWI{}_thumb.webp", temp_id);
             let final_thumb_disk_path = format!("{}{}", target_dir, final_thumb_filename);
             let final_thumb_url = format!("{}{}", url_prefix, final_thumb_filename);
+            let final_thumb_avif_disk_path = format!("{}{}", target_dir, final_thumb_avif_filename);
 
             let t_thumb = temp_thumb_path.clone();
             let f_thumb = final_thumb_disk_path.clone();
+            let f_thumb_avif = final_thumb_avif_disk_path.clone();
 
             let process_thumb = tokio::task::spawn_blocking(move || -> Result<(), AppError> {
                 let img = image::ImageReader::open(&t_thumb)
@@ -258,8 +285,14 @@ pub async fn process_video(
                     img
                 };
 
+                // Save WebP thumbnail
                 final_img
                     .save_with_format(&f_thumb, ImageFormat::WebP)
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+
+                // Save AVIF thumbnail
+                let avif_bytes = encode_to_avif(&final_img, 70)?;
+                std::fs::write(&f_thumb_avif, avif_bytes)
                     .map_err(|e| AppError::Internal(e.to_string()))?;
 
                 let _ = std::fs::remove_file(&t_thumb);
@@ -268,8 +301,15 @@ pub async fn process_video(
 
             if let Ok(Ok(())) = process_thumb {
                 thumbnail_url = Some(final_thumb_url);
+                
+                // Upload WebP thumbnail
                 if let Err(e) = minio.upload(&final_thumb_disk_path, target_dir, &final_thumb_filename, "image/webp", Some(temp_id)).await {
-                    tracing::error!("MinIO: failed to upload video thumbnail: {}", e);
+                    tracing::error!("MinIO: failed to upload video WebP thumbnail: {}", e);
+                }
+                
+                // Upload AVIF thumbnail
+                if let Err(e) = minio.upload(&final_thumb_avif_disk_path, target_dir, &final_thumb_avif_filename, "image/avif", Some(temp_id)).await {
+                    tracing::error!("MinIO: failed to upload video AVIF thumbnail: {}", e);
                 }
             }
         }
@@ -296,14 +336,21 @@ pub async fn process_video(
 
     if let Err(e) = minio.upload(&processed.disk_path, target_dir, &final_filename, &processed.mime_type, None).await {
         tracing::error!("MinIO: failed to upload video: {}", e);
+        // Clean up thumbnails from MinIO if uploaded
+        if processed.thumbnail_url.is_some() {
+            let _ = minio.delete(&format!("{}{}", target_dir, final_thumb_filename)).await;
+            let _ = minio.delete(&format!("{}{}", target_dir, final_thumb_avif_filename)).await;
+        }
         return Err(AppError::Internal(format!("MinIO: failed to upload video: {}", e)));
     }
 
-    // Clean up local staging files (video and thumbnail) after successful upload
+    // Clean up local staging files (video and thumbnails) after successful upload
     if processed.thumbnail_url.is_some() {
-        let final_thumb_filename = format!("ZWI{}_thumb.webp", temp_id);
         let final_thumb_disk_path = format!("{}{}", target_dir, final_thumb_filename);
         let _ = fs::remove_file(&final_thumb_disk_path).await;
+
+        let final_thumb_avif_disk_path = format!("{}{}", target_dir, final_thumb_avif_filename);
+        let _ = fs::remove_file(&final_thumb_avif_disk_path).await;
     }
     let _ = fs::remove_file(&processed.disk_path).await;
 

@@ -21,6 +21,7 @@ pub mod minio_client;
 pub mod video_processing;
 pub mod verification;
 pub mod deletion;
+pub mod media_worker;
 
 
 use crate::errors::AppError;
@@ -169,7 +170,7 @@ pub async fn process_and_save_upload(
         ));
     };
 
-    let is_image = mime_type == "image/jpeg" || mime_type == "image/png" || mime_type == "image/webp";
+    let is_image = mime_type == "image/jpeg" || mime_type == "image/png" || mime_type == "image/webp" || mime_type == "image/avif";
     let is_video = mime_type == "video/mp4"
         || mime_type == "video/webm"
         || mime_type == "video/quicktime"
@@ -181,132 +182,77 @@ pub async fn process_and_save_upload(
     if !is_image && !is_video {
         let _ = tokio::fs::remove_file(&temp_path).await;
         return Err(AppError::BadRequest(
-            format!("Upload rejected: Unsupported file format ({}). Only JPEG, PNG, WEBP images and MP4, WEBM, MOV, AVI videos are allowed.", mime_type)
+            format!("Upload rejected: Unsupported file format ({}). Only JPEG, PNG, WEBP, AVIF images and MP4, WEBM, MOV, AVI videos are allowed.", mime_type)
         ));
     }
 
     // ── 4. Dispatch to the appropriate pipeline ───────────────────────────────
-    if is_image {
-        let allowed_image_mimes = ["image/jpeg", "image/png", "image/webp"];
-        if !allowed_image_mimes.contains(&mime_type.as_str()) {
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            return Err(AppError::BadRequest(
-                "Unsupported image format. Allowed formats: jpeg, png, webp.".to_string(),
-            ));
-        }
+    let mime_subtype = match mime_type.as_str() {
+        "image/jpeg" => "jpg",
+        "image/png" => "png",
+        "image/webp" => "webp",
+        "image/avif" => "avif",
+        "video/mp4" | "application/mp4" => "mp4",
+        "video/webm" => "webm",
+        "video/quicktime" => "mov",
+        _ => "raw",
+    };
 
-        image_processing::process_image(
-            temp_path,
-            temp_id,
-            original_file_name,
-            &hierarchical_dir,
-            &hierarchical_prefix,
-            max_dimension,
-            minio,
-        )
-        .await
+    let raw_filename = if is_image {
+        format!("ZWI{}_raw.{}", temp_id, mime_subtype)
     } else {
-        // Video
-        let allowed_video_mimes = [
-            "video/mp4",
-            "video/webm",
-            "video/quicktime",
-            "application/mp4",
-        ];
-        if !allowed_video_mimes.contains(&mime_type.as_str()) {
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            return Err(AppError::BadRequest(
-                "Unsupported video format. Allowed formats: mp4, webm, mov.".to_string(),
-            ));
-        }
+        format!("ZWV{}_raw.{}", temp_id, mime_subtype)
+    };
 
-        let final_filename = format!("ZWV{}.mp4", temp_id);
-        let final_url = format!("{}{}", hierarchical_prefix, final_filename);
-        let final_disk_path = format!("{}{}", hierarchical_dir, final_filename);
+    // Upload raw original file directly to MinIO
+    minio.upload(&temp_path, &hierarchical_dir, &raw_filename, &mime_type, None)
+        .await
+        .map_err(|e| AppError::Internal(e))?;
 
-        // Pre-register status as 'processing' in uploaded_files table
-        if let Err(e) = minio.insert_processing_record(
-            temp_id,
-            &hierarchical_dir,
-            &final_filename,
-            &mime_type,
-            None,
-            None,
-        ).await {
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            return Err(AppError::Internal(e));
-        }
+    // Clean up local temp file
+    let _ = fs::remove_file(&temp_path).await;
 
-        // Spawn background worker task for async video transcoding/remuxing
-        let minio_clone = minio.clone();
-        let temp_path_clone = temp_path.clone();
-        let original_name = original_file_name.to_string();
-        let hierarchical_dir_clone = hierarchical_dir.clone();
-        let hierarchical_prefix_clone = hierarchical_prefix.clone();
-        let final_url_clone = final_url.clone();
+    let final_filename = if is_image {
+        format!("ZWI{}.webp", temp_id)
+    } else {
+        format!("ZWV{}.mp4", temp_id)
+    };
+    let final_url = format!("{}{}", hierarchical_prefix, final_filename);
+    let final_disk_path = format!("{}{}", hierarchical_dir, final_filename);
 
-        let final_disk_path_clone = final_disk_path.clone();
+    // Pre-register DB record as 'processing'
+    minio.insert_processing_record(
+        temp_id,
+        &hierarchical_dir,
+        &final_filename,
+        if is_image { "image/webp" } else { "video/mp4" },
+        None,
+        None,
+    )
+    .await
+    .map_err(|e| AppError::Internal(e))?;
 
-        tokio::spawn(async move {
-            let res = video_processing::process_video(
-                temp_path_clone.clone(),
-                temp_id,
-                &original_name,
-                &hierarchical_dir_clone,
-                &hierarchical_prefix_clone,
-                &minio_clone,
-            ).await;
+    // Create the background processing job
+    sqlx::query(
+        "INSERT INTO public.media_processing_jobs (uploaded_file_id, job_type, status, priority)
+         VALUES ($1, $2, 'pending', 0)"
+    )
+    .bind(temp_id)
+    .bind(if is_image { "image" } else { "video" })
+    .execute(minio.pool())
+    .await
+    .map_err(|e| AppError::Internal(format!("Failed to insert media processing job: {}", e)))?;
 
-            match res {
-                Ok(processed) => {
-                    // Update db status to ready, update correct file size
-                    if let Err(e) = minio_clone.update_upload_status(
-                        temp_id,
-                        "ready",
-                        None,
-                        Some(processed.file_size as i64),
-                    ).await {
-                        tracing::error!("Failed to update processing status to ready for {}: {}", temp_id, e);
-                    }
-                }
-                Err(err) => {
-                    tracing::error!("Video transcoding failed for {}: {:?}", temp_id, err);
-                    
-                    // Update db status to failed, set error message
-                    let error_msg = format!("{:?}", err);
-                    if let Err(e) = minio_clone.update_upload_status(
-                        temp_id,
-                        "failed",
-                        Some(&error_msg),
-                        None,
-                    ).await {
-                        tracing::error!("Failed to update processing status to failed for {}: {}", temp_id, e);
-                    }
-
-                    // Clean up disk temp/staging file if they exist
-                    let _ = tokio::fs::remove_file(&temp_path_clone).await;
-                    let _ = tokio::fs::remove_file(&final_disk_path_clone).await;
-                    let thumb_path = format!("{}ZWI{}_thumb.webp", hierarchical_dir_clone, temp_id);
-                    let _ = tokio::fs::remove_file(&thumb_path).await;
-
-                    // Clean up partial uploads from MinIO
-                    minio_clone.delete_gallery_item(&final_url_clone, "video").await;
-                }
-            }
-        });
-
-        // Return immediately with 'processing' status
-        Ok(ProcessedMedia {
-            id: temp_id,
-            file_name: original_file_name.to_string(),
-            file_url: final_url,
-            file_size: total_bytes, // Return uploaded size as placeholder
-            mime_type,
-            disk_path: final_disk_path,
-            media_type: "video".to_string(),
-            thumbnail_url: Some(format!("{}ZWI{}_thumb.webp", hierarchical_prefix, temp_id)),
-            duration_seconds: None,
-            status: "processing".to_string(),
-        })
-    }
+    Ok(ProcessedMedia {
+        id: temp_id,
+        file_name: original_file_name.to_string(),
+        file_url: final_url,
+        file_size: total_bytes,
+        mime_type,
+        disk_path: final_disk_path,
+        media_type: if is_image { "image".to_string() } else { "video".to_string() },
+        thumbnail_url: Some(format!("{}ZWI{}_thumb.webp", hierarchical_prefix, temp_id)),
+        duration_seconds: None,
+        status: "processing".to_string(),
+    })
 }

@@ -128,20 +128,17 @@ pub async fn run_pipeline_verification(config: &AppConfig, pool: &PgPool) {
     println!("\n[Test 4] Sizing & Compression Ceiling Step-down Sizing...");
     
     // Load 3 real high-complexity photos for compression benchmarking
-    let test_specs = vec![
-        ("nature", "/home/noon/.gemini/antigravity-ide/brain/40d1798b-24b5-4533-8b25-8c424c8ae297/nature_high_complexity_1783975424182.png"),
-        ("people", "/home/noon/.gemini/antigravity-ide/brain/40d1798b-24b5-4533-8b25-8c424c8ae297/people_high_complexity_1783975444088.png"),
-        ("text", "/home/noon/.gemini/antigravity-ide/brain/40d1798b-24b5-4533-8b25-8c424c8ae297/text_high_complexity_1783975465392.png"),
-    ];
+    let test_specs = vec!["nature", "people", "text"];
 
     println!("| Spec | Variant | Resolution | Size (Bytes) | Ceiling (Bytes) | Under Ceiling? |");
     println!("|---|---|---|---|---|---|");
 
-    for (label, source_path) in test_specs {
+    for label in test_specs {
         let id = Uuid::new_v4();
         let path = format!("{}{}.tmp", temp_dir, id);
-        if let Err(e) = fs::copy(source_path, &path) {
-            println!("  ❌ Failed to copy benchmark source image {}: {:?}", source_path, e);
+        let test_img_bytes = create_test_image(2000, 2000);
+        if let Err(e) = fs::write(&path, &test_img_bytes) {
+            println!("  ❌ Failed to write benchmark source image: {:?}", e);
             continue;
         }
 

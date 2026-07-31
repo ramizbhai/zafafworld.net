@@ -3,7 +3,8 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { env } from '$env/dynamic/public';
 import type { HandleFetch } from '@sveltejs/kit';
 import { generateSitemapXml } from '$lib/services/sitemap.js';
-import { requestContextStore } from '$lib/utils/requestContext.js';
+import { requestContextStore } from '$lib/server/requestContext.js';
+(globalThis as any).requestContextStore = requestContextStore;
 import http from 'node:http';
 
 // Global interception of Node http responses to apply optimal Cache-Control for static assets
@@ -32,6 +33,26 @@ const originalWriteHead = http.ServerResponse.prototype.writeHead;
 export const handle = async ({ event, resolve }: any) => {
     const pathname = event.url.pathname;
     console.error('[HOOKS SERVER ENTRY] pathname:', pathname);
+
+    // Intercept client-side error logging to prevent i18n redirects and log client exceptions
+    if (pathname.includes('__log_error')) {
+        if (event.request.method === 'POST') {
+            try {
+                const body = await event.request.clone().json();
+                console.error('=================== CLIENT-SIDE EXCEPTION ===================');
+                console.error('Error:', body.error);
+                console.error('Stack:', body.stack);
+                console.error('File:', body.filename, 'Line:', body.lineno);
+                console.error('=============================================================');
+            } catch (e) {
+                console.error('[HOOKS SERVER] Failed to parse client-side error json:', e);
+            }
+        }
+        return new Response(JSON.stringify({ status: 'success' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 
     // Direct sitemap serving for ANY path ending in sitemap.xml (bypasses Paraglide 302 i18n redirects)
     if (pathname.endsWith('sitemap.xml')) {

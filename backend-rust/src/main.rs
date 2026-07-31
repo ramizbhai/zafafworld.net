@@ -607,8 +607,11 @@ async fn main() {
     // Start background Storage Deletion Worker
     services::storage_cleanup_worker::start_storage_cleanup_worker(app_state.clone(), shutdown_token.clone());
 
+    // Start background Media Processing Worker
+    services::media::media_worker::start_media_worker(app_state.clone(), shutdown_token.clone());
+
     // Start background WordPress Cache Sync task
-    services::wp_cache_sync::start_wp_cache_sync(app_state.clone(), shutdown_token);
+    services::wp_cache_sync::start_wp_cache_sync(app_state.clone(), shutdown_token.clone());
 
     // Spawn non-blocking Tokio background ticker loop running every 5 minutes to sweep and prune idempotency records older than 1 hour (3600 seconds)
     let idempotency_store_clone = app_state.idempotency_store.clone();
@@ -905,30 +908,22 @@ async fn health_check(
     };
 
     // ── Storage check ─────────────────────────────────────────────────────────
-    // Verify the upload directory exists and is writable by attempting to create
-    // a temp file. Non-blocking best-effort: failure degrades to "degraded".
-    let storage_status = {
-        let root_prefix = crate::utils::storage_paths::clean_prefix(&state.config.minio_root_prefix);
-        let probe_path = format!("{}/.health_probe", root_prefix);
-        match tokio::fs::write(&probe_path, b"ok").await {
-            Ok(_) => {
-                let _ = tokio::fs::remove_file(&probe_path).await;
-                "ok"
-            }
-            Err(err) => {
-                tracing::warn!("Health check: storage write probe failed: {}", err);
-                "degraded"
-            }
+    // Verify MinIO service availability, bucket accessibility, read, and write capability.
+    let storage_status = match state.minio_client.health_check().await {
+        Ok(_) => "ok",
+        Err(err) => {
+            tracing::error!("Health check: storage deep probe failed: {}", err);
+            "error"
         }
     };
 
-    let overall_status = if db_status == "ok" && storage_status != "error" {
+    let overall_status = if db_status == "ok" && storage_status == "ok" {
         "ok"
     } else {
-        "degraded"
+        "error"
     };
 
-    let status_code = if db_status == "ok" {
+    let status_code = if overall_status == "ok" {
         axum::http::StatusCode::OK
     } else {
         axum::http::StatusCode::SERVICE_UNAVAILABLE

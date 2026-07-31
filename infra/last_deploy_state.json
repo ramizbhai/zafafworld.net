@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-07-25T09:43:14+00:00",
-  "git_commit": "b32b3bcf2e26744a174ddf01507088775d16385c",
-  "backup_filename": "/var/lib/zafafworld/backups/zafaf_zafaf_world_20260725_094312.sql.gz",
+  "timestamp": "2026-07-28T22:51:21+00:00",
+  "git_commit": "c13af2ef9462d34d2beea5c460abfc91374db30a",
+  "backup_filename": "/var/lib/zafafworld/backups/zafaf_zafaf_world_20260728_225119.sql.gz",
   "image_ids": {
-    "zafaf-backend": "448fb236aa25fc6a8f8cbddbd985c995726f6f569fba9acfab80c29eeae25c4f",
-    "zafaf-client-web": "2f600bd6957d33c58f5cab8fea4ca5b6424d78e212c69c54afd79ef7466e6d25",
-    "zafaf-vendor-portal": "07833318f81dcd703ea9f29857b5611b373197765cd2c9506d05fd613c5c9e82",
-    "zafaf-admin-panel": "52040c0a5514df205fe6721135428e4894580c41e7611610ed1eb50b2c28704c",
-    "zafaf-nginx": "7e7b37f766e0f0c92b0aa4911a3c40dc9224ea1684f024de423dac9d5f817351"
+    "zafaf-backend": "none",
+    "zafaf-client-web": "none",
+    "zafaf-vendor-portal": "none",
+    "zafaf-admin-panel": "none",
+    "zafaf-nginx": "none"
   }
 }

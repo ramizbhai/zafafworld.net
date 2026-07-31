@@ -1751,6 +1751,8 @@ async fn get_listing_by_slug(
             vp.price_on_inquiry,
             vp.gender_section,
             vp.features_selection,
+            vp.cultural_attributes,
+            vp.total_capacity,
             vp.coordinator_name_ar AS prod_coord_name_ar,
             vp.coordinator_name_en AS prod_coord_name_en,
             vp.coordinator_phone   AS prod_coord_phone,
@@ -1781,6 +1783,15 @@ async fn get_listing_by_slug(
             v.longitude   AS vendor_lng,
             v.address_ar  AS vendor_address_ar,
             v.address_en  AS vendor_address_en,
+            v.subscription_tier_id AS vendor_subscription_tier_id,
+            COALESCE(
+                CASE 
+                    WHEN v.subscription_expires_at IS NULL OR v.subscription_expires_at > CURRENT_TIMESTAMP 
+                    THEN st.name 
+                    ELSE 'Free' 
+                END, 
+                'Free'
+            ) AS tier_name,
             NULL          AS vendor_district_ar,
             NULL          AS vendor_district_en,
             v.star_rating AS vendor_star_rating,
@@ -1862,6 +1873,7 @@ async fn get_listing_by_slug(
          FROM vendor_products vp
          JOIN vendors v ON vp.vendor_id = v.id
          LEFT JOIN cities c ON COALESCE(v.city_id, vp.city_id) = c.id
+         LEFT JOIN subscription_tiers st ON v.subscription_tier_id = st.id
          LEFT JOIN (
              SELECT
                  vendor_id,
@@ -1907,6 +1919,28 @@ async fn get_listing_by_slug(
     let features_selection: serde_json::Value = row
         .try_get("features_selection")
         .unwrap_or_else(|_| json!({}));
+    let total_capacity: Option<i32> = row.try_get("total_capacity").ok().flatten();
+    let cultural_attributes: serde_json::Value = row
+        .try_get("cultural_attributes")
+        .unwrap_or_else(|_| json!({}));
+    let vendor_subscription_tier_id: Option<Uuid> = row.try_get("vendor_subscription_tier_id").ok().flatten();
+    let tier_name: String = row.try_get("tier_name").unwrap_or_else(|_| "Free".to_string());
+
+    let subscription_badge = if tier_name.eq_ignore_ascii_case("free") {
+        serde_json::Value::Null
+    } else {
+        let badge_ar = match tier_name.to_lowercase().as_str() {
+            "gold" => "ذهبي",
+            "vip" => "مميز VIP",
+            "diamond" => "ماسي",
+            _ => "عضو مميز",
+        };
+        json!({
+            "tierId": tier_name.to_lowercase(),
+            "ar": badge_ar,
+            "en": tier_name,
+        })
+    };
 
     let prod_coord_name_ar: Option<String> = row.try_get("prod_coord_name_ar").ok().flatten();
     let prod_coord_name_en: Option<String> = row.try_get("prod_coord_name_en").ok().flatten();
@@ -2029,6 +2063,9 @@ async fn get_listing_by_slug(
             "genderSection": gender_section,
             "priceOnInquiry": price_on_inquiry.unwrap_or(false),
             "featuresSelection": features_selection,
+            "totalCapacity": total_capacity,
+            "culturalAttributes": cultural_attributes,
+            "subscriptionBadge": subscription_badge,
             "coordinator": {
                 "nameAr": prod_coord_name_ar.unwrap_or_default(),
                 "nameEn": prod_coord_name_en.unwrap_or_default(),
@@ -2069,6 +2106,7 @@ async fn get_listing_by_slug(
                 "mapsUrl":      vendor_maps,
                 "videoUrl":     vendor_video,
                 "starRating":   vendor_stars.map(|s| s.to_string()),
+                "subscriptionTierId": vendor_subscription_tier_id.map(|id| id.to_string()),
                 "location": {
                     "latitude":    vendor_lat,
                     "longitude":   vendor_lng,

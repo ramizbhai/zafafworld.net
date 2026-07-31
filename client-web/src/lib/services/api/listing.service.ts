@@ -103,7 +103,7 @@ function mapListing(l: any): Listing {
     email: vendorRaw.email ?? vendorRaw.vendor_email ?? null,
     mapsUrl: vendorRaw.mapsUrl ?? vendorRaw.vendor_maps_url ?? vendorRaw.maps_url ?? null,
     website: vendorRaw.website ?? vendorRaw.vendor_website ?? null,
-    subscriptionTierId: vendorRaw.subscriptionTierId ?? vendorRaw.subscription_tier_id ?? undefined,
+    subscriptionTierId: vendorRaw.subscriptionTierId ?? vendorRaw.subscription_tier_id ?? null,
     descriptionAr: vendorRaw.descriptionAr ?? vendorRaw.vendor_desc_ar ?? null,
     descriptionEn: vendorRaw.descriptionEn ?? vendorRaw.vendor_desc_en ?? null,
     videoUrl: vendorRaw.videoUrl ?? vendorRaw.vendor_video_url ?? null,
@@ -205,7 +205,15 @@ function mapListing(l: any): Listing {
     metaDescriptionEn,
     isFeatured:  l.isFeatured  ?? l.is_featured   ?? false,
     isAvailable: l.isAvailable ?? l.is_available  ?? true,
-    subscriptionBadge: l.subscriptionBadge ?? l.subscription_badge ?? null,
+    subscriptionBadge: l.subscriptionBadge
+      ? {
+          tierId: l.subscriptionBadge.tierId ?? 'free',
+          ar: l.subscriptionBadge.ar ?? '',
+          en: l.subscriptionBadge.en ?? '',
+        }
+      : null,
+    totalCapacity,
+    culturalAttributes: l.culturalAttributes ?? l.cultural_attributes ?? {},
     createdAt:   l.createdAt   ?? l.created_at    ?? '',
     detailUrl:   l.detailUrl   ?? l.detail_url    ?? `/listings/${l.slug}`,
     bookingUrl:  l.bookingUrl  ?? l.booking_url   ?? `/booking/listing/${l.id}`,

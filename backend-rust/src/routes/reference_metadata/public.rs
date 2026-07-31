@@ -73,10 +73,10 @@ async fn list_cities(
     tracing::info!("Querying active cities for country: {}...", country_id);
 
     let rows = sqlx::query(
-        "SELECT ci.id, ci.slug, ci.name_ar, ci.name_en, co.iso_code AS country_id \
+        "SELECT ci.id, ci.slug, ci.name_ar, ci.name_en, co.id AS country_id \
          FROM cities ci \
          JOIN countries co ON ci.country_id = co.id \
-         WHERE LOWER(co.iso_code) = LOWER($1) OR LOWER(co.slug) = LOWER($1) \
+         WHERE LOWER(co.id) = LOWER($1) OR LOWER(co.slug) = LOWER($1) \
          ORDER BY \
              CASE ci.slug \
                  WHEN 'riyadh' THEN 1 \

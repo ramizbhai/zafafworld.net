@@ -1,5 +1,4 @@
 import { browser } from '$app/environment';
-import { requestContextStore } from '$lib/utils/requestContext.js';
 
 export interface CountryInfo {
   code: string;
@@ -79,7 +78,7 @@ function createCountryStore() {
 
   function getActiveCode() {
     if (!browser) {
-      const store = requestContextStore.getStore();
+      const store = (globalThis as any).requestContextStore?.getStore();
       return store?.countryCode ?? DEFAULT_COUNTRY;
     }
     return clientActiveCode;

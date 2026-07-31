@@ -287,6 +287,34 @@ export type GenderSection =
     | 'dual_parallel'
     | 'family';
 
+/** Subscription badge metadata for premium tiers (Diamond, VIP, Gold) */
+export interface SubscriptionBadge {
+    tierId: 'free' | 'gold' | 'vip' | 'diamond' | string;
+    ar: string;
+    en: string;
+}
+
+/** Normalized review rating aggregates */
+export interface ListingRating {
+    overall: number;
+    quality: number;
+    staff: number;
+    communication: number;
+    count: number;
+}
+
+/** Coordinator contact person details */
+export interface Coordinator {
+    nameAr: string | null;
+    nameEn: string | null;
+    phone: string | null;
+    whatsapp: string | null;
+    email: string | null;
+    mobile: string | null;
+    avatar: string | null;
+    gender?: string | null;
+}
+
 /** A vendor_products row — the canonical bookable listing */
 export interface Listing {
     id: string;
@@ -311,16 +339,7 @@ export interface Listing {
     category: string;
     attributes: Record<string, any>;
     featuresSelection?: Record<string, any>;
-    coordinator?: {
-        nameAr: string | null;
-        nameEn: string | null;
-        phone: string | null;
-        whatsapp: string | null;
-        email: string | null;
-        mobile: string | null;
-        avatar: string | null;
-        gender?: string | null;
-    };
+    coordinator?: Coordinator;
 
     // V2 GCC cultural fields
     genderSection: string | null;   // 'dual_parallel' | 'women_only' | 'men_only' | etc.
@@ -330,11 +349,7 @@ export interface Listing {
     qualityScore: number;           // 0–100 listing completeness
     verificationLevel: string;      // 'basic' | 'verified' | 'premium_verified' | 'official_partner'
 
-    subscriptionBadge?: {
-        tierId: string;
-        ar: string;
-        en: string;
-    };
+    subscriptionBadge?: SubscriptionBadge | null;
 
     // Per-listing pricing
     basePriceSar: string | null;  // Decimal string from backend
@@ -360,16 +375,14 @@ export interface Listing {
     longitude: number | null;
 
     // Rating (vendor-level reviews, shown per listing)
-    rating: {
-        overall: number;
-        quality: number;
-        staff: number;
-        communication: number;
-        count: number;
-    };
+    rating: ListingRating;
 
     isFeatured: boolean;
     isAvailable: boolean;
+
+    // V2 GCC Quick Facts additions
+    totalCapacity?: number | null; // Will be mapped by API in later phase
+    culturalAttributes?: Record<string, any> | null;
 
     // Timestamps
     createdAt: string;
@@ -447,6 +460,7 @@ export interface ListingVendorSummary {
     descriptionEn?: string | null;
     videoUrl?: string | null;
     starRating?: string | null;
+    subscriptionTierId?: string | null;
     location?: {
         latitude: number | null;
         longitude: number | null;

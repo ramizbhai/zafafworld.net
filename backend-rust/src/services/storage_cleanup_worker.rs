@@ -116,6 +116,15 @@ async fn poll_and_process_cleanup(
         Ok(_) => {
             info!("Storage Cleanup: Successfully deleted physical objects for task {}", task.id);
             
+            // Delete public.uploaded_file_variants rows
+            if let Err(e) = sqlx::query("DELETE FROM public.uploaded_file_variants WHERE id = ANY($1)")
+                .bind(&task.file_ids)
+                .execute(db)
+                .await 
+            {
+                error!("Storage Cleanup: Failed to delete uploaded_file_variants rows for task {}: {}", task.id, e);
+            }
+
             // Delete public.uploaded_files rows
             if let Err(e) = sqlx::query("DELETE FROM public.uploaded_files WHERE id = ANY($1)")
                 .bind(&task.file_ids)

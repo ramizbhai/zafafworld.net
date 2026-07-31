@@ -43,6 +43,36 @@ pub async fn get_by_id(pool: &PgPool, id: Uuid) -> Result<Option<UploadedFileDto
     }
 }
 
+/// Insert a new variant row into `uploaded_file_variants`.
+pub async fn insert_variant(
+    pool: &PgPool,
+    uploaded_file_id: Uuid,
+    format: &str,
+    variant: &str,
+    size_bytes: i64,
+    object_key: &str,
+) -> Result<Uuid, sqlx::Error> {
+    let id = sqlx::query_scalar::<_, Uuid>(
+        r#"
+        INSERT INTO public.uploaded_file_variants
+            (uploaded_file_id, format, variant, size_bytes, object_key)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (object_key) DO UPDATE
+            SET size_bytes = EXCLUDED.size_bytes
+        RETURNING id
+        "#
+    )
+    .bind(uploaded_file_id)
+    .bind(format)
+    .bind(variant)
+    .bind(size_bytes)
+    .bind(object_key)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(id)
+}
+
 /// Insert a new `uploaded_files` row after a successful MinIO put.
 ///
 /// Returns the newly-created row ID.
@@ -56,17 +86,42 @@ pub async fn insert_upload(
     uploaded_by: Option<Uuid>,
     parent_id: Option<Uuid>,
 ) -> Result<Uuid, sqlx::Error> {
+    if let Some(pid) = parent_id {
+        let format = if mime_type == "image/avif" {
+            "avif"
+        } else if mime_type == "image/webp" {
+            "webp"
+        } else {
+            "raw"
+        };
+
+        let variant = if file_name.contains("_thumb.") {
+            "thumb"
+        } else if file_name.contains("_card.") {
+            "card"
+        } else if file_name.contains("_medium.") {
+            "medium"
+        } else if file_name.contains("_large.") {
+            "large"
+        } else if file_name.contains("_raw.") {
+            "raw"
+        } else {
+            "original"
+        };
+
+        return insert_variant(pool, pid, format, variant, file_size, object_key).await;
+    }
+
     let id = sqlx::query_scalar::<_, Uuid>(
         r#"
         INSERT INTO public.uploaded_files
-            (bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status, parent_id)
-        VALUES ($1, $2, $3, $4, $5, $6, 'ready', $7)
+            (bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status)
+        VALUES ($1, $2, $3, $4, $5, $6, 'ready')
         ON CONFLICT (object_key) DO UPDATE
             SET file_size   = EXCLUDED.file_size,
                 mime_type   = EXCLUDED.mime_type,
                 file_name   = EXCLUDED.file_name,
-                status      = 'ready',
-                parent_id   = COALESCE(EXCLUDED.parent_id, public.uploaded_files.parent_id)
+                status      = 'ready'
         RETURNING id
         "#,
     )
@@ -76,7 +131,6 @@ pub async fn insert_upload(
     .bind(file_size)
     .bind(mime_type)
     .bind(uploaded_by)
-    .bind(parent_id)
     .fetch_one(pool)
     .await?;
 
@@ -96,17 +150,43 @@ pub async fn insert_upload_with_status(
     status: &str,
     parent_id: Option<Uuid>,
 ) -> Result<(), sqlx::Error> {
+    if let Some(pid) = parent_id {
+        let format = if mime_type == "image/avif" {
+            "avif"
+        } else if mime_type == "image/webp" {
+            "webp"
+        } else {
+            "raw"
+        };
+
+        let variant = if file_name.contains("_thumb.") {
+            "thumb"
+        } else if file_name.contains("_card.") {
+            "card"
+        } else if file_name.contains("_medium.") {
+            "medium"
+        } else if file_name.contains("_large.") {
+            "large"
+        } else if file_name.contains("_raw.") {
+            "raw"
+        } else {
+            "original"
+        };
+
+        let _ = insert_variant(pool, pid, format, variant, file_size, object_key).await?;
+        return Ok(());
+    }
+
     sqlx::query(
         r#"
         INSERT INTO public.uploaded_files
-            (id, bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status, parent_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            (id, bucket_name, object_key, file_name, file_size, mime_type, uploaded_by, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (object_key) DO UPDATE
             SET file_size   = EXCLUDED.file_size,
                 mime_type   = EXCLUDED.mime_type,
                 file_name   = EXCLUDED.file_name,
-                status      = EXCLUDED.status,
-                parent_id   = COALESCE(EXCLUDED.parent_id, public.uploaded_files.parent_id)
+                status      = EXCLUDED.status
         "#,
     )
     .bind(id)
@@ -117,7 +197,6 @@ pub async fn insert_upload_with_status(
     .bind(mime_type)
     .bind(uploaded_by)
     .bind(status)
-    .bind(parent_id)
     .execute(pool)
     .await?;
 

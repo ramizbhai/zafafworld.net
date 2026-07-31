@@ -68,3 +68,62 @@ export function getOptimizedImage(
 
     return url;
 }
+
+export interface ResponsiveSources {
+    avif: {
+        original: string;
+        large: string;
+        medium: string;
+        card: string;
+        thumb: string;
+    };
+    webp: {
+        original: string;
+        large: string;
+        medium: string;
+        card: string;
+        thumb: string;
+    };
+    fallback: string;
+}
+
+/**
+ * Returns the complete set of resolved AVIF and WebP responsive sizes
+ * for rendering high-performance <picture> tags on the client.
+ */
+export function getResponsiveSources(url: string | null | undefined): ResponsiveSources | null {
+    if (!url) return null;
+
+    const resolvedUrl = resolveMediaUrl(url);
+
+    // Only apply suffix generation if the file matches our standard upload pattern (ends in .webp)
+    if (!resolvedUrl.toLowerCase().endsWith('.webp')) {
+        const fallback = resolvedUrl;
+        return {
+            avif: { original: fallback, large: fallback, medium: fallback, card: fallback, thumb: fallback },
+            webp: { original: fallback, large: fallback, medium: fallback, card: fallback, thumb: fallback },
+            fallback
+        };
+    }
+
+    const dotIndex = resolvedUrl.lastIndexOf('.');
+    const base = resolvedUrl.substring(0, dotIndex);
+
+    return {
+        avif: {
+            original: `${base}.avif`,
+            large: `${base}_large.avif`,
+            medium: `${base}_medium.avif`,
+            card: `${base}_card.avif`,
+            thumb: `${base}_thumb.avif`
+        },
+        webp: {
+            original: `${base}.webp`,
+            large: `${base}_large.webp`,
+            medium: `${base}_medium.webp`,
+            card: `${base}_card.webp`,
+            thumb: `${base}_thumb.webp`
+        },
+        fallback: `${base}.webp`
+    };
+}
