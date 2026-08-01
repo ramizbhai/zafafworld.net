@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { Venue } from '$lib/types/index.js';
-  import { resolveMediaUrl, getOptimizedImage } from '$lib/shared/utils/media.js';
+  import { resolveMediaUrl } from '$lib/shared/utils/media.js';
   import * as m from '$lib/paraglide/messages.js';
-import { getLocale } from '$lib/paraglide/runtime.js';
-import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$lib/utils/localize.js';
+  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { getLocalizedField, formatCurrency } from '$lib/utils/localize.js';
   import Badge from '$lib/components/ui/Badge.svelte';
   import StarRating from '$lib/components/ui/StarRating.svelte';
+  import OptimizedImage from '$lib/components/shared/OptimizedImage.svelte';
 
   interface Props {
     venue: Venue;
@@ -16,7 +17,6 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
   let { venue, layout = 'grid', class: extraClass = '' }: Props = $props();
 
   let isWishlisted = $state(false);
-  let imgError = $state(false);
 
   const name = $derived(getLocalizedField(venue, 'name', getLocale()));
   const city = $derived(venue.location.city);
@@ -39,23 +39,14 @@ import { getLocalizedField, formatCurrency, formatNumber, formatDate } from '$li
     relative overflow-hidden bg-[var(--color-surface-alt)]
     {layout === 'list' ? 'w-64 flex-shrink-0' : 'aspect-[4/3] w-full'}
   ">
-    {#if primaryImage && !imgError}
-      <img
-        src={resolveMediaUrl(getOptimizedImage(primaryImage.url, 'card'))}
+    {#if primaryImage}
+      <OptimizedImage
+        src={primaryImage.url}
         alt={primaryImage.alt || name || 'venue image'}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        aspectRatio="4/3"
         loading="lazy"
-        width="400"
-        height="300"
-        onerror={(e) => {
-          const img = e.currentTarget as HTMLImageElement;
-          const fallback = resolveMediaUrl(primaryImage.url);
-          if (img.src !== fallback) {
-            img.src = fallback;
-          } else {
-            imgError = true;
-          }
-        }}
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
     {:else}
       <div class="w-full h-full flex items-center justify-center text-[var(--color-muted)]">

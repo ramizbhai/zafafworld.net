@@ -109,23 +109,23 @@
 /* ─── CSS DESIGN TOKENS (LEGACY COMPAT) ─────────────────────────────────── */
 :root {
   /* Premium Arab Wedding Identity */
-  --color-primary: #5b21b6;
-  --color-primary-hover: #4c1d95;
-  --color-secondary: #d97706;
-  --color-bg-warm: #faf8f5;
+  --color-primary: #C9A96E;
+  --color-primary-hover: #9B7A42;
+  --color-secondary: #2D2620;
+  --color-bg-warm: #FDFAF6;
   --color-surface: #ffffff;
-  --color-text-dark: #1e293b;
+  --color-text-dark: #2D2620;
 
   /* Core brand */
   --teal:         var(--color-primary);
   --teal-dark:    var(--color-primary-hover);
   --teal-mid:     var(--color-primary);
-  --teal-light:   rgba(91, 33, 182, 0.08);
-  --teal-h: 258; --teal-s: 90%; --teal-l: 66%;
+  --teal-light:   rgba(201, 169, 110, 0.08);
+  --teal-h: 40; --teal-s: 50%; --teal-l: 61%;
 
   --gold:         var(--color-secondary);
-  --gold-light:   rgba(217, 119, 6, 0.15);
-  --gold-dark:    #b45309;
+  --gold-light:   rgba(45, 38, 32, 0.15);
+  --gold-dark:    #1C1713;
 
   /* Layout */
   --sidebar-w:    248px;

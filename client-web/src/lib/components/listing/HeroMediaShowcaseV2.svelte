@@ -3,6 +3,7 @@
     import { getLocale } from "$lib/paraglide/runtime.js";
     import { resolveMediaUrl } from "$lib/shared/utils/media.js";
     import GalleryLightboxV2 from "./GalleryLightboxV2.svelte";
+    import OptimizedImage from "$lib/components/shared/OptimizedImage.svelte";
 
     let { images = [], title = "" } = $props<{
         images: any[];
@@ -62,22 +63,19 @@
         
         <!-- 1. DESKTOP EXPERIENCE: 3-Photo Grid (>= 1024px) -->
         <div class="hidden lg:grid grid-cols-3 gap-3 h-[450px] relative">
-            
-            <!-- Slot 1: Large Featured Cover Image -->
             <button 
                 onclick={() => openLightbox(0)}
                 class="col-span-2 relative overflow-hidden rounded-2xl cursor-pointer group bg-slate-900 border border-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                 aria-label={isAr ? "فتح صورة الغلاف في المعرض المكبر" : "Open cover image in full lightbox"}
             >
-                <img 
-                    src={resolveMediaUrl(images[0].url)} 
+                <OptimizedImage 
+                    src={images[0].url} 
                     alt={images[0].alt || `${title} - image 1`}
+                    fetchpriority="high"
                     loading="eager"
-                    class="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
-                    onerror={(e) => {
-                        const el = e.currentTarget as HTMLImageElement;
-                        el.src = "/images/fallbacks/default-cover.webp";
-                    }}
+                    className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
+                    sizes="(max-width: 1024px) 100vw, 66vw"
+                    aspectRatio="16/9"
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950/20 to-transparent pointer-events-none"></div>
             </button>
@@ -91,15 +89,13 @@
                         class="relative overflow-hidden rounded-2xl cursor-pointer group bg-slate-900 border border-slate-100 focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
                         aria-label={isAr ? "فتح الصورة الثانية في المعرض المكبر" : "Open second image in full lightbox"}
                     >
-                        <img 
-                            src={resolveMediaUrl(images[1].url)} 
+                        <OptimizedImage 
+                            src={images[1].url} 
                             alt={images[1].alt || `${title} - image 2`}
                             loading="lazy"
-                            class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
-                            onerror={(e) => {
-                                const el = e.currentTarget as HTMLImageElement;
-                                el.src = "/images/fallbacks/default-cover.webp";
-                            }}
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            aspectRatio="16/9"
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/20 to-transparent pointer-events-none"></div>
                     </button>
@@ -116,15 +112,13 @@
                             : (isAr ? "فتح الصورة الثالثة في المعرض المكبر" : "Open third image in full lightbox")
                         }
                     >
-                        <img 
-                            src={resolveMediaUrl(images[2].thumbnailUrl || images[2].url)} 
+                        <OptimizedImage 
+                            src={images[2].thumbnailUrl || images[2].url} 
                             alt={images[2].alt || `${title} - image 3`}
                             loading="lazy"
-                            class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
-                            onerror={(e) => {
-                                const el = e.currentTarget as HTMLImageElement;
-                                el.src = "/images/fallbacks/default-cover.webp";
-                            }}
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 brightness-[0.98] group-hover:brightness-100"
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            aspectRatio="16/9"
                         />
                         
                         {#if isVideo}
@@ -177,11 +171,14 @@
                         >
                             {#if img.mediaType === "video"}
                                 <div class="relative w-full h-full flex items-center justify-center bg-black">
-                                    <img 
-                                        src={resolveMediaUrl(img.thumbnailUrl || img.url)} 
+                                    <OptimizedImage 
+                                        src={img.thumbnailUrl || img.url} 
                                         alt={title}
-                                        class="w-full h-full object-cover brightness-75"
+                                        className="w-full h-full object-cover brightness-75"
                                         loading={i === 0 ? "eager" : "lazy"}
+                                        fetchpriority={i === 0 ? "high" : "auto"}
+                                        sizes="100vw"
+                                        aspectRatio="16/9"
                                     />
                                     <div class="absolute inset-0 flex items-center justify-center">
                                         <div class="w-14 h-14 rounded-full bg-slate-900/60 border border-white/20 backdrop-blur-md flex items-center justify-center">
@@ -190,15 +187,14 @@
                                     </div>
                                 </div>
                             {:else}
-                                <img 
-                                    src={resolveMediaUrl(img.url)} 
+                                <OptimizedImage 
+                                    src={img.url} 
                                     alt={img.alt || `${title} - image ${i + 1}`}
                                     loading={i === 0 ? "eager" : "lazy"}
-                                    class="w-full h-full object-cover"
-                                    onerror={(e) => {
-                                        const el = e.currentTarget as HTMLImageElement;
-                                        el.src = "/images/fallbacks/default-cover.webp";
-                                    }}
+                                    fetchpriority={i === 0 ? "high" : "auto"}
+                                    className="w-full h-full object-cover"
+                                    sizes="100vw"
+                                    aspectRatio="16/9"
                                 />
                             {/if}
                         </div>

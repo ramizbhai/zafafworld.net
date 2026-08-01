@@ -2,6 +2,8 @@
     import { getLocale } from '$lib/paraglide/runtime.js';
     import { resolveMediaUrl } from "$lib/shared/utils/media.js";
     import { Sparkles, MapPin, Phone, Share2, Compass, ChevronDown, ChevronUp, Link as LinkIcon } from 'lucide-svelte';
+    import OptimizedImage from '$lib/components/shared/OptimizedImage.svelte';
+    import OptimizedVideo from '$lib/components/shared/OptimizedVideo.svelte';
 
     let { descriptionAr = "", descriptionEn = "" } = $props<{
         descriptionAr?: string;
@@ -178,19 +180,38 @@
                             {/each}
                         </ul>
                     {:else if block.type === "image" && block.url}
-                        <img src={resolveMediaUrl(block.url)} alt="" loading="lazy" class="rounded-2xl max-w-full h-auto my-6 shadow-xs border border-slate-100" />
+                        <OptimizedImage
+                            src={block.url}
+                            alt="Listing description image"
+                            className="rounded-2xl max-w-full h-auto my-6 shadow-xs border border-slate-100"
+                            loading="lazy"
+                            sizes="100vw"
+                        />
                     {:else if block.type === "gallery" && block.url}
                         {@const urls = getGalleryUrls(block.url)}
                         {#if urls.length > 1}
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-6">
                                 {#each urls as imageUrl}
                                     <div class="relative aspect-video rounded-2xl overflow-hidden shadow-xs border border-slate-100">
-                                        <img src={resolveMediaUrl(imageUrl)} alt="" loading="lazy" class="w-full h-full object-cover" />
+                                        <OptimizedImage
+                                            src={imageUrl}
+                                            alt="Gallery image"
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                            aspectRatio="16/9"
+                                        />
                                     </div>
                                 {/each}
                             </div>
                         {:else if urls.length === 1}
-                            <img src={resolveMediaUrl(urls[0])} alt="" loading="lazy" class="rounded-2xl max-w-full h-auto my-6 shadow-xs border border-slate-100" />
+                            <OptimizedImage
+                                src={urls[0]}
+                                alt="Gallery image single"
+                                className="rounded-2xl max-w-full h-auto my-6 shadow-xs border border-slate-100"
+                                loading="lazy"
+                                sizes="100vw"
+                            />
                         {/if}
                     {:else if block.type === "video" && block.url}
                         {@const embedUrl = getVideoEmbedUrl(block.url)}
@@ -199,8 +220,10 @@
                                 <iframe src={embedUrl} title="Video" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
                             </div>
                         {:else}
-                            <!-- svelte-ignore a11y_media_has_caption -->
-                            <video src={resolveMediaUrl(block.url)} controls playsinline preload="metadata" class="w-full rounded-2xl my-6 shadow-xs border border-slate-100"></video>
+                            <OptimizedVideo
+                                src={block.url}
+                                className="w-full rounded-2xl my-6 shadow-xs border border-slate-100"
+                            />
                         {/if}
                     {:else if block.type === "map" && block.url}
                         {@const embedUrl = getEmbedUrl(block.url)}
@@ -243,13 +266,27 @@
                                 <div class="flex-1 text-slate-700 leading-relaxed text-sm whitespace-pre-wrap order-2 sm:order-1">{content}</div>
                                 {#if block.url}
                                     <div class="w-full sm:w-1/2 rounded-2xl overflow-hidden shadow-xs border border-slate-100 order-1 sm:order-2 shrink-0">
-                                        <img src={block.url} alt="" class="w-full h-full object-cover" />
+                                        <OptimizedImage
+                                            src={block.url}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            sizes="(max-width: 640px) 100vw, 50vw"
+                                            aspectRatio="16/9"
+                                        />
                                     </div>
                                 {/if}
                             {:else}
                                 {#if block.url}
                                     <div class="w-full sm:w-1/2 rounded-2xl overflow-hidden shadow-xs border border-slate-100 shrink-0">
-                                        <img src={block.url} alt="" class="w-full h-full object-cover" />
+                                        <OptimizedImage
+                                            src={block.url}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            sizes="(max-width: 640px) 100vw, 50vw"
+                                            aspectRatio="16/9"
+                                        />
                                     </div>
                                 {/if}
                                 <div class="flex-1 text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">{content}</div>

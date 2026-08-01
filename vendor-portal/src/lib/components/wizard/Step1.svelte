@@ -55,11 +55,9 @@
                     : getApiUrl(`/api/v1/vendor/products`);
 
                 const method = $listingStore.productId ? "PUT" : "POST";
-
-                const payload = {
-                    productCategory: selectedCategory,
-                    version: $listingStore.productId ? $listingStore.version : undefined,
-                };
+                const payload = $listingStore.productId 
+                    ? listingStore.getApiPayload($listingStore) 
+                    : { productCategory: selectedCategory };
 
                 const { blocked, response: res } = await checkSubscriptionQuota(async () => {
                     return await wizardFetch(url, {

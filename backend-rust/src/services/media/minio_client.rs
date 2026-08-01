@@ -162,6 +162,9 @@ impl MinioClient {
         filename: &str,
         mime_type: &str,
         parent_id: Option<Uuid>,
+        width: Option<i32>,
+        height: Option<i32>,
+        checksum: Option<&str>,
     ) -> Result<(), String> {
         let clean_dir = self.normalize_dir(target_dir);
         let key = format!("{}{}", clean_dir, filename);
@@ -243,8 +246,11 @@ impl MinioClient {
             filename,
             file_size,
             mime_type,
-            None,  // uploaded_by: None (caller can pass user_id in a future iteration)
+            None,  // uploaded_by
             parent_id,
+            width,
+            height,
+            checksum,
         ).await {
             Ok(db_id) => {
                 tracing::info!(
@@ -289,6 +295,9 @@ impl MinioClient {
             uploaded_by,
             "processing",
             parent_id,
+            None,
+            None,
+            None,
         )
         .await
         .map_err(|e| {
@@ -316,17 +325,37 @@ impl MinioClient {
         status: &str,
         error_message: Option<&str>,
         file_size: Option<i64>,
+        width: Option<i32>,
+        height: Option<i32>,
+        duration_seconds: Option<i32>,
+        codec: Option<&str>,
+        bitrate: Option<i64>,
+        orientation: Option<i32>,
+        checksum: Option<&str>,
     ) -> Result<(), String> {
-        uploaded_files_repository::update_status(&self.pool, id, status, error_message, file_size)
-            .await
-            .map_err(|e| {
-                tracing::error!(
-                    target: "storage",
-                    "Metadata Update Failed: id={} status={} operation=update_status error={}",
-                    id, status, e
-                );
-                format!("Failed to update upload status: {}", e)
-            })?;
+        uploaded_files_repository::update_status(
+            &self.pool,
+            id,
+            status,
+            error_message,
+            file_size,
+            width,
+            height,
+            duration_seconds,
+            codec,
+            bitrate,
+            orientation,
+            checksum,
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!(
+                target: "storage",
+                "Metadata Update Failed: id={} status={} operation=update_status error={}",
+                id, status, e
+            );
+            format!("Failed to update upload status: {}", e)
+        })?;
 
         tracing::info!(
             target: "storage",
@@ -411,33 +440,58 @@ impl MinioClient {
     /// For images this includes the original, thumb, card, medium, and large
     /// variants. For videos it includes the video file and thumbnail.
     pub async fn delete_gallery_item(&self, file_url: &str, media_type: &str) {
-        let path_str = crate::utils::storage_paths::normalize_key(file_url, &self.root_prefix);
+        use sqlx::Row;
+        let path_str = crate::utils::storage_paths::normalize_key(file_url, &self.root_prefix).to_string();
+        let mut keys_to_delete = vec![path_str.clone()];
 
-        let keys_to_delete: Vec<String> = if let Some(dot_idx) = path_str.rfind('.') {
-            let base_key = &path_str[..dot_idx];
-            let ext = &path_str[dot_idx..];
-
-            if media_type == "video" {
-                vec![
-                    path_str.to_string(),
-                    format!("{}_thumb.webp", base_key),
-                ]
-            } else {
-                let mut keys = vec![
-                    format!("{}{}", base_key, ext),
-                    format!("{}_thumb.webp", base_key),
-                    format!("{}_card.webp", base_key),
-                    format!("{}_medium.webp", base_key),
-                    format!("{}_large.webp", base_key),
-                ];
-                if ext != ".webp" {
-                    keys.push(format!("{}.webp", base_key));
+        // Query both uploaded_files and uploaded_file_variants for this key's ID
+        if let Ok(Some(row)) = sqlx::query("SELECT id FROM public.uploaded_files WHERE object_key = $1")
+            .bind(&path_str)
+            .fetch_optional(&self.pool)
+            .await
+        {
+            if let Ok(parent_id) = row.try_get::<Uuid, _>("id") {
+                // Find all variant keys
+                if let Ok(variants) = sqlx::query("SELECT object_key FROM public.uploaded_file_variants WHERE uploaded_file_id = $1")
+                    .bind(parent_id)
+                    .fetch_all(&self.pool)
+                    .await
+                {
+                    for var in variants {
+                        if let Ok(k) = var.try_get::<String, _>("object_key") {
+                            keys_to_delete.push(k);
+                        }
+                    }
                 }
-                keys
             }
-        } else {
-            vec![path_str.to_string()]
-        };
+        }
+
+        // Fallback checks if db is out-of-sync or empty
+        if keys_to_delete.len() == 1 {
+            if let Some(dot_idx) = path_str.rfind('.') {
+                let base_key = &path_str[..dot_idx];
+                let ext = &path_str[dot_idx..];
+
+                if media_type == "video" {
+                    keys_to_delete.push(format!("{}_thumb.webp", base_key));
+                    keys_to_delete.push(format!("{}_thumb.avif", base_key));
+                    keys_to_delete.push(format!("{}_poster.webp", base_key));
+                    keys_to_delete.push(format!("{}_poster.avif", base_key));
+                    keys_to_delete.push(format!("{}_master.m3u8", base_key));
+                    keys_to_delete.push(format!("{}_1080p.m3u8", base_key));
+                    keys_to_delete.push(format!("{}_720p.m3u8", base_key));
+                    keys_to_delete.push(format!("{}_480p.m3u8", base_key));
+                } else {
+                    keys_to_delete.push(format!("{}_thumb.webp", base_key));
+                    keys_to_delete.push(format!("{}_card.webp", base_key));
+                    keys_to_delete.push(format!("{}_medium.webp", base_key));
+                    keys_to_delete.push(format!("{}_large.webp", base_key));
+                    if ext != ".webp" {
+                        keys_to_delete.push(format!("{}.webp", base_key));
+                    }
+                }
+            }
+        }
 
         for key in keys_to_delete {
             if let Err(e) = self.delete(&key).await {

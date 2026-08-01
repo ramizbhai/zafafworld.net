@@ -230,14 +230,14 @@
 <DiamondShowcase />
 
 <!-- Categories Showcase Section -->
-<section class="py-20 bg-[var(--color-surface-alt)] relative overflow-hidden" aria-labelledby="categories-title">
+<section class="py-20 bg-zw-surface-alt relative overflow-hidden" aria-labelledby="categories-title">
   <div class="container-page">
     <div class="text-center mb-12">
       <span class="divider-gold mx-auto"></span>
-      <h2 id="categories-title" class="font-display text-3xl sm:text-4xl font-bold text-[var(--color-secondary)] mt-6 mb-4">
+      <h2 id="categories-title" class="font-display text-3xl sm:text-4xl font-bold text-zw-secondary mt-6 mb-4">
         {m.home_categories()}
       </h2>
-      <p class="text-[var(--color-muted)] text-base max-w-2xl mx-auto leading-relaxed">{m.home_categoriesSubtitle()}</p>
+      <p class="text-zw-muted text-base max-w-2xl mx-auto leading-relaxed">{m.home_categoriesSubtitle()}</p>
     </div>
 
     <!-- TOP 3 FIXED GRID SHOWCASE -->
@@ -246,8 +246,8 @@
         <a
           href={cat.href}
           data-sveltekit-preload-data="hover"
-          class="group flex flex-col bg-white border border-[var(--color-border)]/65 rounded-3xl p-4
-            hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-gold)]
+          class="group flex flex-col bg-white border border-zw-border/65 rounded-3xl p-4
+            hover:border-zw-primary/40 hover:shadow-gold
             transition-all duration-500
             {cat.key === 'wedding-palace' ? 'lg:col-span-2 md:col-span-2' : 'col-span-1'}"
         >
@@ -266,10 +266,10 @@
           </div>
           <!-- Text content centered below the image -->
           <div class="text-center mt-4 mb-2 flex-grow flex flex-col justify-center">
-            <h3 class="font-display text-base sm:text-lg font-bold text-[var(--color-secondary)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+            <h3 class="font-display text-base sm:text-lg font-bold text-zw-secondary group-hover:text-zw-primary-contrast transition-colors duration-300">
               {getLocalizedField(cat, 'label', getLocale())}
             </h3>
-            <p class="text-xs text-[var(--color-muted)] font-medium mt-1">
+            <p class="text-xs text-zw-muted font-medium mt-1">
               {getProviderCountLabel(cat.listingsCount || 0, getLocale())}
             </p>
           </div>
@@ -283,9 +283,9 @@
       <button
         onclick={scrollPrev}
         class="absolute top-1/2 -translate-y-1/2 start-0 -ms-4 z-20
-          w-10 h-10 rounded-full bg-white/90 border border-[var(--color-border)] shadow-md
-          flex items-center justify-center text-[var(--color-secondary)]
-          hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)] hover:border-[var(--color-primary)]
+          w-10 h-10 rounded-full bg-white/90 border border-zw-border shadow-md
+          flex items-center justify-center text-zw-secondary
+          hover:bg-zw-primary hover:text-zw-secondary hover:border-zw-primary
           opacity-0 group-hover/carousel:opacity-100 transition-all duration-300
           hidden md:flex focus-visible:opacity-100"
         aria-label={getLocale() === 'ar' ? 'السابق' : 'Previous Category'}
@@ -299,9 +299,9 @@
       <button
         onclick={scrollNext}
         class="absolute top-1/2 -translate-y-1/2 end-0 -me-4 z-20
-          w-10 h-10 rounded-full bg-white/90 border border-[var(--color-border)] shadow-md
-          flex items-center justify-center text-[var(--color-secondary)]
-          hover:bg-[var(--color-primary)] hover:text-[var(--color-secondary)] hover:border-[var(--color-primary)]
+          w-10 h-10 rounded-full bg-white/90 border border-zw-border shadow-md
+          flex items-center justify-center text-zw-secondary
+          hover:bg-zw-primary hover:text-zw-secondary hover:border-zw-primary
           opacity-0 group-hover/carousel:opacity-100 transition-all duration-300
           hidden md:flex focus-visible:opacity-100"
         aria-label={getLocale() === 'ar' ? 'التالي' : 'Next Category'}
@@ -330,8 +330,8 @@
           <a
             href={cat.href}
             data-sveltekit-preload-data="hover"
-            class="group flex flex-col bg-white border border-[var(--color-border)]/65 rounded-3xl p-4
-              hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-gold)]
+            class="group flex flex-col bg-white border border-zw-border/65 rounded-3xl p-4
+              hover:border-zw-primary/40 hover:shadow-gold
               transition-all duration-500 snap-start flex-shrink-0
               w-[240px] sm:w-[260px] md:w-[280px]"
           >
@@ -349,10 +349,10 @@
             </div>
             <!-- Text content centered below the image -->
             <div class="text-center mt-4 mb-2 flex-grow flex flex-col justify-center">
-              <h3 class="font-display text-sm sm:text-base font-bold text-[var(--color-secondary)] group-hover:text-[var(--color-primary)] transition-colors duration-300">
+              <h3 class="font-display text-sm sm:text-base font-bold text-zw-secondary group-hover:text-zw-primary-contrast transition-colors duration-300">
                 {getLocalizedField(cat, 'label', getLocale())}
               </h3>
-              <p class="text-xs text-[var(--color-muted)] font-medium mt-1">
+              <p class="text-xs text-zw-muted font-medium mt-1">
                 {getProviderCountLabel(cat.listingsCount || 0, getLocale())}
               </p>
             </div>
@@ -363,7 +363,7 @@
 
     <!-- Show All Categories Link -->
     <div class="text-center mt-12">
-      <Button href="/" variant="outline" size="md" class="group hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
+      <Button href="/" variant="outline" size="md" class="group hover:border-zw-primary hover:text-zw-primary-contrast transition-colors">
         {m.common_showAll()}
         <svg viewBox="0 0 20 20" class="w-4 h-4 rtl:rotate-180 ms-2 inline-block transition-transform duration-300 group-hover:translate-x-1 rtl:group-hover:-translate-x-1" fill="currentColor">
           <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/>
@@ -375,16 +375,16 @@
 
 <!-- Dynamic Multi-Layout Category Sections (Phase 1 Premium Redesign) -->
 {#each categoryGroups as group (group.key)}
-  <section class="py-24 bg-white border-b border-[var(--color-border)] last:border-b-0" aria-labelledby="section-{group.key}">
+  <section class="py-24 bg-white border-b border-zw-border last:border-b-0" aria-labelledby="section-{group.key}">
     <div class="container-page">
       <!-- Header Row -->
       <div class="flex items-end justify-between mb-10 gap-4 flex-wrap">
         <div>
           <span class="divider-gold"></span>
-          <h2 id="section-{group.key}" class="font-display text-2xl sm:text-3xl font-bold text-[var(--color-secondary)] mt-4 mb-2">
+          <h2 id="section-{group.key}" class="font-display text-2xl sm:text-3xl font-bold text-zw-secondary mt-4 mb-2">
             {getLocalizedField(group, 'title', getLocale())}
           </h2>
-          <p class="text-[var(--color-muted)] text-sm">{getLocalizedField(group, 'subtitle', getLocale())}</p>
+          <p class="text-zw-muted text-sm">{getLocalizedField(group, 'subtitle', getLocale())}</p>
         </div>
         <Button href={group.href} variant="outline" size="sm">
           {m.common_showAll()}
@@ -396,14 +396,14 @@
 
       <!-- Layout Selection -->
       {#if group.listings.length === 0}
-        <div class="flex flex-col items-center justify-center py-16 px-6 bg-[var(--color-surface-alt)]/40 border border-dashed border-[var(--color-border)]/80 rounded-3xl text-center backdrop-blur-sm transition-all duration-300 hover:border-[var(--color-primary)]/40">
-          <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm text-2xl mb-4 border border-[var(--color-border)]/50">
+        <div class="flex flex-col items-center justify-center py-16 px-6 bg-zw-surface-alt/40 border border-dashed border-zw-border/80 rounded-3xl text-center backdrop-blur-sm transition-all duration-300 hover:border-zw-primary/40">
+          <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm text-2xl mb-4 border border-zw-border/50">
             ✨
           </div>
-          <h3 class="font-display text-base sm:text-lg font-bold text-[var(--color-secondary)] mb-2">
+          <h3 class="font-display text-base sm:text-lg font-bold text-zw-secondary mb-2">
             {getLocale() === 'ar' ? 'قريباً جداً' : 'Coming Soon'}
           </h3>
-          <p class="text-xs sm:text-sm text-[var(--color-muted)] max-w-md">
+          <p class="text-xs sm:text-sm text-zw-muted max-w-md">
             {getLocale() === 'ar' 
               ? 'نعمل حالياً على اختيار وتوثيق أفضل مزودي الخدمة في هذا القسم.' 
               : 'We are currently selecting and verifying the finest service providers for this section.'}
@@ -489,7 +489,7 @@
   <div bind:this={sentinelEl} class="py-8 flex justify-center items-center" aria-hidden="true">
     {#if isLoadingMore}
       <!-- A beautiful gold spinner -->
-      <div class="w-8 h-8 border-4 border-[var(--color-primary)]/20 border-t-[var(--color-primary)] rounded-full animate-spin"></div>
+      <div class="w-8 h-8 border-4 border-zw-primary/20 border-t-zw-primary rounded-full animate-spin"></div>
     {/if}
   </div>
 {/if}

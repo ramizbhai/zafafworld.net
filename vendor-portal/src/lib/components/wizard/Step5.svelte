@@ -74,11 +74,7 @@
 
             try {
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
-                const payload = {
-                    version: $listingStore.version,
-                    attributes: $listingStore.formData.categoryAttributes,
-                    featuresSelection: $listingStore.formData.featuresSelection,
-                };
+                const payload = listingStore.getApiPayload($listingStore);
 
                 const res = await wizardFetch(url, {
                     method: "PUT",

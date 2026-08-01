@@ -98,6 +98,38 @@
     </div>
   {/if}
 
+  <!-- Premium Pricing & Deposit Block -->
+  <div class="bg-white rounded-2xl border border-zw-border p-6 shadow-sm space-y-4">
+    <div class="flex items-baseline justify-between">
+      <span class="text-xs font-semibold text-zw-muted uppercase tracking-wider">
+        {isAr ? "الأسعار تبدأ من" : "Starting Price"}
+      </span>
+      {#if listing.priceOnInquiry}
+        <span class="px-3 py-1.5 text-xs font-bold bg-zw-surface-alt text-zw-primary-contrast rounded-lg border border-zw-border">
+          {isAr ? "عند الطلب" : "Price on Inquiry"}
+        </span>
+      {:else if listing.basePriceSar}
+        <div class="text-right">
+          <span class="text-2xl font-extrabold text-zw-primary-contrast font-mono">
+            {parseFloat(listing.basePriceSar).toLocaleString()}
+          </span>
+          <span class="text-xs font-semibold text-zw-muted ms-1">
+            {isAr ? "ر.س" : "SAR"}
+          </span>
+        </div>
+      {/if}
+    </div>
+
+    {#if !listing.priceOnInquiry && listing.depositPercentage}
+      <div class="flex items-center justify-between text-xs text-zw-muted border-t border-zw-border pt-3">
+        <span>{isAr ? "دفعة الحجز والمقدم:" : "Booking Deposit:"}</span>
+        <span class="font-bold text-zw-secondary bg-zw-surface-alt px-2.5 py-0.5 rounded-md border border-zw-border/50">
+          {listing.depositPercentage}%
+        </span>
+      </div>
+    {/if}
+  </div>
+
   <!-- Inquiry Form -->
   <div
     class="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden relative"

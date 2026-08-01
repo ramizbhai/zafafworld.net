@@ -10,7 +10,7 @@
 
   function formatDate(d: string) {
     if (!d) return '-';
-    return new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', {
+    return new Date(d).toLocaleDateString($lang === 'ar' ? 'ar-SA' : 'en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -23,8 +23,8 @@
 <div class="fade-in max-w-6xl mx-auto">
   <div class="page-header mb-6">
     <div class="page-header-left">
-      <h1 class="page-title" id="comments-heading">{lang === 'ar' ? 'الإشراف على التعليقات' : 'Comment Moderation'}</h1>
-      <p class="page-subtitle">{lang === 'ar' ? 'مراجعة وقبول أو رفض التعليقات المكتوبة على مقالات المدونة' : 'Moderate comments posted on your blog posts'}</p>
+      <h1 class="page-title" id="comments-heading">{$lang === 'ar' ? 'الإشراف على التعليقات' : 'Comment Moderation'}</h1>
+      <p class="page-subtitle">{$lang === 'ar' ? 'مراجعة وقبول أو رفض التعليقات المكتوبة على مقالات المدونة' : 'Moderate comments posted on your blog posts'}</p>
     </div>
   </div>
 
@@ -38,19 +38,19 @@
   <div class="form-card">
     <h2 class="section-title text-lg font-bold mb-4 flex items-center gap-2">
       <MessageSquare size={18} class="text-[var(--color-primary)]" />
-      {lang === 'ar' ? 'قائمة التعليقات' : 'Comments Queue'}
+      {$lang === 'ar' ? 'قائمة التعليقات' : 'Comments Queue'}
     </h2>
 
     <div class="table-container">
       <table aria-describedby="comments-heading">
         <thead>
           <tr>
-            <th>{lang === 'ar' ? 'الكاتب' : 'Author'}</th>
-            <th>{lang === 'ar' ? 'التعليق' : 'Comment'}</th>
-            <th>{lang === 'ar' ? 'المقال' : 'Blog Post'}</th>
-            <th>{lang === 'ar' ? 'التاريخ' : 'Date'}</th>
-            <th>{lang === 'ar' ? 'الحالة' : 'Status'}</th>
-            <th class="text-right">{lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
+            <th>{$lang === 'ar' ? 'الكاتب' : 'Author'}</th>
+            <th>{$lang === 'ar' ? 'التعليق' : 'Comment'}</th>
+            <th>{$lang === 'ar' ? 'المقال' : 'Blog Post'}</th>
+            <th>{$lang === 'ar' ? 'التاريخ' : 'Date'}</th>
+            <th>{$lang === 'ar' ? 'الحالة' : 'Status'}</th>
+            <th class="text-right">{$lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,11 +76,11 @@
               <td>
                 {#if comment.is_approved}
                   <span class="badge badge-dot badge-success text-xs font-semibold px-2 py-1 rounded bg-green-50 border border-green-200 text-green-700">
-                    {lang === 'ar' ? 'مقبول' : 'Approved'}
+                    {$lang === 'ar' ? 'مقبول' : 'Approved'}
                   </span>
                 {:else}
                   <span class="badge badge-dot badge-warning text-xs font-semibold px-2 py-1 rounded bg-yellow-50 border border-yellow-200 text-yellow-700">
-                    {lang === 'ar' ? 'قيد الانتظار' : 'Pending'}
+                    {$lang === 'ar' ? 'قيد الانتظار' : 'Pending'}
                   </span>
                 {/if}
               </td>
@@ -108,7 +108,7 @@
                         aria-label="Approve comment from {comment.name}"
                       >
                         <CheckCircle size={14} />
-                        {lang === 'ar' ? 'قبول' : 'Approve'}
+                        {$lang === 'ar' ? 'قبول' : 'Approve'}
                       </button>
                     </form>
                   {/if}
@@ -134,7 +134,7 @@
                       aria-label="Delete comment from {comment.name}"
                     >
                       <XCircle size={14} />
-                      {lang === 'ar' ? 'رفض / حذف' : 'Reject'}
+                      {$lang === 'ar' ? 'رفض / حذف' : 'Reject'}
                     </button>
                   </form>
                 </div>
@@ -145,7 +145,7 @@
               <td colspan="6" class="text-center py-12 text-[var(--text-ghost)]">
                 <div class="flex flex-col items-center justify-center gap-2">
                   <MessageSquare size={32} class="text-slate-300" />
-                  <p>{lang === 'ar' ? 'لا توجد تعليقات للمراجعة حالياً.' : 'No comments found in moderation queue.'}</p>
+                  <p>{$lang === 'ar' ? 'لا توجد تعليقات للمراجعة حالياً.' : 'No comments found in moderation queue.'}</p>
                 </div>
               </td>
             </tr>

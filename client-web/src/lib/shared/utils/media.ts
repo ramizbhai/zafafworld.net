@@ -127,3 +127,26 @@ export function getResponsiveSources(url: string | null | undefined): Responsive
         fallback: `${base}.webp`
     };
 }
+
+/**
+ * Resolves the generated WebP or AVIF poster image URL for a processed video asset.
+ */
+export function getVideoPosterUrl(url: string | null | undefined, format: 'webp' | 'avif' = 'webp'): string {
+    if (!url) return '';
+    const resolvedUrl = resolveMediaUrl(url);
+
+    const lower = resolvedUrl.toLowerCase();
+    if (lower.includes('/zwv') && (lower.endsWith('.mp4') || lower.endsWith('.mov'))) {
+        const dotIndex = resolvedUrl.lastIndexOf('.');
+        if (dotIndex !== -1) {
+            const base = resolvedUrl.substring(0, dotIndex);
+            const zwvIndex = base.toLowerCase().lastIndexOf('/zwv');
+            if (zwvIndex !== -1) {
+                const prefix = base.substring(0, zwvIndex);
+                const suffix = base.substring(zwvIndex + 4);
+                return `${prefix}/ZWI${suffix}_poster.${format}`;
+            }
+        }
+    }
+    return '';
+}

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { resolveMediaUrl, getOptimizedImage } from '$lib/shared/utils/media.js';
+  import { resolveMediaUrl } from '$lib/shared/utils/media.js';
   import { ChevronLeft, ChevronRight, X, Play, Maximize2, Volume2 } from 'lucide-svelte';
   import { getLocale } from '$lib/paraglide/runtime.js';
+  import OptimizedImage from '$lib/components/shared/OptimizedImage.svelte';
+  import OptimizedVideo from '$lib/components/shared/OptimizedVideo.svelte';
 
   let { images = [], title = '' } = $props<{
     images: { url: string; thumbnailUrl?: string; mediaType?: string; durationSeconds?: number }[];
@@ -81,16 +83,13 @@
             <div class="relative w-full h-full flex items-center justify-center bg-black">
               {#if i === activeIndex && isVideoPlaying}
                 <!-- Active Playing Video: Mounted dynamically to prevent background download/play audio leakage -->
-                <!-- svelte-ignore a11y_media_has_caption -->
-                <video 
-                  src={resolveMediaUrl(img.url)}
-                  poster={img.thumbnailUrl ? resolveMediaUrl(img.thumbnailUrl) : ''}
-                  controls
-                  autoplay
-                  playsinline
+                <OptimizedVideo 
+                  src={img.url}
+                  controls={true}
+                  autoplay={true}
                   preload="auto"
-                  class="w-full h-full object-contain max-h-full transition-opacity duration-300"
-                ></video>
+                  className="w-full h-full object-contain max-h-full transition-opacity duration-300"
+                />
               {:else}
                 <!-- Video Thumbnail Placeholder with pulsing Play button overlay -->
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -105,18 +104,14 @@
                     }
                   }}
                 >
-                  <img 
-                    src={img.thumbnailUrl ? resolveMediaUrl(img.thumbnailUrl) : resolveMediaUrl(getOptimizedImage(img.url, 'large'))} 
+                  <OptimizedImage 
+                    src={img.thumbnailUrl || img.url} 
                     alt={`${title} video preview`} 
                     loading={i === 0 ? "eager" : "lazy"}
-                    width="1280"
-                    height="720"
-                    onerror={(e) => {
-                      const el = e.currentTarget as HTMLImageElement;
-                      const fallback = resolveMediaUrl(getOriginalUrl(img.url));
-                      if (el.src !== fallback) el.src = fallback;
-                    }}
-                    class="w-full h-full object-cover brightness-75 hover:brightness-90 transition-all duration-700 ease-out"
+                    fetchpriority={i === 0 ? "high" : "auto"}
+                    className="w-full h-full object-cover brightness-75 hover:brightness-90 transition-all duration-700 ease-out"
+                    sizes="100vw"
+                    aspectRatio="16/9"
                   />
                   <!-- Elegant Glassmorphic Pulsing Play Button Overlay -->
                   <div class="absolute inset-0 flex items-center justify-center">
@@ -142,18 +137,14 @@
               class="relative w-full h-full cursor-pointer overflow-hidden" 
               onclick={() => isFullscreen = true}
             >
-              <img 
-                src={resolveMediaUrl(getOptimizedImage(img.url, 'large'))} 
+              <OptimizedImage 
+                src={img.url} 
                 alt={`${title} - ${i + 1}`} 
                 loading={i === 0 ? "eager" : "lazy"}
-                width="1280"
-                height="800"
-                onerror={(e) => {
-                  const el = e.currentTarget as HTMLImageElement;
-                  const fallback = resolveMediaUrl(getOriginalUrl(img.url));
-                  if (el.src !== fallback) el.src = fallback;
-                }}
-                class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out brightness-95 hover:brightness-100"
+                fetchpriority={i === 0 ? "high" : "auto"}
+                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700 ease-out brightness-95 hover:brightness-100"
+                sizes="100vw"
+                aspectRatio="16/9"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none"></div>
             </div>

@@ -4,6 +4,7 @@
   import StarRating from "$lib/components/ui/StarRating.svelte";
   import { getLocale } from "$lib/paraglide/runtime.js";
   import * as m from "$lib/paraglide/messages.js";
+  import OptimizedImage from "$lib/components/shared/OptimizedImage.svelte";
 
   let {
     venue,
@@ -41,11 +42,14 @@
   aria-label="Cover Image"
 >
   {#if venue.images && venue.images.length > 0}
-    <img
+    <OptimizedImage
       src={venue.images[activeImage]?.url}
       alt={venue.images[activeImage]?.alt || name}
-      class="w-full h-full object-cover opacity-70 transition-transform duration-[8000ms] hover:scale-105"
+      className="w-full h-full object-cover opacity-70 transition-transform duration-[8000ms] hover:scale-105"
       fetchpriority="high"
+      loading="eager"
+      sizes="100vw"
+      aspectRatio="16/9"
     />
   {:else}
     <div
@@ -69,11 +73,13 @@
             : 'border-white/40 hover:border-white/80'}"
           aria-label="Image {i + 1}"
         >
-          <img
+          <OptimizedImage
             src={img.url}
             alt={img.alt}
-            class="w-full h-full object-cover"
+            className="w-full h-full object-cover"
             loading="lazy"
+            sizes="96px"
+            aspectRatio="1/1"
           />
         </button>
       {/each}
@@ -115,10 +121,13 @@
           class="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-white bg-[var(--color-surface-alt)] shadow-[var(--shadow-lg)] flex items-center justify-center transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-gold"
         >
           {#if venue.coordinator?.avatar}
-            <img
+            <OptimizedImage
               src={venue.coordinator.avatar}
               alt={name}
-              class="w-full h-full object-cover"
+              className="w-full h-full object-cover"
+              loading="lazy"
+              sizes="144px"
+              aspectRatio="1/1"
             />
           {:else}
             <div

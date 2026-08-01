@@ -40,6 +40,13 @@ fn encode_to_avif(img: &image::DynamicImage, quality: u32) -> Result<Vec<u8>, Ap
     Ok(res.avif_file)
 }
 
+fn compute_checksum(bytes: &[u8]) -> String {
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("{:x}", hasher.finalize())
+}
+
 // ── Semaphore ─────────────────────────────────────────────────────────────────
 
 pub static FFMPEG_SEMAPHORE: OnceLock<Semaphore> = OnceLock::new();
@@ -66,8 +73,31 @@ pub async fn process_video(
     let final_disk_path = format!("{}{}", target_dir, final_filename);
     let final_url = format!("{}{}", url_prefix, final_filename);
 
+    // ── Check magic bytes and MIME type ──────────────────────────────────────
+    let raw_bytes = tokio::fs::read(&temp_path).await.map_err(|e| {
+        AppError::Internal(format!("Failed to read raw temp file: {}", e))
+    })?;
+
+    let inferred = infer::get(&raw_bytes).ok_or_else(|| {
+        AppError::BadRequest("Failed to infer file format from magic bytes: unrecognized payload".to_string())
+    })?;
+
+    let mime = inferred.mime_type();
+    let is_valid_mime = match mime {
+        "video/mp4" | "video/webm" | "video/quicktime" | "application/mp4" | "video/x-msvideo" | "video/avi" | "video/msvideo" => true,
+        _ => false,
+    };
+
+    if !is_valid_mime {
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return Err(AppError::BadRequest(format!(
+            "MIME check failed: type '{}' is not a supported video format. Only MP4, WEBM, MOV, and AVI media payloads are allowed.",
+            mime
+        )));
+    }
+
     // ── Disk space check ──────────────────────────────────────────────────────
-    let file_size = tokio::fs::metadata(&temp_path).await.map(|m| m.len()).unwrap_or(0);
+    let file_size = raw_bytes.len() as u64;
     if let Some(available_space) = super::get_available_disk_space(target_dir).await {
         let required_space = file_size * 3;
         let safe_margin = 500 * 1024 * 1024; // 500 MB
@@ -178,7 +208,7 @@ pub async fn process_video(
         }
     } else {
         tracing::info!(
-            "Video not compatible (codec={}, ext={}, pix_fmt={}) — running full transcode...",
+            "Video not compatible (codec={}, ext={}, pix_fmt={}) — running full transcode with audio normalization...",
             video_codec, upload_ext, pix_fmt
         );
 
@@ -187,7 +217,7 @@ pub async fn process_video(
         cmd.arg("-y").arg("-i").arg(&temp_path)
             .args(["-vcodec", "libx264", "-pix_fmt", "yuv420p", "-movflags", "faststart", "-crf", "23"]);
         if has_audio {
-            cmd.args(["-acodec", "aac"]);
+            cmd.args(["-acodec", "aac", "-filter:a", "loudnorm"]);
         } else {
             cmd.arg("-an");
         }
@@ -237,6 +267,53 @@ pub async fn process_video(
         ));
     }
 
+    // ── Resolution extraction ────────────────────────────────────────────────
+    let width_str = probe_single_field(&final_disk_path, &[
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=width",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+    ]).await;
+    let width = width_str.trim().parse::<i32>().ok();
+
+    let height_str = probe_single_field(&final_disk_path, &[
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=height",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+    ]).await;
+    let height = height_str.trim().parse::<i32>().ok();
+
+    // ── Bitrate extraction ───────────────────────────────────────────────────
+    let bitrate_str = probe_single_field(&final_disk_path, &[
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=bit_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+    ]).await;
+    let mut bitrate = bitrate_str.trim().parse::<i64>().ok();
+    if bitrate.is_none() {
+        let fmt_bitrate_str = probe_single_field(&final_disk_path, &[
+            "-v", "error",
+            "-show_entries", "format=bit_rate",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+        ]).await;
+        bitrate = fmt_bitrate_str.trim().parse::<i64>().ok();
+    }
+
+    // ── Frame rate detection ─────────────────────────────────────────────────
+    let fps_str = probe_single_field(&final_disk_path, &[
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=r_frame_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+    ]).await;
+    tracing::info!("Detected video frame rate: {}", fps_str);
+
+    // ── Orientation detection ────────────────────────────────────────────────
+    let rotation_str = probe_single_field(&final_disk_path, &[
+        "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream_tags=rotate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+    ]).await;
+    let orientation = rotation_str.trim().parse::<i32>().unwrap_or(0);
+
     // ── Duration probe ────────────────────────────────────────────────────────
     let duration_seconds = {
         let s = probe_single_field(&final_disk_path, &[
@@ -247,10 +324,12 @@ pub async fn process_video(
         s.trim().parse::<f64>().ok().map(|f| f.round() as i32)
     };
 
+    let final_poster_filename = format!("ZWI{}_poster.webp", temp_id);
+    let final_poster_avif_filename = format!("ZWI{}_poster.avif", temp_id);
     let final_thumb_filename = format!("ZWI{}_thumb.webp", temp_id);
     let final_thumb_avif_filename = format!("ZWI{}_thumb.avif", temp_id);
 
-    // ── Thumbnail extraction ──────────────────────────────────────────────────
+    // ── Poster & Thumbnail extraction ──────────────────────────────────────────
     let temp_thumb_path = format!("{}{}_thumb_temp.jpg", TEMP_DIR, temp_id);
     let mut cmd_thumb = tokio::process::Command::new("ffmpeg");
     cmd_thumb.kill_on_drop(true);
@@ -260,18 +339,24 @@ pub async fn process_video(
         .await;
 
     let mut thumbnail_url = None;
+    let mut poster_w = None;
+    let mut poster_h = None;
 
     if let Ok(out) = ffmpeg_output {
         if out.status.success() {
+            let final_poster_disk_path = format!("{}{}", target_dir, final_poster_filename);
+            let final_poster_avif_disk_path = format!("{}{}", target_dir, final_poster_avif_filename);
             let final_thumb_disk_path = format!("{}{}", target_dir, final_thumb_filename);
             let final_thumb_url = format!("{}{}", url_prefix, final_thumb_filename);
             let final_thumb_avif_disk_path = format!("{}{}", target_dir, final_thumb_avif_filename);
 
             let t_thumb = temp_thumb_path.clone();
+            let f_poster = final_poster_disk_path.clone();
+            let f_poster_avif = final_poster_avif_disk_path.clone();
             let f_thumb = final_thumb_disk_path.clone();
             let f_thumb_avif = final_thumb_avif_disk_path.clone();
 
-            let process_thumb = tokio::task::spawn_blocking(move || -> Result<(), AppError> {
+            let process_thumb = tokio::task::spawn_blocking(move || -> Result<(i32, i32, i32, i32, String, String, Vec<u8>, Vec<u8>), AppError> {
                 let img = image::ImageReader::open(&t_thumb)
                     .map_err(|e| AppError::BadRequest(e.to_string()))?
                     .with_guessed_format()
@@ -279,36 +364,83 @@ pub async fn process_video(
                     .decode()
                     .map_err(|e| AppError::BadRequest(e.to_string()))?;
 
-                let final_img = if img.width() > 1024 || img.height() > 1024 {
+                // Poster (max 1024px)
+                let poster_img = if img.width() > 1024 || img.height() > 1024 {
                     img.resize(1024, 1024, FilterType::Lanczos3)
                 } else {
-                    img
+                    img.clone()
                 };
+                let p_w = poster_img.width() as i32;
+                let p_h = poster_img.height() as i32;
+
+                // Thumbnail (max 150px)
+                let thumb_img = if img.width() > 150 || img.height() > 150 {
+                    img.resize(150, 150, FilterType::Lanczos3)
+                } else {
+                    img.clone()
+                };
+                let t_w = thumb_img.width() as i32;
+                let t_h = thumb_img.height() as i32;
+
+                // Save WebP poster
+                poster_img
+                    .save_with_format(&f_poster, ImageFormat::WebP)
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+
+                // Save AVIF poster
+                let avif_poster_bytes = encode_to_avif(&poster_img, 70)?;
+                std::fs::write(&f_poster_avif, &avif_poster_bytes)
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
 
                 // Save WebP thumbnail
-                final_img
+                thumb_img
                     .save_with_format(&f_thumb, ImageFormat::WebP)
                     .map_err(|e| AppError::Internal(e.to_string()))?;
 
                 // Save AVIF thumbnail
-                let avif_bytes = encode_to_avif(&final_img, 70)?;
-                std::fs::write(&f_thumb_avif, avif_bytes)
+                let avif_thumb_bytes = encode_to_avif(&thumb_img, 70)?;
+                std::fs::write(&f_thumb_avif, &avif_thumb_bytes)
                     .map_err(|e| AppError::Internal(e.to_string()))?;
 
+                // Compute checksums
+                let webp_poster_bytes = std::fs::read(&f_poster).map_err(|e| AppError::Internal(e.to_string()))?;
+                let webp_poster_checksum = compute_checksum(&webp_poster_bytes);
+
+                let webp_thumb_bytes = std::fs::read(&f_thumb).map_err(|e| AppError::Internal(e.to_string()))?;
+                let webp_thumb_checksum = compute_checksum(&webp_thumb_bytes);
+
                 let _ = std::fs::remove_file(&t_thumb);
-                Ok(())
+                Ok((
+                    p_w, p_h, t_w, t_h,
+                    webp_poster_checksum, webp_thumb_checksum,
+                    avif_poster_bytes, avif_thumb_bytes
+                ))
             }).await;
 
-            if let Ok(Ok(())) = process_thumb {
+            if let Ok(Ok((p_w, p_h, t_w, t_h, wp_checksum, wt_checksum, avif_poster_bytes, avif_thumb_bytes))) = process_thumb {
                 thumbnail_url = Some(final_thumb_url);
+                poster_w = Some(p_w);
+                poster_h = Some(p_h);
                 
+                // Upload WebP poster
+                if let Err(e) = minio.upload(&final_poster_disk_path, target_dir, &final_poster_filename, "image/webp", Some(temp_id), Some(p_w), Some(p_h), Some(&wp_checksum)).await {
+                    tracing::error!("MinIO: failed to upload video WebP poster: {}", e);
+                }
+                
+                // Upload AVIF poster
+                let avif_poster_checksum = compute_checksum(&avif_poster_bytes);
+                if let Err(e) = minio.upload(&final_poster_avif_disk_path, target_dir, &final_poster_avif_filename, "image/avif", Some(temp_id), Some(p_w), Some(p_h), Some(&avif_poster_checksum)).await {
+                    tracing::error!("MinIO: failed to upload video AVIF poster: {}", e);
+                }
+
                 // Upload WebP thumbnail
-                if let Err(e) = minio.upload(&final_thumb_disk_path, target_dir, &final_thumb_filename, "image/webp", Some(temp_id)).await {
+                if let Err(e) = minio.upload(&final_thumb_disk_path, target_dir, &final_thumb_filename, "image/webp", Some(temp_id), Some(t_w), Some(t_h), Some(&wt_checksum)).await {
                     tracing::error!("MinIO: failed to upload video WebP thumbnail: {}", e);
                 }
                 
                 // Upload AVIF thumbnail
-                if let Err(e) = minio.upload(&final_thumb_avif_disk_path, target_dir, &final_thumb_avif_filename, "image/avif", Some(temp_id)).await {
+                let avif_thumb_checksum = compute_checksum(&avif_thumb_bytes);
+                if let Err(e) = minio.upload(&final_thumb_avif_disk_path, target_dir, &final_thumb_avif_filename, "image/avif", Some(temp_id), Some(t_w), Some(t_h), Some(&avif_thumb_checksum)).await {
                     tracing::error!("MinIO: failed to upload video AVIF thumbnail: {}", e);
                 }
             }
@@ -320,6 +452,9 @@ pub async fn process_video(
     let metadata = fs::metadata(&final_disk_path)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let final_bytes = tokio::fs::read(&final_disk_path).await.unwrap_or_default();
+    let final_checksum = compute_checksum(&final_bytes);
 
     let processed = ProcessedMedia {
         id: temp_id,
@@ -334,18 +469,149 @@ pub async fn process_video(
         status: "ready".to_string(),
     };
 
-    if let Err(e) = minio.upload(&processed.disk_path, target_dir, &final_filename, &processed.mime_type, None).await {
+    if let Err(e) = minio.upload(
+        &processed.disk_path,
+        target_dir,
+        &final_filename,
+        &processed.mime_type,
+        None,
+        width,
+        height,
+        Some(&final_checksum),
+    ).await {
         tracing::error!("MinIO: failed to upload video: {}", e);
         // Clean up thumbnails from MinIO if uploaded
         if processed.thumbnail_url.is_some() {
+            let _ = minio.delete(&format!("{}{}", target_dir, final_poster_filename)).await;
+            let _ = minio.delete(&format!("{}{}", target_dir, final_poster_avif_filename)).await;
             let _ = minio.delete(&format!("{}{}", target_dir, final_thumb_filename)).await;
             let _ = minio.delete(&format!("{}{}", target_dir, final_thumb_avif_filename)).await;
         }
         return Err(AppError::Internal(format!("MinIO: failed to upload video: {}", e)));
     }
 
+    // ── Stage 2: Adaptive HLS Transcoding ──────────────────────────────────────
+    let temp_hls_dir = format!("{}hls_{}/", TEMP_DIR, temp_id);
+    let _ = fs::create_dir_all(&temp_hls_dir).await;
+
+    let hls_start_time = std::time::Instant::now();
+    let mut cmd_hls = tokio::process::Command::new("ffmpeg");
+    cmd_hls.kill_on_drop(true);
+    cmd_hls.arg("-y")
+        .arg("-i").arg(&final_disk_path)
+        .arg("-filter_complex").arg("[0:v]split=3[v1][v2][v3]; [v1]scale=w=1920:h=1080[v1out]; [v2]scale=w=1280:h=720[v2out]; [v3]scale=w=854:h=480[v3out]")
+        .arg("-map").arg("[v1out]").arg("-c:v:0").arg("libx264").arg("-b:v:0").arg("3000k").arg("-maxrate:v:0").arg("3300k").arg("-bufsize:v:0").arg("6000k").arg("-r").arg("30").arg("-g").arg("60").arg("-keyint_min").arg("60").arg("-sc_threshold").arg("0")
+        .arg("-map").arg("[v2out]").arg("-c:v:1").arg("libx264").arg("-b:v:1").arg("1500k").arg("-maxrate:v:1").arg("1650k").arg("-bufsize:v:1").arg("3000k").arg("-r").arg("30").arg("-g").arg("60").arg("-keyint_min").arg("60").arg("-sc_threshold").arg("0")
+        .arg("-map").arg("[v3out]").arg("-c:v:2").arg("libx264").arg("-b:v:2").arg("800k").arg("-maxrate:v:2").arg("880k").arg("-bufsize:v:2").arg("1600k").arg("-r").arg("30").arg("-g").arg("60").arg("-keyint_min").arg("60").arg("-sc_threshold").arg("0");
+
+    if has_audio {
+        cmd_hls.arg("-map").arg("0:a").arg("-c:a:0").arg("aac").arg("-b:a:0").arg("128k")
+            .arg("-map").arg("0:a").arg("-c:a:1").arg("aac").arg("-b:a:1").arg("128k")
+            .arg("-map").arg("0:a").arg("-c:a:2").arg("aac").arg("-b:a:2").arg("96k")
+            .arg("-var_stream_map").arg("v:0,a:0 v:1,a:1 v:2,a:2");
+    } else {
+        cmd_hls.arg("-var_stream_map").arg("v:0 v:1 v:2");
+    }
+
+    cmd_hls.args([
+        "-f", "hls",
+        "-hls_time", "6",
+        "-hls_playlist_type", "vod",
+        "-hls_segment_type", "fmp4",
+        "-hls_segment_filename", &format!("{}ZWV{}_%v_%03d.m4s", temp_hls_dir, temp_id),
+        "-master_pl_name", &format!("ZWV{}_master.m3u8", temp_id),
+        &format!("{}ZWV{}_%v.m3u8", temp_hls_dir, temp_id)
+    ]);
+
+    let hls_transcode_res = tokio::time::timeout(
+        std::time::Duration::from_secs(120),
+        cmd_hls.output(),
+    ).await;
+
+    let hls_success = match hls_transcode_res {
+        Ok(Ok(out)) if out.status.success() => {
+            let elapsed = hls_start_time.elapsed().as_millis() as u64;
+            crate::services::metrics::observe_encoding(elapsed);
+            crate::services::metrics::observe_segment_gen(elapsed);
+            crate::services::metrics::observe_playlist_gen(elapsed);
+            tracing::info!("HLS transcode/segmentation succeeded in {} ms.", elapsed);
+            true
+        }
+        Ok(Ok(out)) => {
+            let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+            tracing::error!("ffmpeg HLS transcoding failed: {}", stderr);
+            crate::services::metrics::inc_hls_generation_failures();
+            false
+        }
+        _ => {
+            tracing::error!("ffmpeg HLS transcoding timed out or failed to execute.");
+            crate::services::metrics::inc_hls_generation_failures();
+            false
+        }
+    };
+
+    if hls_success {
+        // Upload all HLS files (playlists and segment fmp4 files) to MinIO
+        if let Ok(mut entries) = fs::read_dir(&temp_hls_dir).await {
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(filename_str) = path.file_name().and_then(|s| s.to_str()) {
+                        let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+                        let mime_type = match extension {
+                            "m3u8" => "application/vnd.apple.mpegurl",
+                            "m4s" => "video/iso.segment",
+                            "mp4" => "video/mp4",
+                            _ => "application/octet-stream",
+                        };
+
+                        let file_bytes = tokio::fs::read(&path).await.unwrap_or_default();
+                        let checksum = compute_checksum(&file_bytes);
+
+                        if let Err(e) = minio.upload(
+                            path.to_str().unwrap(),
+                            target_dir,
+                            filename_str,
+                            mime_type,
+                            Some(temp_id),
+                            None,
+                            None,
+                            Some(&checksum),
+                        ).await {
+                            tracing::error!("MinIO: failed to upload HLS variant {}: {}", filename_str, e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = fs::remove_dir_all(&temp_hls_dir).await;
+
+    // Update db status and store complete metadata
+    let _ = minio.update_upload_status(
+        temp_id,
+        "ready",
+        None,
+        Some(processed.file_size as i64),
+        width,
+        height,
+        duration_seconds,
+        Some("h264"),
+        bitrate,
+        Some(orientation),
+        Some(&final_checksum),
+    )
+    .await;
+
     // Clean up local staging files (video and thumbnails) after successful upload
     if processed.thumbnail_url.is_some() {
+        let final_poster_disk_path = format!("{}{}", target_dir, final_poster_filename);
+        let _ = fs::remove_file(&final_poster_disk_path).await;
+
+        let final_poster_avif_disk_path = format!("{}{}", target_dir, final_poster_avif_filename);
+        let _ = fs::remove_file(&final_poster_avif_disk_path).await;
+
         let final_thumb_disk_path = format!("{}{}", target_dir, final_thumb_filename);
         let _ = fs::remove_file(&final_thumb_disk_path).await;
 

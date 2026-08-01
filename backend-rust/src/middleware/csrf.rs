@@ -39,10 +39,10 @@ pub async fn csrf_protection_middleware(
         return Ok(next.run(request).await);
     }
 
-    // 2. Skip public, auth, and internal routes — internal endpoints are
+    // 2. Skip public, auth, telemetry, and internal routes — internal endpoints are
     //    server-to-server only and protected by private network namespaces
     //    and shared secret validation (CSRF applies only to browser clients).
-    if path.starts_with("/api/v1/auth") || path.starts_with("/api/v1/public") || path.starts_with("/api/v1/internal") {
+    if path.starts_with("/api/v1/auth") || path.starts_with("/api/v1/public") || path.starts_with("/api/v1/internal") || path.starts_with("/api/v1/telemetry") || path.starts_with("/api/v1/analytics") {
         return Ok(next.run(request).await);
     }
 

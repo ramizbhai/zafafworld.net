@@ -157,23 +157,31 @@ pub async fn run_pipeline_verification(config: &AppConfig, pool: &PgPool) {
         match res {
             Ok(processed) => {
                 let variants = vec![
-                    ("original", format!("assets/uploads/gallery/ZWI{}.webp", id), 300 * 1024),
-                    ("large", format!("assets/uploads/gallery/ZWI{}_large.webp", id), 150 * 1024),
-                    ("medium", format!("assets/uploads/gallery/ZWI{}_medium.webp", id), 80 * 1024),
-                    ("card", format!("assets/uploads/gallery/ZWI{}_card.webp", id), 40 * 1024),
-                    ("thumb", format!("assets/uploads/gallery/ZWI{}_thumb.webp", id), 15 * 1024),
+                    ("original (webp)", format!("assets/uploads/gallery/ZWI{}.webp", id), 300 * 1024),
+                    ("original (avif)", format!("assets/uploads/gallery/ZWI{}.avif", id), 200 * 1024),
+                    ("large (webp)", format!("assets/uploads/gallery/ZWI{}_large.webp", id), 150 * 1024),
+                    ("large (avif)", format!("assets/uploads/gallery/ZWI{}_large.avif", id), 100 * 1024),
+                    ("medium (webp)", format!("assets/uploads/gallery/ZWI{}_medium.webp", id), 80 * 1024),
+                    ("medium (avif)", format!("assets/uploads/gallery/ZWI{}_medium.avif", id), 60 * 1024),
+                    ("card (webp)", format!("assets/uploads/gallery/ZWI{}_card.webp", id), 40 * 1024),
+                    ("card (avif)", format!("assets/uploads/gallery/ZWI{}_card.avif", id), 30 * 1024),
+                    ("thumb (webp)", format!("assets/uploads/gallery/ZWI{}_thumb.webp", id), 15 * 1024),
+                    ("thumb (avif)", format!("assets/uploads/gallery/ZWI{}_thumb.avif", id), 10 * 1024),
                 ];
 
                 for (var_name, key, ceiling) in variants {
                     if let Some(size) = get_minio_object_size(&minio, &key).await {
                         let under = if size <= ceiling { "Yes ✅" } else { "No ❌" };
-                        let res_str = match var_name {
-                            "original" => format!("max {}px", 1920),
-                            "large" => format!("max {}px", 1200),
-                            "medium" => format!("max {}px", 800),
-                            "card" => format!("max {}px", 400),
-                            "thumb" => format!("max {}px", 150),
-                            _ => "".to_string(),
+                        let res_str = if var_name.contains("original") {
+                            format!("max {}px", 1920)
+                        } else if var_name.contains("large") {
+                            format!("max {}px", 1200)
+                        } else if var_name.contains("medium") {
+                            format!("max {}px", 800)
+                        } else if var_name.contains("card") {
+                            format!("max {}px", 400)
+                        } else {
+                            format!("max {}px", 150)
                         };
                         println!(
                             "| {} | {} | {} | {} | {} | {} |",

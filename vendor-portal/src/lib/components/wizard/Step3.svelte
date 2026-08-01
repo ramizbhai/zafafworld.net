@@ -61,15 +61,7 @@
 
             try {
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
-                const payload = {
-                    version: $listingStore.version,
-                    descriptionAr: $listingStore.formData.descriptionAr || null,
-                    descriptionEn: $listingStore.formData.descriptionEn || null,
-                    metaTitleAr: $listingStore.formData.metaTitleAr || null,
-                    metaTitleEn: $listingStore.formData.metaTitleEn || null,
-                    metaDescriptionAr: $listingStore.formData.metaDescriptionAr || null,
-                    metaDescriptionEn: $listingStore.formData.metaDescriptionEn || null,
-                };
+                const payload = listingStore.getApiPayload($listingStore);
 
                 const res = await wizardFetch(url, {
                     method: "PUT",

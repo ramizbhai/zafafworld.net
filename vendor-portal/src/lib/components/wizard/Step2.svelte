@@ -74,20 +74,7 @@
 
             try {
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
-                const payload = {
-                    version: $listingStore.version, // Use dynamic version for Optimistic Concurrency Control
-                    titleAr: $listingStore.formData.titleAr || null,
-                    titleEn: $listingStore.formData.titleEn || null,
-                    basePriceSar: $listingStore.formData.priceOnInquiry
-                        ? null
-                        : parseFloat($listingStore.formData.basePriceSar),
-                    priceOnInquiry: $listingStore.formData.priceOnInquiry,
-                    depositPercentage: $listingStore.formData.depositPercentage,
-                    cityId: $listingStore.formData.selectedCityId || null,
-                    googleMapsUrl: $listingStore.formData.googleMapsUrl.trim() || null,
-                    latitude: $listingStore.formData.latitude.trim() ? parseFloat($listingStore.formData.latitude) : null,
-                    longitude: $listingStore.formData.longitude.trim() ? parseFloat($listingStore.formData.longitude) : null,
-                };
+                const payload = listingStore.getApiPayload($listingStore);
 
                 const res = await wizardFetch(url, {
                     method: "PUT",

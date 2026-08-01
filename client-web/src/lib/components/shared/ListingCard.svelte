@@ -8,8 +8,9 @@
         formatNumber,
         formatDate,
     } from "$lib/utils/localize.js";
-    import { resolveMediaUrl, getOptimizedImage } from "$lib/shared/utils/media.js";
+    import { resolveMediaUrl } from "$lib/shared/utils/media.js";
     import { getCategoryIcon } from "$lib/constants/categoryIcons.js";
+    import OptimizedImage from "$lib/components/shared/OptimizedImage.svelte";
 
     interface Props {
         listing: Listing;
@@ -30,13 +31,6 @@
     }: Props = $props();
 
     let isWishlisted = $state(false);
-    let imgError = $state(false);
-    // Fallback URL: if the sized variant (e.g. _card.webp) 404s, try the original cover image
-    let imgFallbackSrc = $derived(
-        listing.coverImage && !listing.coverImage.includes('_card')
-            ? resolveMediaUrl(listing.coverImage)
-            : ''
-    );
 
     // ── Derived display values ────────────────────────────────────────────────
     const name = $derived(getLocalizedField(listing, "title", getLocale()));
@@ -166,23 +160,14 @@
                 : 'aspect-[4/3] w-full'}
   "
     >
-        {#if listing.coverImage && !imgError}
-            <img
-                src={resolveMediaUrl(getOptimizedImage(listing.coverImage, 'card'))}
+        {#if listing.coverImage}
+            <OptimizedImage
+                src={listing.coverImage}
                 alt={name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                aspectRatio="4/3"
                 loading="lazy"
-                width="400"
-                height="300"
-                onerror={(e) => {
-                    // Two-stage fallback: sized variant 404 → original URL → emoji placeholder
-                    const img = e.currentTarget as HTMLImageElement;
-                    if (imgFallbackSrc && img.src !== imgFallbackSrc) {
-                        img.src = imgFallbackSrc;
-                    } else {
-                        imgError = true;
-                    }
-                }}
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
         {:else}
             <div

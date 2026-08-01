@@ -61,42 +61,11 @@
             listingStore.setError("");
 
             try {
-                const galleryPayload = [];
-                if (state.coverItem && state.coverItem.status === "completed") {
-                    galleryPayload.push({
-                        imageUrl: state.coverItem.url,
-                        filePath: state.coverItem.file_path,
-                        isCover: true,
-                        sortOrder: 0,
-                        mediaType: state.coverItem.mediaType || "image",
-                        fileSize: state.coverItem.fileSize || 0,
-                        thumbnailUrl: state.coverItem.thumbnailUrl || null,
-                        durationSeconds: state.coverItem.durationSeconds || null,
-                        caption: state.coverItem.caption || null,
-                        fileId: state.coverItem.fileId || null,
-                    });
-                }
-                
-                let sortIdx = 1;
-                state.galleryItems.forEach((item) => {
-                    if (item.status === "completed" && item.url) {
-                        galleryPayload.push({
-                            imageUrl: item.url,
-                            filePath: item.file_path,
-                            isCover: false,
-                            sortOrder: sortIdx,
-                            mediaType: item.mediaType || "image",
-                            fileSize: item.fileSize || 0,
-                            thumbnailUrl: item.thumbnailUrl || null,
-                            durationSeconds: item.durationSeconds || null,
-                            caption: item.caption || null,
-                            fileId: item.fileId || null,
-                        });
-                        sortIdx++;
-                    }
-                });
+                listingStore.updateFormData({ coverItem: state.coverItem, galleryItems: state.galleryItems });
 
                 const url = getApiUrl(`/api/v1/vendor/products/${$listingStore.productId}`);
+                const payload = listingStore.getApiPayload($listingStore);
+
                 const res = await wizardFetch(url, {
                     method: "PUT",
                     headers: {
@@ -104,7 +73,7 @@
                         Authorization: `Bearer ${data.sessionToken}`,
                         "X-Trace-ID": listingStore.getTraceId(),
                     },
-                    body: JSON.stringify({ version: $listingStore.version, galleryItems: galleryPayload }),
+                    body: JSON.stringify(payload),
                 });
 
                 if (!res.ok) {

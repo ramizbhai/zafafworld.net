@@ -247,8 +247,29 @@ async fn process_image_job(
     _cancel_token: &CancellationToken,
 ) -> Result<usize, String> {
     // 1. Fetch metadata of raw upload from database
+    let raw_row = sqlx::query(
+        "SELECT id, bucket_name, object_key, file_name, mime_type, file_size
+         FROM public.uploaded_files
+         WHERE file_name LIKE 'ZWI' || $1 || '_raw.%'
+            OR file_name LIKE 'ZWV' || $1 || '_raw.%'"
+    )
+    .bind(uploaded_file_id.to_string())
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| format!("Database query error for raw file: {}", e))?;
+
+    let raw_record = raw_row.ok_or_else(|| {
+        format!("Raw file record matching ID {} not found in public.uploaded_files", uploaded_file_id)
+    })?;
+
+    let raw_key: String = raw_record.get("object_key");
+    let _raw_bucket: String = raw_record.get("bucket_name");
+    let _raw_file_name: String = raw_record.get("file_name");
+    let _raw_mime_type: String = raw_record.get("mime_type");
+
+    // Also get the optimized file metadata to keep file_name logic correct
     let parent = sqlx::query(
-        "SELECT id, bucket_name, object_key, file_name, mime_type
+        "SELECT id, file_name
          FROM public.uploaded_files
          WHERE id = $1",
     )
@@ -258,28 +279,24 @@ async fn process_image_job(
     .map_err(|e| e.to_string())?
     .ok_or_else(|| format!("Uploaded file record {} not found in db", uploaded_file_id))?;
 
-    let object_key: String = parent.get("object_key");
     let file_name: String = parent.get("file_name");
-    let mime_type: String = parent.get("mime_type");
 
-    let clean_dir = match object_key.rfind('/') {
-        Some(idx) => &object_key[..idx + 1],
-        None => "",
-    };
-
-    let ext = std::path::Path::new(&file_name)
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("jpg")
-        .to_lowercase();
-
-    // 2. Raw key is ZWI{id}_raw.{ext}
-    let raw_key = format!("{}ZWI{}_raw.{}", clean_dir, uploaded_file_id, ext);
-
+    // 2. Raw key is resolved directly from database row
     // 3. Download raw bytes from S3 MinIO
     let bucket = state.minio_client.bucket().map_err(|e| e.to_string())?;
     let response = bucket.get_object(&raw_key).await.map_err(|e| e.to_string())?;
+    
+    if response.status_code() != 200 {
+        return Err(format!(
+            "MinIO GET failed with HTTP {} for key {}. Response: {}",
+            response.status_code(),
+            raw_key,
+            String::from_utf8_lossy(response.bytes())
+        ));
+    }
+    
     let raw_bytes = response.bytes();
+    tracing::info!("Downloaded raw image file key={} bytes={}", raw_key, raw_bytes.len());
 
     // 4. Save raw bytes to a temp staging file
     let temp_dir = "assets/uploads/temp/";
@@ -315,6 +332,13 @@ async fn process_image_job(
                 "ready",
                 None,
                 Some(processed.file_size as i64),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
             )
             .await;
             Ok(11) // 11 variants (1 original + 10 optimized WebP/AVIF variants)
@@ -331,8 +355,29 @@ async fn process_video_job(
     _cancel_token: &CancellationToken,
 ) -> Result<usize, String> {
     // 1. Fetch metadata of raw upload from database
+    let raw_row = sqlx::query(
+        "SELECT id, bucket_name, object_key, file_name, mime_type, file_size
+         FROM public.uploaded_files
+         WHERE file_name LIKE 'ZWI' || $1 || '_raw.%'
+            OR file_name LIKE 'ZWV' || $1 || '_raw.%'"
+    )
+    .bind(uploaded_file_id.to_string())
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| format!("Database query error for raw file: {}", e))?;
+
+    let raw_record = raw_row.ok_or_else(|| {
+        format!("Raw file record matching ID {} not found in public.uploaded_files", uploaded_file_id)
+    })?;
+
+    let raw_key: String = raw_record.get("object_key");
+    let _raw_bucket: String = raw_record.get("bucket_name");
+    let _raw_file_name: String = raw_record.get("file_name");
+    let _raw_mime_type: String = raw_record.get("mime_type");
+
+    // Also get the optimized file metadata to keep file_name logic correct
     let parent = sqlx::query(
-        "SELECT id, bucket_name, object_key, file_name, mime_type
+        "SELECT id, file_name
          FROM public.uploaded_files
          WHERE id = $1",
     )
@@ -342,28 +387,24 @@ async fn process_video_job(
     .map_err(|e| e.to_string())?
     .ok_or_else(|| format!("Uploaded file record {} not found in db", uploaded_file_id))?;
 
-    let object_key: String = parent.get("object_key");
     let file_name: String = parent.get("file_name");
-    let mime_type: String = parent.get("mime_type");
 
-    let clean_dir = match object_key.rfind('/') {
-        Some(idx) => &object_key[..idx + 1],
-        None => "",
-    };
-
-    let ext = std::path::Path::new(&file_name)
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("mp4")
-        .to_lowercase();
-
-    // 2. Raw key is ZWV{id}_raw.{ext}
-    let raw_key = format!("{}ZWV{}_raw.{}", clean_dir, uploaded_file_id, ext);
-
+    // 2. Raw key is resolved directly from database row
     // 3. Download raw bytes from S3 MinIO
     let bucket = state.minio_client.bucket().map_err(|e| e.to_string())?;
     let response = bucket.get_object(&raw_key).await.map_err(|e| e.to_string())?;
+    
+    if response.status_code() != 200 {
+        return Err(format!(
+            "MinIO GET failed with HTTP {} for key {}. Response: {}",
+            response.status_code(),
+            raw_key,
+            String::from_utf8_lossy(response.bytes())
+        ));
+    }
+    
     let raw_bytes = response.bytes();
+    tracing::info!("Downloaded raw video file key={} bytes={}", raw_key, raw_bytes.len());
 
     // 4. Save raw bytes to a temp staging file
     let temp_dir = "assets/uploads/temp/";
@@ -398,6 +439,13 @@ async fn process_video_job(
                 "ready",
                 None,
                 Some(processed.file_size as i64),
+                None,
+                None,
+                processed.duration_seconds,
+                None,
+                None,
+                None,
+                None,
             )
             .await;
             Ok(3) // 3 variants (raw + remuxed mp4 + thumbnails)

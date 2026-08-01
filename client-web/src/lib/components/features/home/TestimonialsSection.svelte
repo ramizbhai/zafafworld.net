@@ -16,48 +16,48 @@ import { getLocalizedField } from '$lib/utils/localize.js';
   }
 </script>
 
-<section class="py-24 bg-[var(--color-surface-alt)]" aria-labelledby="testimonials-title">
+<section class="py-24 bg-zw-surface-alt" aria-labelledby="testimonials-title">
   {#if testimonials && testimonials.length > 0}
     <div class="container-page">
       <!-- Header -->
       <div class="text-center mb-16">
         <span class="divider-gold mx-auto"></span>
-        <h2 id="testimonials-title" class="font-display text-3xl sm:text-4xl font-bold text-[var(--color-secondary)] mt-6 mb-4">
+        <h2 id="testimonials-title" class="font-display text-3xl sm:text-4xl font-bold text-zw-secondary mt-6 mb-4">
           {m.home_testimonials()}
         </h2>
-        <p class="text-[var(--color-muted)] text-lg">{m.home_testimonialsSubtitle()}</p>
+        <p class="text-zw-muted text-lg">{m.home_testimonialsSubtitle()}</p>
       </div>
 
       <!-- Desktop: all 3 cards -->
       <div class="hidden md:grid md:grid-cols-3 gap-8">
         {#each testimonials as t, i}
           <article
-            class="bg-white rounded-2xl p-8 border border-[var(--color-border)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] transition-shadow duration-300 flex flex-col gap-5"
+            class="bg-white rounded-2xl p-8 border border-zw-border shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col gap-5"
             aria-label={getLocalizedField(t, 'name', getLocale())}
           >
             <!-- Quote icon -->
-            <div class="text-[var(--color-primary)] opacity-30 font-display text-6xl leading-none select-none" aria-hidden="true">
+            <div class="text-zw-primary opacity-30 font-display text-6xl leading-none select-none" aria-hidden="true">
               "
             </div>
 
             <StarRating rating={t.rating} size="sm" />
 
-            <p class="text-[var(--color-text)] text-sm leading-relaxed flex-1">
+            <p class="text-zw-secondary text-sm leading-relaxed flex-1">
               {getLocalizedField(t, 'text', getLocale())}
             </p>
 
-            <div class="flex items-center gap-4 pt-4 border-t border-[var(--color-border)]">
+            <div class="flex items-center gap-4 pt-4 border-t border-zw-border">
               <img
                 src={t.image}
                 alt={getLocalizedField(t, 'name', getLocale())}
-                class="w-12 h-12 rounded-full object-cover border-2 border-[var(--color-primary-light)]"
+                class="w-12 h-12 rounded-full object-cover border-2 border-zw-primary-light"
                 loading="lazy"
               />
               <div>
-                <p class="font-semibold text-[var(--color-secondary)] text-sm">
+                <p class="font-semibold text-zw-secondary text-sm">
                   {getLocalizedField(t, 'name', getLocale())}
                 </p>
-                <p class="text-xs text-[var(--color-muted)]">
+                <p class="text-xs text-zw-muted">
                   {getLocalizedField(t.city, 'name', getLocale())}
                 </p>
               </div>
@@ -69,25 +69,25 @@ import { getLocalizedField } from '$lib/utils/localize.js';
       <!-- Mobile: carousel -->
       <div class="md:hidden">
         {#if testimonials[activeIndex]}
-        <article class="bg-white rounded-2xl p-8 border border-[var(--color-border)] shadow-[var(--shadow-md)] flex flex-col gap-5">
-          <div class="text-[var(--color-primary)] opacity-30 font-display text-6xl leading-none" aria-hidden="true">
+        <article class="bg-white rounded-2xl p-8 border border-zw-border shadow-md flex flex-col gap-5">
+          <div class="text-zw-primary opacity-30 font-display text-6xl leading-none" aria-hidden="true">
             "
           </div>
           <StarRating rating={testimonials[activeIndex].rating} size="sm" />
-          <p class="text-[var(--color-text)] text-sm leading-relaxed">
+          <p class="text-zw-secondary text-sm leading-relaxed">
             {getLocalizedField(testimonials[activeIndex], 'text', getLocale())}
           </p>
-          <div class="flex items-center gap-4 pt-4 border-t border-[var(--color-border)]">
+          <div class="flex items-center gap-4 pt-4 border-t border-zw-border">
             <img
               src={testimonials[activeIndex].image}
               alt={getLocalizedField(testimonials[activeIndex], 'name', getLocale())}
               class="w-12 h-12 rounded-full object-cover"
             />
             <div>
-              <p class="font-semibold text-[var(--color-secondary)] text-sm">
+              <p class="font-semibold text-zw-secondary text-sm">
                 {getLocalizedField(testimonials[activeIndex], 'name', getLocale())}
               </p>
-              <p class="text-xs text-[var(--color-muted)]">
+              <p class="text-xs text-zw-muted">
                 {getLocalizedField(testimonials[activeIndex], 'city', getLocale())}
               </p>
             </div>
@@ -99,7 +99,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         <div class="flex items-center justify-center gap-4 mt-6">
           <button
             onclick={prev}
-            class="w-10 h-10 rounded-full border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            class="w-10 h-10 rounded-full border border-zw-border flex items-center justify-center hover:border-zw-primary hover:text-zw-primary transition-colors"
             aria-label={m.a11y_previousImage()}
           >
             <svg viewBox="0 0 20 20" class="w-4 h-4 ltr:rotate-180" fill="currentColor">
@@ -111,7 +111,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
             {#each testimonials as _, i}
               <button
                 onclick={() => activeIndex = i}
-                class="w-2 h-2 rounded-full transition-all duration-200 {i === activeIndex ? 'bg-[var(--color-primary)] w-6' : 'bg-[var(--color-border)]'}"
+                class="w-2 h-2 rounded-full transition-all duration-200 {i === activeIndex ? 'bg-zw-primary w-6' : 'bg-zw-border'}"
                 aria-label="Slide {i + 1}"
                 aria-current={i === activeIndex}
               ></button>
@@ -120,7 +120,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
 
           <button
             onclick={next}
-            class="w-10 h-10 rounded-full border border-[var(--color-border)] flex items-center justify-center hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
+            class="w-10 h-10 rounded-full border border-zw-border flex items-center justify-center hover:border-zw-primary hover:text-zw-primary transition-colors"
             aria-label={m.a11y_nextImage()}
           >
             <svg viewBox="0 0 20 20" class="w-4 h-4 rtl:rotate-180" fill="currentColor">

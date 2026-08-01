@@ -170,7 +170,7 @@ pub async fn process_and_save_upload(
         ));
     };
 
-    let is_image = mime_type == "image/jpeg" || mime_type == "image/png" || mime_type == "image/webp" || mime_type == "image/avif";
+    let is_image = mime_type == "image/jpeg" || mime_type == "image/png" || mime_type == "image/webp" || mime_type == "image/avif" || mime_type == "image/heic" || mime_type == "image/heif";
     let is_video = mime_type == "video/mp4"
         || mime_type == "video/webm"
         || mime_type == "video/quicktime"
@@ -182,7 +182,7 @@ pub async fn process_and_save_upload(
     if !is_image && !is_video {
         let _ = tokio::fs::remove_file(&temp_path).await;
         return Err(AppError::BadRequest(
-            format!("Upload rejected: Unsupported file format ({}). Only JPEG, PNG, WEBP, AVIF images and MP4, WEBM, MOV, AVI videos are allowed.", mime_type)
+            format!("Upload rejected: Unsupported file format ({}). Only JPEG, PNG, WEBP, AVIF, HEIC images and MP4, WEBM, MOV, AVI videos are allowed.", mime_type)
         ));
     }
 
@@ -192,6 +192,8 @@ pub async fn process_and_save_upload(
         "image/png" => "png",
         "image/webp" => "webp",
         "image/avif" => "avif",
+        "image/heic" => "heic",
+        "image/heif" => "heif",
         "video/mp4" | "application/mp4" => "mp4",
         "video/webm" => "webm",
         "video/quicktime" => "mov",
@@ -204,8 +206,17 @@ pub async fn process_and_save_upload(
         format!("ZWV{}_raw.{}", temp_id, mime_subtype)
     };
 
+    // Compute checksum of original raw file before upload
+    let raw_bytes = tokio::fs::read(&temp_path).await.map_err(|e| {
+        AppError::Internal(format!("Failed to read raw temp file: {}", e))
+    })?;
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    hasher.update(&raw_bytes);
+    let checksum_str = format!("{:x}", hasher.finalize());
+
     // Upload raw original file directly to MinIO
-    minio.upload(&temp_path, &hierarchical_dir, &raw_filename, &mime_type, None)
+    minio.upload(&temp_path, &hierarchical_dir, &raw_filename, &mime_type, None, None, None, Some(&checksum_str))
         .await
         .map_err(|e| AppError::Internal(e))?;
 

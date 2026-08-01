@@ -212,15 +212,15 @@
 
 <!-- Page Header -->
 <div
-  class="bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]"
+  class="bg-zw-surface-alt border-b border-zw-border"
 >
   <div class="container-page py-12">
     <h1
-      class="font-display text-3xl sm:text-4xl font-bold text-[var(--color-secondary)] mb-2"
+      class="font-display text-3xl sm:text-4xl font-bold text-zw-secondary mb-2"
     >
       {m.auto_browse_listings()}
     </h1>
-    <p class="text-[var(--color-muted)]">
+    <p class="text-zw-muted">
       {m.auto_discover_top_wedding()}
     </p>
   </div>
@@ -234,15 +234,15 @@
       aria-label={m.auto_filter_options()}
     >
       <div
-        class="bg-white rounded-2xl border border-[var(--color-border)] p-6 sticky top-24"
+        class="bg-white rounded-2xl border border-zw-border p-6 sticky top-24"
       >
         <div class="flex items-center justify-between mb-6">
-          <h2 class="font-semibold text-[var(--color-secondary)]">
+          <h2 class="font-semibold text-zw-secondary">
             {m.auto_filter_results()}
           </h2>
           <button
             onclick={resetFilters}
-            class="text-sm text-[var(--color-primary)] hover:underline"
+            class="text-sm text-zw-primary-contrast hover:underline"
           >
             {m.auto_reset()}
           </button>
@@ -253,14 +253,14 @@
           <div>
             <label
               for="filter-city"
-              class="block text-sm font-medium text-[var(--color-text)] mb-2"
+              class="block text-sm font-medium text-zw-secondary mb-2"
             >
               {m.auto_city()}
             </label>
             <select
               id="filter-city"
               bind:value={city}
-              class="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] bg-white"
+              class="w-full rounded-lg border border-zw-border px-3 py-2.5 text-sm focus:outline-none focus:border-zw-primary bg-white"
             >
               <option value="">{m.auto_all()}</option>
               {#each SAUDI_CITIES as c}
@@ -275,14 +275,14 @@
           <div>
             <label
               for="filter-category"
-              class="block text-sm font-medium text-[var(--color-text)] mb-2"
+              class="block text-sm font-medium text-zw-secondary mb-2"
             >
               {m.auto_category()}
             </label>
             <select
               id="filter-category"
               bind:value={category}
-              class="w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] bg-white"
+              class="w-full rounded-lg border border-zw-border px-3 py-2.5 text-sm focus:outline-none focus:border-zw-primary bg-white"
             >
               <option value="">{m.auto_all_categories()}</option>
               {#each $page.data.metadata?.categories || [] as cat}
@@ -298,7 +298,7 @@
           <!-- Gender Section (القسم) -->
           <fieldset>
             <legend
-              class="block text-sm font-medium text-[var(--color-text)] mb-2"
+              class="block text-sm font-medium text-zw-secondary mb-2"
             >
               {m.auto_hall_section()}
             </legend>
@@ -310,9 +310,9 @@
                     gender = opt.value as GenderSection | "";
                   }}
                   aria-pressed={gender === opt.value}
-                  class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] {gender === opt.value
-                    ? 'bg-[var(--color-primary)] text-[var(--color-secondary)]'
-                    : 'border border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-primary)]'}"
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zw-primary {gender === opt.value
+                    ? 'bg-zw-primary text-zw-secondary'
+                    : 'border border-zw-border text-zw-secondary hover:border-zw-primary'}"
                 >
                   {getLocale() === "ar" ? opt.arLabel : opt.enLabel}
                 </button>
@@ -322,7 +322,7 @@
 
           <!-- Price Range -->
           <div>
-            <p class="text-sm font-medium text-[var(--color-text)] mb-2">
+            <p class="text-sm font-medium text-zw-secondary mb-2">
               {m.auto_price_range_sar()}
             </p>
             <div class="grid grid-cols-2 gap-2">
@@ -330,20 +330,20 @@
                 type="number"
                 bind:value={priceMin}
                 placeholder={m.auto_min()}
-                class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+                class="rounded-lg border border-zw-border px-3 py-2 text-sm focus:outline-none focus:border-zw-primary"
               />
               <input
                 type="number"
                 bind:value={priceMax}
                 placeholder={m.auto_max()}
-                class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+                class="rounded-lg border border-zw-border px-3 py-2 text-sm focus:outline-none focus:border-zw-primary"
               />
             </div>
           </div>
 
           <!-- Capacity -->
           <div>
-            <p class="text-sm font-medium text-[var(--color-text)] mb-2">
+            <p class="text-sm font-medium text-zw-secondary mb-2">
               {m.auto_capacity_guests()}
             </p>
             <div class="grid grid-cols-2 gap-2">
@@ -351,20 +351,20 @@
                 type="number"
                 bind:value={minCapacity}
                 placeholder={m.auto_min()}
-                class="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] bg-white"
+                class="w-full rounded-lg border border-zw-border px-3 py-2 text-sm focus:outline-none focus:border-zw-primary bg-white"
               />
               <input
                 type="number"
                 bind:value={maxCapacity}
                 placeholder={m.auto_max()}
-                class="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] bg-white"
+                class="w-full rounded-lg border border-zw-border px-3 py-2 text-sm focus:outline-none focus:border-zw-primary bg-white"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            class="w-full rounded-xl bg-[var(--color-primary)] text-[var(--color-secondary)] py-3 font-bold text-sm hover:bg-[var(--color-primary-dark)] transition-colors flex items-center justify-center gap-2 shadow-sm"
+            class="w-full rounded-xl bg-zw-primary text-zw-secondary py-3 font-bold text-sm hover:bg-zw-primary-dark transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             {m.auto_apply_filters()}
           </button>
@@ -377,8 +377,8 @@
 
       <!-- Active Filters Display -->
       {#if city || category || gender || priceMin || priceMax}
-        <div class="flex flex-wrap items-center gap-2 mb-6 bg-white p-4 rounded-2xl border border-[var(--color-border)] shadow-sm">
-          <span class="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider me-2">
+        <div class="flex flex-wrap items-center gap-2 mb-6 bg-white p-4 rounded-2xl border border-zw-border shadow-sm">
+          <span class="text-xs font-bold text-zw-muted uppercase tracking-wider me-2">
             {getLocale() === 'ar' ? 'الفلاتر النشطة:' : 'Active Filters:'}
           </span>
           {#if city}
@@ -412,7 +412,7 @@
           <!-- Mobile filter toggle -->
           <button
             onclick={() => (isFilterOpen = !isFilterOpen)}
-            class="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium hover:border-[var(--color-primary)] transition-colors"
+            class="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg border border-zw-border text-sm font-medium hover:border-zw-primary transition-colors"
           >
             <svg
               viewBox="0 0 24 24"
@@ -430,7 +430,7 @@
             {m.auto_filters()}
           </button>
 
-          <p class="text-sm text-[var(--color-muted)]">
+          <p class="text-sm text-zw-muted">
             {formatNumber(total)}
             {m.auto_results()}
           </p>
@@ -440,7 +440,7 @@
         <div class="flex items-center gap-2">
           <label
             for="sort-by"
-            class="text-sm text-[var(--color-muted)] whitespace-nowrap"
+            class="text-sm text-zw-muted whitespace-nowrap"
           >
             {m.auto_sort_by()}:
           </label>
@@ -448,7 +448,7 @@
             id="sort-by"
             bind:value={sortBy}
             onchange={applyFilters}
-            class="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] bg-white"
+            class="rounded-lg border border-zw-border px-3 py-2 text-sm focus:outline-none focus:border-zw-primary bg-white"
           >
             {#each sortOptions as opt}
               <option value={opt.value}
@@ -470,18 +470,18 @@
         >
           <div class="text-5xl mb-4" aria-hidden="true">✨</div>
           <h3
-            class="font-display text-2xl sm:text-3xl font-extrabold text-[var(--color-secondary)] mb-3"
+            class="font-display text-2xl sm:text-3xl font-extrabold text-zw-secondary mb-3"
           >
             {getLocale() === 'ar' ? 'قريباً جداً!' : "It's Coming Soon!"}
           </h3>
-          <p class="text-[var(--color-muted)] font-medium max-w-md mx-auto mb-8 leading-relaxed">
+          <p class="text-zw-muted font-medium max-w-md mx-auto mb-8 leading-relaxed">
             {getLocale() === 'ar'
               ? 'نحن نعمل حالياً على إضافة أفضل مزودي الخدمات في هذا القسم. يرجى تعديل البحث أو العودة لاحقاً لاكتشاف المزيد.'
               : 'We are currently working on adding the best premium service providers in this section. Please adjust your search or check back later!'}
           </p>
           <button
             onclick={resetFilters}
-            class="px-8 py-3.5 rounded-full bg-[var(--color-primary)] text-[var(--color-secondary)] font-bold shadow-md hover:bg-[var(--color-primary-dark)] hover:-translate-y-0.5 transition-all"
+            class="px-8 py-3.5 rounded-full bg-zw-primary text-zw-secondary font-bold shadow-md hover:bg-zw-primary-dark hover:-translate-y-0.5 transition-all"
           >
             {m.auto_clear_filters()}
           </button>
@@ -493,7 +493,7 @@
               class="tier-section diamond-section relative rounded-2xl bg-gradient-to-br from-purple-50/60 via-white to-blue-50/40 border border-purple-200/50 p-6 -mx-2"
             >
               <h2
-                class="font-display text-xl font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2"
+                class="font-display text-xl font-bold text-zw-secondary mb-4 flex items-center gap-2"
               >
                 💎 {getLocale() === "ar" ? "العروض الماسية" : "Diamond Offers"}
               </h2>
@@ -514,7 +514,7 @@
               class="tier-section vip-section relative rounded-2xl bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 border border-amber-200/40 p-6 -mx-2"
             >
               <h2
-                class="font-display text-xl font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2"
+                class="font-display text-xl font-bold text-zw-secondary mb-4 flex items-center gap-2"
               >
                 👑 {getLocale() === "ar" ? "العروض المميزة" : "VIP Offers"}
               </h2>
@@ -533,7 +533,7 @@
           {#if groupedListings.gold.length > 0}
             <div class="tier-section gold-section">
               <h2
-                class="font-display text-xl font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2"
+                class="font-display text-xl font-bold text-zw-secondary mb-4 flex items-center gap-2"
               >
                 🥇 {getLocale() === "ar" ? "العروض الذهبية" : "Gold Offers"}
               </h2>
@@ -548,7 +548,7 @@
           {#if groupedListings.free.length > 0}
             <div class="tier-section free-section">
               <h2
-                class="font-display text-lg font-bold text-[var(--color-secondary)] mb-4 flex items-center gap-2"
+                class="font-display text-lg font-bold text-zw-secondary mb-4 flex items-center gap-2"
               >
                 🌿 {getLocale() === "ar" ? "العروض العامة" : "Standard Offers"}
               </h2>
@@ -573,7 +573,7 @@
                 applyFilters(true);
               }}
               disabled={currentPage === 1}
-              class="w-10 h-10 rounded-lg border border-[var(--color-border)] flex items-center justify-center disabled:opacity-40 hover:border-[var(--color-primary)] transition-colors"
+              class="w-10 h-10 rounded-lg border border-zw-border flex items-center justify-center disabled:opacity-40 hover:border-zw-primary transition-colors"
               aria-label={m.auto_previous()}
             >
               <svg
@@ -597,8 +597,8 @@
                   applyFilters(true);
                 }}
                 class="w-10 h-10 rounded-lg text-sm font-medium transition-colors {currentPage === p
-                  ? 'bg-[var(--color-primary)] text-[var(--color-secondary)]'
-                  : 'border border-[var(--color-border)] hover:border-[var(--color-primary)] text-[var(--color-text)]'}"
+                  ? 'bg-zw-primary text-zw-secondary'
+                  : 'border border-zw-border hover:border-zw-primary text-zw-secondary'}"
                 aria-current={currentPage === p ? "page" : undefined}
                 >{p}</button
               >
@@ -610,7 +610,7 @@
                 applyFilters(true);
               }}
               disabled={currentPage === totalPages}
-              class="w-10 h-10 rounded-lg border border-[var(--color-border)] flex items-center justify-center disabled:opacity-40 hover:border-[var(--color-primary)] transition-colors"
+              class="w-10 h-10 rounded-lg border border-zw-border flex items-center justify-center disabled:opacity-40 hover:border-zw-primary transition-colors"
               aria-label={m.auto_next()}
             >
               <svg

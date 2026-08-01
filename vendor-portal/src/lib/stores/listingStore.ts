@@ -235,6 +235,8 @@ function createListingStore() {
             };
             s.formData      = { ...s.formData,      ...cleared };
             s.savedFormData = { ...s.savedFormData,  ...JSON.parse(JSON.stringify(cleared)) };
+            s.schema        = null;
+            s.schemaError   = null;
             return s;
         }),
 
@@ -424,6 +426,76 @@ function createListingStore() {
             s.savedFormData = JSON.parse(JSON.stringify(s.formData));
             return s;
         }),
+
+        getApiPayload: (s: ListingState) => {
+            const fd = s.formData;
+            
+            const galleryPayload: any[] = [];
+            if (fd.coverItem && fd.coverItem.status === "completed") {
+                galleryPayload.push({
+                    imageUrl: fd.coverItem.url,
+                    filePath: fd.coverItem.file_path,
+                    isCover: true,
+                    sortOrder: 0,
+                    mediaType: fd.coverItem.mediaType || "image",
+                    fileSize: fd.coverItem.fileSize || 0,
+                    thumbnailUrl: fd.coverItem.thumbnailUrl || null,
+                    durationSeconds: fd.coverItem.durationSeconds || null,
+                    caption: fd.coverItem.caption || null,
+                    fileId: fd.coverItem.fileId || null,
+                });
+            }
+            
+            let sortIdx = 1;
+            fd.galleryItems.forEach((item) => {
+                if (item.status === "completed" && item.url) {
+                    galleryPayload.push({
+                        imageUrl: item.url,
+                        filePath: item.file_path,
+                        isCover: false,
+                        sortOrder: sortIdx,
+                        mediaType: item.mediaType || "image",
+                        fileSize: item.fileSize || 0,
+                        thumbnailUrl: item.thumbnailUrl || null,
+                        durationSeconds: item.durationSeconds || null,
+                        caption: item.caption || null,
+                        fileId: item.fileId || null,
+                    });
+                    sortIdx++;
+                }
+            });
+
+            return {
+                version: s.version,
+                productCategory: fd.selectedCategory || null,
+                titleAr: fd.titleAr || null,
+                titleEn: fd.titleEn || null,
+                basePriceSar: fd.priceOnInquiry ? null : (fd.basePriceSar !== "" ? parseFloat(fd.basePriceSar) : null),
+                priceOnInquiry: fd.priceOnInquiry,
+                depositPercentage: fd.depositPercentage,
+                cityId: fd.selectedCityId || null,
+                googleMapsUrl: fd.googleMapsUrl.trim() || null,
+                latitude: fd.latitude.trim() !== "" ? parseFloat(fd.latitude) : null,
+                longitude: fd.longitude.trim() !== "" ? parseFloat(fd.longitude) : null,
+                descriptionAr: fd.descriptionAr || null,
+                descriptionEn: fd.descriptionEn || null,
+                metaTitleAr: fd.metaTitleAr || null,
+                metaTitleEn: fd.metaTitleEn || null,
+                metaDescriptionAr: fd.metaDescriptionAr || null,
+                metaDescriptionEn: fd.metaDescriptionEn || null,
+                genderSection: fd.genderSection || null,
+                culturalAttributes: fd.culturalAttributes || {},
+                attributes: fd.categoryAttributes || {},
+                featuresSelection: fd.featuresSelection || {},
+                coordinatorNameAr: fd.coordinatorNameAr || null,
+                coordinatorNameEn: fd.coordinatorNameEn || null,
+                coordinatorPhone: fd.coordinatorPhone || null,
+                coordinatorWhatsapp: fd.coordinatorWhatsapp || null,
+                coordinatorEmail: fd.coordinatorEmail || null,
+                coordinatorMobile: fd.coordinatorMobile || null,
+                galleryItems: galleryPayload,
+            };
+        },
 
         reset: () => {
             // Wipe sessionStorage so a future fresh wizard starts clean

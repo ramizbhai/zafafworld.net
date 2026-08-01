@@ -37,15 +37,15 @@ import { getLocalizedField } from '$lib/utils/localize.js';
   ]);
 </script>
 
-<section class="py-24 bg-[var(--color-surface)]" aria-labelledby="how-it-works-title">
+<section class="py-24 bg-zw-surface" aria-labelledby="how-it-works-title">
   <div class="container-page">
     <!-- Section Header -->
     <div class="text-center mb-16">
       <span class="divider-gold mx-auto"></span>
-      <h2 id="how-it-works-title" class="font-display text-3xl sm:text-4xl font-bold text-[var(--color-secondary)] mt-6 mb-4">
+      <h2 id="how-it-works-title" class="font-display text-3xl sm:text-4xl font-bold text-zw-secondary mt-6 mb-4">
         {m.home_howItWorks()}
       </h2>
-      <p class="text-[var(--color-muted)] text-lg max-w-xl mx-auto">
+      <p class="text-zw-muted text-lg max-w-xl mx-auto">
         {m.home_howItWorksSubtitle()}
       </p>
     </div>
@@ -54,7 +54,7 @@ import { getLocalizedField } from '$lib/utils/localize.js';
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
       <!-- Connector line -->
       <div
-        class="hidden md:block absolute top-16 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent z-0"
+        class="hidden md:block absolute top-16 inset-x-0 h-px bg-gradient-to-r from-transparent via-zw-border to-transparent z-0"
         aria-hidden="true"
       ></div>
 
@@ -62,28 +62,28 @@ import { getLocalizedField } from '$lib/utils/localize.js';
         <div class="relative z-10 flex flex-col items-center text-center group">
           <!-- Step number bubble -->
           <div class="
-            relative w-20 h-20 rounded-2xl bg-white border-2 border-[var(--color-border)]
-            flex items-center justify-center mb-6 shadow-[var(--shadow-md)]
-            group-hover:border-[var(--color-primary)] group-hover:shadow-[var(--shadow-gold)]
+            relative w-20 h-20 rounded-2xl bg-white border-2 border-zw-border
+            flex items-center justify-center mb-6 shadow-md
+            group-hover:border-zw-primary group-hover:shadow-gold
             transition-all duration-300
           ">
-            <div class="text-[var(--color-primary)]">
+            <div class="text-zw-primary-contrast">
               {@html step.icon}
             </div>
             <div class="
               absolute -top-3 -end-3 w-7 h-7 rounded-full
-              bg-[var(--color-primary)] text-[var(--color-secondary)]
+              bg-zw-primary text-zw-secondary
               flex items-center justify-center text-xs font-bold
-              shadow-[var(--shadow-sm)]
+              shadow-sm
             ">
               {i + 1}
             </div>
           </div>
 
-          <h3 class="font-display text-xl font-semibold text-[var(--color-secondary)] mb-3">
+          <h3 class="font-display text-xl font-semibold text-zw-secondary mb-3">
             {step.title}
           </h3>
-          <p class="text-[var(--color-muted)] text-sm leading-relaxed max-w-xs">
+          <p class="text-zw-muted text-sm leading-relaxed max-w-xs">
             {step.description}
           </p>
         </div>

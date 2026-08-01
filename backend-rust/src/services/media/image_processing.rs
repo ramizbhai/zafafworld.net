@@ -155,6 +155,24 @@ fn generate_lqip(img: &image::DynamicImage) -> Result<String, AppError> {
     Ok(format!("data:image/webp;base64,{}", b64))
 }
 
+// ── Checksum Helper ──────────────────────────────────────────────────────────
+
+fn compute_checksum(bytes: &[u8]) -> String {
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("{:x}", hasher.finalize())
+}
+
+#[derive(Clone)]
+struct ImageVariantData {
+    key: String,
+    bytes: Vec<u8>,
+    width: i32,
+    height: i32,
+    checksum: String,
+}
+
 // ── Public Entry Point ────────────────────────────────────────────────────────
 
 pub async fn process_image(
@@ -178,7 +196,31 @@ pub async fn process_image(
     let original_url = format!("{}{}", url_prefix, original_filename);
     let target_dir_str = target_dir.to_string();
 
-    // 1. Pre-register DB record as 'processing'
+    // 1. Read bytes for magic check
+    let raw_bytes = tokio::fs::read(&temp_path).await.map_err(|e| {
+        AppError::Internal(format!("Failed to read raw temp file: {}", e))
+    })?;
+
+    // 2. Strict magic bytes validation using `infer`
+    let inferred = infer::get(&raw_bytes).ok_or_else(|| {
+        AppError::BadRequest("Failed to infer file format from magic bytes: unrecognized payload".to_string())
+    })?;
+
+    let mime = inferred.mime_type();
+    let is_valid_mime = match mime {
+        "image/jpeg" | "image/png" | "image/webp" | "image/avif" | "image/heic" | "image/heif" => true,
+        _ => false,
+    };
+
+    if !is_valid_mime {
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return Err(AppError::BadRequest(format!(
+            "MIME check failed: type '{}' is not a supported image format. Only JPEG, PNG, WEBP, AVIF, and HEIC/HEIF media payloads are allowed.",
+            mime
+        )));
+    }
+
+    // 3. Pre-register DB record as 'processing'
     if let Err(e) = minio.insert_processing_record(
         temp_id,
         target_dir,
@@ -191,22 +233,42 @@ pub async fn process_image(
         return Err(AppError::Internal(e));
     }
 
+    // 4. HEIC conversion if needed
+    let is_heic = mime == "image/heic" || mime == "image/heif";
+    let TEMP_DIR = "/tmp/"; // Assuming a standard temp directory
+    let decode_path = if is_heic {
+        let converted_path = format!("{}{}_converted.jpg", TEMP_DIR, temp_id);
+        tracing::info!("Converting HEIC image to JPEG via ffmpeg...");
+        let output = tokio::process::Command::new("ffmpeg")
+            .arg("-y")
+            .arg("-i")
+            .arg(&temp_path)
+            .arg(&converted_path)
+            .output()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to run ffmpeg HEIC conversion: {}", e)))?;
+
+        if !output.status.success() {
+            let _ = tokio::fs::remove_file(&converted_path).await;
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(AppError::BadRequest("Failed to convert HEIC image: ffmpeg exited with error".to_string()));
+        }
+        converted_path
+    } else {
+        temp_path.clone()
+    };
+
     // Acquire semaphore permit before starting CPU intensive operations
     let _permit = get_image_semaphore().acquire().await.ok();
 
     let mut uploaded_keys = Vec::new();
     let mut written_disk_paths = Vec::new();
 
-    let t_path = temp_path.clone();
+    let t_path = decode_path.clone();
     let orig_name = original_file_name.to_string();
 
     let run_processing = async {
-        // Read original raw bytes for archiving/future reprocessing
-        let raw_bytes = tokio::fs::read(&t_path).await.map_err(|e| {
-            AppError::Internal(format!("Failed to read raw temp file: {}", e))
-        })?;
-
-        let variant_files = tokio::task::spawn_blocking(move || -> Result<(HashMap<String, Vec<u8>>, String), AppError> {
+        let variant_files = tokio::task::spawn_blocking(move || -> Result<(Vec<ImageVariantData>, String, u32, i32, i32), AppError> {
             // EXIF Orientation check
             let orientation = get_exif_orientation(&t_path).unwrap_or(1);
 
@@ -235,6 +297,8 @@ pub async fn process_image(
 
             // EXIF Normalization & metadata stripping (implicit in DynamicImage manipulation)
             img = apply_exif_orientation(img, orientation);
+            let final_width = img.width() as i32;
+            let final_height = img.height() as i32;
 
             tracing::info!(
                 target: "media_pipeline",
@@ -244,7 +308,7 @@ pub async fn process_image(
 
             let lqip = generate_lqip(&img)?;
 
-            let mut results = HashMap::new();
+            let mut results = Vec::new();
 
             // Sizing limits: (name, max_edge, webp_ceiling, avif_ceiling)
             let sizes = [
@@ -265,28 +329,50 @@ pub async fn process_image(
                     img.clone()
                 };
 
+                let w = resized.width() as i32;
+                let h = resized.height() as i32;
+
                 // WebP variant
                 let webp_bytes = encode_with_ceil_webp(&resized, max_webp, name)?;
-                results.insert(format!("webp_{}", name), webp_bytes);
+                let webp_checksum = compute_checksum(&webp_bytes);
+                results.push(ImageVariantData {
+                    key: format!("webp_{}", name),
+                    bytes: webp_bytes,
+                    width: w,
+                    height: h,
+                    checksum: webp_checksum,
+                });
 
                 // AVIF variant
                 let avif_bytes = encode_with_ceil_avif(&resized, max_avif, name)?;
-                results.insert(format!("avif_{}", name), avif_bytes);
+                let avif_checksum = compute_checksum(&avif_bytes);
+                results.push(ImageVariantData {
+                    key: format!("avif_{}", name),
+                    bytes: avif_bytes,
+                    width: w,
+                    height: h,
+                    checksum: avif_checksum,
+                });
             }
 
             // Cleanup local source temp file
             let _ = std::fs::remove_file(&t_path);
 
-            Ok((results, lqip))
+            Ok((results, lqip, orientation, final_width, final_height))
         }).await
         .map_err(|e| AppError::Internal(format!("Image variant generation task panicked: {}", e)))??;
 
-        let (files_map, lqip) = variant_files;
+        let (variants_list, lqip, orientation, final_w, final_h) = variant_files;
+
+        // Cleanup original HEIC source temp file if it was converted
+        if is_heic {
+            let _ = tokio::fs::remove_file(&temp_path).await;
+        }
 
         tracing::info!(
             target: "media_pipeline",
             "Variants Generated: operation_id={} temp_id={} variants_count={}",
-            operation_id, temp_id, files_map.len() + 1 // +1 for raw
+            operation_id, temp_id, variants_list.len() + 1 // +1 for raw
         );
 
         // Extract original file extension
@@ -297,6 +383,7 @@ pub async fn process_image(
 
         // Write processed variants to staging disk
         let mut original_webp_size = 0;
+        let mut original_webp_checksum = String::new();
 
         // 1. Write the Raw original
         let raw_filename = format!("ZWI{}_raw.{}", temp_id, orig_ext);
@@ -305,59 +392,79 @@ pub async fn process_image(
             AppError::Internal(format!("Failed to write raw file to disk: {}", e))
         })?;
         written_disk_paths.push(raw_disk_path.clone());
+        let raw_checksum = compute_checksum(&raw_bytes);
 
         // 2. Write all WebP and AVIF variants
-        for (key, bytes) in &files_map {
-            let filename = if key == "webp_original" {
+        for variant_data in &variants_list {
+            let filename = if variant_data.key == "webp_original" {
                 format!("ZWI{}.webp", temp_id)
-            } else if key == "avif_original" {
+            } else if variant_data.key == "avif_original" {
                 format!("ZWI{}.avif", temp_id)
-            } else if key.starts_with("webp_") {
-                format!("ZWI{}_{}.webp", temp_id, &key[5..])
+            } else if variant_data.key.starts_with("webp_") {
+                format!("ZWI{}_{}.webp", temp_id, &variant_data.key[5..])
             } else {
-                format!("ZWI{}_{}.avif", temp_id, &key[5..])
+                format!("ZWI{}_{}.avif", temp_id, &variant_data.key[5..])
             };
 
             let disk_path = format!("{}{}", target_dir_str, filename);
-            tokio::fs::write(&disk_path, bytes).await.map_err(|e| {
-                AppError::Internal(format!("Failed to write variant {} to disk: {}", key, e))
+            tokio::fs::write(&disk_path, &variant_data.bytes).await.map_err(|e| {
+                AppError::Internal(format!("Failed to write variant {} to disk: {}", variant_data.key, e))
             })?;
             written_disk_paths.push(disk_path);
 
-            if key == "webp_original" {
-                original_webp_size = bytes.len();
+            if variant_data.key == "webp_original" {
+                original_webp_size = variant_data.bytes.len();
+                original_webp_checksum = variant_data.checksum.clone();
             }
         }
 
-        // Upload original raw file to MinIO
+        // Upload original raw file to MinIO (as a variant)
         let inferred_mime = infer::get(&raw_bytes)
             .map(|k| k.mime_type())
             .unwrap_or("image/jpeg");
-        minio.upload(&raw_disk_path, target_dir_str.as_str(), &raw_filename, inferred_mime, Some(temp_id))
-            .await
-            .map_err(|e| AppError::Internal(format!("MinIO raw upload failed: {}", e)))?;
+        minio.upload(
+            &raw_disk_path,
+            target_dir_str.as_str(),
+            &raw_filename,
+            inferred_mime,
+            Some(temp_id),
+            Some(final_w),
+            Some(final_h),
+            Some(&raw_checksum),
+        )
+        .await
+        .map_err(|e| AppError::Internal(format!("MinIO raw upload failed: {}", e)))?;
         uploaded_keys.push(format!("{}{}", target_dir_str, raw_filename));
 
         // Upload WebP and AVIF variants to MinIO
-        for key in files_map.keys() {
-            let filename = if key == "webp_original" {
+        for variant_data in &variants_list {
+            let filename = if variant_data.key == "webp_original" {
                 format!("ZWI{}.webp", temp_id)
-            } else if key == "avif_original" {
+            } else if variant_data.key == "avif_original" {
                 format!("ZWI{}.avif", temp_id)
-            } else if key.starts_with("webp_") {
-                format!("ZWI{}_{}.webp", temp_id, &key[5..])
+            } else if variant_data.key.starts_with("webp_") {
+                format!("ZWI{}_{}.webp", temp_id, &variant_data.key[5..])
             } else {
-                format!("ZWI{}_{}.avif", temp_id, &key[5..])
+                format!("ZWI{}_{}.avif", temp_id, &variant_data.key[5..])
             };
 
             let disk_path = format!("{}{}", target_dir_str, filename);
-            let mime = if key.starts_with("webp_") { "image/webp" } else { "image/avif" };
+            let mime = if variant_data.key.starts_with("webp_") { "image/webp" } else { "image/avif" };
             
-            let parent_id = if key == "webp_original" { None } else { Some(temp_id) };
+            let parent_id = if variant_data.key == "webp_original" { None } else { Some(temp_id) };
 
-            minio.upload(&disk_path, target_dir_str.as_str(), &filename, mime, parent_id)
-                .await
-                .map_err(|e| AppError::Internal(format!("MinIO upload failed for key {}: {}", key, e)))?;
+            minio.upload(
+                &disk_path,
+                target_dir_str.as_str(),
+                &filename,
+                mime,
+                parent_id,
+                Some(variant_data.width),
+                Some(variant_data.height),
+                Some(&variant_data.checksum),
+            )
+            .await
+            .map_err(|e| AppError::Internal(format!("MinIO upload failed for key {}: {}", variant_data.key, e)))?;
             uploaded_keys.push(format!("{}{}", target_dir_str, filename));
         }
 
@@ -367,20 +474,32 @@ pub async fn process_image(
             operation_id, temp_id, uploaded_keys.len()
         );
 
-        Ok::<(_, usize), AppError>((lqip, original_webp_size))
+        Ok::<(_, usize, _, _, _, _), AppError>((lqip, original_webp_size, original_webp_checksum, orientation, final_w, final_h))
     };
 
     match run_processing.await {
-        Ok((lqip, final_size)) => {
-            // Update db status to ready
-            if let Err(e) = minio.update_upload_status(temp_id, "ready", None, Some(final_size as i64)).await {
+        Ok((lqip, final_size, final_checksum, orientation, width, height)) => {
+            // Update db status and store complete metadata
+            if let Err(e) = minio.update_upload_status(
+                temp_id,
+                "ready",
+                None,
+                Some(final_size as i64),
+                Some(width),
+                Some(height),
+                None, // duration
+                None, // codec
+                None, // bitrate
+                Some(orientation as i32),
+                Some(&final_checksum),
+            ).await {
                 tracing::error!("Failed to update database status to ready for {}: {}", temp_id, e);
             }
 
             tracing::info!(
                 target: "media_pipeline",
-                "Metadata Saved: operation_id={} temp_id={} status=ready size={}",
-                operation_id, temp_id, final_size
+                "Metadata Saved: operation_id={} temp_id={} status=ready size={} dims={}x{} checksum={}",
+                operation_id, temp_id, final_size, width, height, final_checksum
             );
 
             // Cleanup local variant files from staging disk
@@ -410,7 +529,19 @@ pub async fn process_image(
 
             // Update db status to failed
             let error_msg = format!("{:?}", err);
-            if let Err(e) = minio.update_upload_status(temp_id, "failed", Some(&error_msg), None).await {
+            if let Err(e) = minio.update_upload_status(
+                temp_id,
+                "failed",
+                Some(&error_msg),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ).await {
                 tracing::error!("Failed to update database status to failed for {}: {}", temp_id, e);
             }
 

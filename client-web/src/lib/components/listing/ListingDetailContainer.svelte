@@ -181,24 +181,40 @@
                             <h3 class="font-display text-xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">
                                 {m.listing_location_map_title()}
                             </h3>
-                            <div class="flex items-start gap-4">
-                                <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0">
-                                    <MapPin size={24} />
+                            <div class="flex flex-col gap-5">
+                                <div class="flex items-start gap-4">
+                                    <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl shrink-0">
+                                        <MapPin size={24} />
+                                    </div>
+                                    <div class="space-y-2 flex-grow">
+                                        <p class="text-lg font-bold text-slate-900">{city || m.listing_location_unavailable()}</p>
+                                        {#if listing.googleMapsUrl}
+                                            <a 
+                                                href={listing.googleMapsUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all mt-2"
+                                            >
+                                                <MapPin size={14} class="text-amber-400" />
+                                                <span>{m.listing_view_on_google_maps()}</span>
+                                            </a>
+                                        {/if}
+                                    </div>
                                 </div>
-                                <div class="space-y-2">
-                                    <p class="text-lg font-bold text-slate-900">{city || m.listing_location_unavailable()}</p>
-                                    {#if listing.googleMapsUrl}
-                                        <a 
-                                            href={listing.googleMapsUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm transition-all mt-2"
-                                        >
-                                            <MapPin size={14} class="text-amber-400" />
-                                            <span>{m.listing_view_on_google_maps()}</span>
-                                        </a>
-                                    {/if}
-                                </div>
+
+                                {#if listing.latitude && listing.longitude}
+                                    <div class="rounded-xl overflow-hidden border border-slate-200/80 shadow-xs h-64 relative bg-slate-100">
+                                        <iframe
+                                            title="Google Maps Coordinates"
+                                            width="100%"
+                                            height="100%"
+                                            frameborder="0"
+                                            style="border:0"
+                                            src={`https://maps.google.com/maps?q=${listing.latitude},${listing.longitude}&hl=${getLocale()}&z=15&t=&ie=UTF8&iwloc=&output=embed`}
+                                            allowfullscreen
+                                        ></iframe>
+                                    </div>
+                                {/if}
                             </div>
                         </section>
                     {/if}
